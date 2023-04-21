@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Linq;
 using System.IO;
 using UnityEditor;
@@ -7,38 +8,66 @@ namespace UNIHper.Art.Editor
 {
     public static class ReverseAnimationContext
     {
-        [MenuItem("Assets/Create/Reversed Clip", false, 14)]
+        // [MenuItem("Test/Unit %g")]
+        private static void Test() { }
+
+        [MenuItem("Assets/Create/反转动画", false, 33)]
         private static void ReverseClip()
         {
             ReverseClip(GetSelectedClip());
         }
 
-        [MenuItem("Assets/Create/Reversed Clip", true)]
+        [MenuItem("Assets/Create/反转动画", true)]
         static bool ReverseClipValidation()
         {
-            return Selection.activeObject.GetType() == typeof(AnimationClip);
+            return Selection.activeObject
+                && Selection.activeObject.GetType() == typeof(AnimationClip);
         }
 
         // create reverse clip from an animation clip
         public static AnimationClip ReverseClip(AnimationClip originalClip)
         {
-            string directoryPath = Path.GetDirectoryName(AssetDatabase.GetAssetPath(originalClip));
-            string fileName = Path.GetFileName(AssetDatabase.GetAssetPath(originalClip));
-            // csharpier-ignore
-            string fileExtension = Path.GetExtension(AssetDatabase.GetAssetPath(originalClip));
-            fileName = Path.GetFileNameWithoutExtension(fileName);
-            // csharpier-ignore
-            string copiedFilePath = directoryPath + Path.DirectorySeparatorChar + fileName + "_Reversed" + fileExtension;
+            AnimationClip _reversedClip = null;
+            var _assetPath = AssetDatabase.GetAssetPath(originalClip);
 
-            AssetDatabase.CopyAsset(AssetDatabase.GetAssetPath(originalClip), copiedFilePath);
-            var reversedClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(copiedFilePath);
-            // csharpier-ignore
-            if (reversedClip == null) return null;
-            float clipLength = reversedClip.length;
-            var curves = AnimationUtility.GetCurveBindings(reversedClip);
-            reversedClip.ClearCurves();
+            if (AssetDatabase.IsSubAsset(originalClip))
+            {
+                var _childAnims = AssetDatabase
+                    .LoadAllAssetRepresentationsAtPath(_assetPath)
+                    .Where(_ => _ is AnimationClip)
+                    .OfType<AnimationClip>();
+                var _reversedClipName = originalClip.name + "_Reversed";
+                _reversedClip = _childAnims
+                    .Where(_ => _.name == _reversedClipName)
+                    .FirstOrDefault();
+                if (_reversedClip is not null)
+                {
+                    AssetDatabase.RemoveObjectFromAsset(_reversedClip);
+                    Object.DestroyImmediate(_reversedClip);
+                    AssetDatabase.SaveAssets();
+                }
+                _reversedClip = Object.Instantiate<AnimationClip>(originalClip);
+                _reversedClip.name = _reversedClipName;
+                AssetDatabase.AddObjectToAsset(_reversedClip, _assetPath);
+                AssetDatabase.SaveAssets();
+            }
+            else
+            {
+                var _copiedAnimPath = AssetDatabase.GenerateUniqueAssetPath(
+                    _assetPath.Replace(".anim", "_Reversed.anim")
+                );
+                AssetDatabase.CopyAsset(_assetPath, _copiedAnimPath);
+                _reversedClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(_copiedAnimPath);
+            }
 
-            foreach (EditorCurveBinding binding in curves)
+            if (_reversedClip is null)
+                return null;
+
+            float _clipLength = _reversedClip.length;
+            var _curves = AnimationUtility.GetCurveBindings(_reversedClip);
+            _reversedClip.ClearCurves();
+
+            foreach (EditorCurveBinding binding in _curves)
             {
                 AnimationCurve curve = AnimationUtility.GetEditorCurve(originalClip, binding);
                 Keyframe[] keys = curve.keys;
@@ -49,30 +78,34 @@ namespace UNIHper.Art.Editor
                 for (int i = 0; i < keyCount; i++)
                 {
                     Keyframe K = keys[i];
-                    K.time = clipLength - K.time;
+                    K.time = _clipLength - K.time;
                     float tmp = -K.inTangent;
                     K.inTangent = -K.outTangent;
                     K.outTangent = tmp;
                     keys[i] = K;
                 }
                 curve.keys = keys;
-                reversedClip.SetCurve(binding.path, binding.type, binding.propertyName, curve);
+                _reversedClip.SetCurve(binding.path, binding.type, binding.propertyName, curve);
             }
-            var events = AnimationUtility.GetAnimationEvents(reversedClip);
+            var events = AnimationUtility.GetAnimationEvents(_reversedClip);
             if (events.Length > 0)
             {
                 for (int i = 0; i < events.Length; i++)
                 {
-                    events[i].time = clipLength - events[i].time;
+                    events[i].time = _clipLength - events[i].time;
                 }
-                AnimationUtility.SetAnimationEvents(reversedClip, events);
+                AnimationUtility.SetAnimationEvents(_reversedClip, events);
             }
-            return reversedClip;
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            return _reversedClip;
         }
 
         public static AnimationClip GetSelectedClip()
         {
-            return Selection.GetFiltered(typeof(AnimationClip), SelectionMode.Assets).FirstOrDefault() as AnimationClip;
+            return Selection
+                .GetFiltered<AnimationClip>(SelectionMode.Editable | SelectionMode.Deep)
+                .FirstOrDefault();
         }
     }
 }

@@ -5,14 +5,14 @@ using UnityEngine;
 
 namespace UNIHper.Art.Editor
 {
-
     [CustomEditor(typeof(Ghost))]
     public class GhostEditor : UnityEditor.Editor
     {
         public override void OnInspectorGUI()
         {
             base.OnInspectorGUI();
-            if (!GhostManager.IsReady()) return;
+            if (!GhostManager.IsReady())
+                return;
 
             EditorGUILayout.Space();
 
@@ -40,7 +40,6 @@ namespace UNIHper.Art.Editor
 
     public static class GhostManager
     {
-
         public static bool IsReady()
         {
             return GhostManagerPrototype != null;
@@ -76,10 +75,12 @@ namespace UNIHper.Art.Editor
                     try
                     {
                         var _assembly = Assembly.Load("UNIHper.Ghost.Editor");
-                        if (_assembly is null) return null;
+                        if (_assembly is null)
+                            return null;
 
                         var _manager = _assembly.GetType("UNIHper.Ghost.Editor.GhostManager");
-                        if (_manager is null) return null;
+                        if (_manager is null)
+                            return null;
 
                         ghostManager = _manager;
                     }
@@ -92,9 +93,25 @@ namespace UNIHper.Art.Editor
             }
         }
 
-        private static MethodInfo GenerateGhostEntityMethod => GhostManagerPrototype.GetMethod("GenerateGhostEntity", BindingFlags.Public | BindingFlags.Static);
-        private static MethodInfo RestoreGhostEntityMethod => GhostManagerPrototype.GetMethod("RestoreGhostEntity", BindingFlags.Public | BindingFlags.Static);
-        private static MethodInfo IsGhostRestoredMethod => GhostManagerPrototype.GetMethod("IsGhostRestored", BindingFlags.Public | BindingFlags.Static);
-        private static MethodInfo CheckRemoveNonBuiltinComponentsMethod => GhostManagerPrototype.GetMethod("CheckRemoveNonBuiltinComponents", BindingFlags.Public | BindingFlags.Static);
+        private static MethodInfo GenerateGhostEntityMethod =>
+            GhostManagerPrototype.GetMethod(
+                "GenerateGhostEntity",
+                BindingFlags.Public | BindingFlags.Static
+            );
+        private static MethodInfo RestoreGhostEntityMethod =>
+            GhostManagerPrototype.GetMethod(
+                "RestoreGhostEntity",
+                BindingFlags.Public | BindingFlags.Static
+            );
+        private static MethodInfo IsGhostRestoredMethod =>
+            GhostManagerPrototype.GetMethod(
+                "IsGhostRestored",
+                BindingFlags.Public | BindingFlags.Static
+            );
+        private static MethodInfo CheckRemoveNonBuiltinComponentsMethod =>
+            GhostManagerPrototype.GetMethod(
+                "CheckRemoveNonBuiltinComponents",
+                BindingFlags.Public | BindingFlags.Static
+            );
     }
 }
