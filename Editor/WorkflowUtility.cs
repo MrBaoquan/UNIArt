@@ -37,15 +37,15 @@ namespace UNIHper.Art.Editor
             }
         }
 
-        [MenuItem("Assets/Create/UI 页面预制体", priority = 30)]
+        [MenuItem("Assets/Create/UI Pages预制体", priority = 30)]
         public static void CreateUIPrefab()
         {
-            if (!AssetDatabase.IsValidFolder("Assets/ArtAssets/UI 页面"))
+            if (!AssetDatabase.IsValidFolder("Assets/ArtAssets/UI Pages"))
             {
-                AssetDatabase.CreateFolder("Assets/ArtAssets", "UI 页面");
+                AssetDatabase.CreateFolder("Assets/ArtAssets", "UI Pages");
             }
             Selection.activeObject = AssetDatabase.LoadAssetAtPath(
-                "Assets/ArtAssets/UI 页面",
+                "Assets/ArtAssets/UI Pages",
                 typeof(Object)
             );
 
@@ -54,7 +54,7 @@ namespace UNIHper.Art.Editor
                 ScriptableObject.CreateInstance<DOCreatePrefab>(),
                 "NewUI.prefab",
                 EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D,
-                "ArtAssets/UI 页面"
+                "ArtAssets/UI Pages"
             );
         }
 
@@ -62,7 +62,7 @@ namespace UNIHper.Art.Editor
         public static void ShowUIList()
         {
             var _uiPrefabsFolder = AssetDatabase.LoadAssetAtPath(
-                "Assets/ArtAssets/UI 页面",
+                "Assets/ArtAssets/UI Pages",
                 typeof(Object)
             );
             AssetDatabase.OpenAsset(_uiPrefabsFolder);
@@ -81,7 +81,7 @@ namespace UNIHper.Art.Editor
                 AssetDatabase.Refresh();
             }
             bool _dirty = false;
-            new List<string> { "UI 页面", "图片素材", "音频素材", "字体素材", "动画素材" }.ForEach(
+            new List<string> { "UI Pages", "Textures", "Audios", "Fonts", "Animations" }.ForEach(
                 (folderName) =>
                 {
                     if (!AssetDatabase.IsValidFolder($"Assets/ArtAssets/{folderName}"))
