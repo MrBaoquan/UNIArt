@@ -45,12 +45,12 @@ namespace UNIHper.Art.Editor
         {
             if (animator.runtimeAnimatorController == null)
             {
-                if (!AssetDatabase.IsValidFolder("Assets/ArtAssets/动画素材"))
-                    AssetDatabase.CreateFolder("Assets/ArtAssets", "动画素材");
+                if (!AssetDatabase.IsValidFolder("Assets/ArtAssets/Animations"))
+                    AssetDatabase.CreateFolder("Assets/ArtAssets", "Animations");
 
                 var _controller = AnimatorController.CreateAnimatorControllerAtPath(
                     AssetDatabase.GenerateUniqueAssetPath(
-                        $"Assets/ArtAssets/动画素材/{animator.gameObject.name}.controller"
+                        $"Assets/ArtAssets/Animations/{animator.gameObject.name}.controller"
                     )
                 );
                 animator.runtimeAnimatorController = _controller;
