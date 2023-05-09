@@ -34,6 +34,8 @@ namespace UNIHper.Art.Editor
 
                 PrefabStageUtility.OpenPrefab(pathName);
                 SceneView.lastActiveSceneView.FrameSelected();
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
             }
         }
 
