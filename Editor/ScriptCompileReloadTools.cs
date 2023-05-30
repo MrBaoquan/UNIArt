@@ -96,6 +96,10 @@ namespace UNIHper.Art.Editor
             if (SessionState.GetBool(kFirstEnterUnity, true))
             {
                 SessionState.SetBool(kFirstEnterUnity, false);
+
+                // 默认开启手动重载
+                PlayerPrefs.SetInt(kManualReloadDomain, 1);
+
                 Menu.SetChecked(menuEnableManualReload, IsManualReload ? true : false);
                 Menu.SetChecked(menuDisenableManualReload, IsManualReload ? false : true);
 
