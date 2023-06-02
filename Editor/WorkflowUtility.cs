@@ -39,7 +39,7 @@ namespace UNIHper.Art.Editor
             }
         }
 
-        [MenuItem("Assets/Create/UI Pages预制体", priority = 30)]
+        [MenuItem("Assets/Create/UIPage 预制体", priority = 30)]
         public static void CreateUIPrefab()
         {
             if (!AssetDatabase.IsValidFolder("Assets/ArtAssets/UI Pages"))
