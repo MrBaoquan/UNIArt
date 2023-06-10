@@ -10,7 +10,7 @@ namespace UNIHper.Art.Editor
 {
     internal class WorkflowUtility
     {
-        public class DOCreatePrefab : EndNameEditAction
+        public class DOCreateUIPage : EndNameEditAction
         {
             public override void Action(int instanceId, string pathName, string resourceFile)
             {
@@ -39,6 +39,63 @@ namespace UNIHper.Art.Editor
             }
         }
 
+        public class DOCopyUIPage : EndNameEditAction
+        {
+            public static string originalPrefabPath = string.Empty;
+
+            public override void Action(int instanceId, string pathName, string resourceFile)
+            {
+                if (string.IsNullOrEmpty(originalPrefabPath))
+                {
+                    Debug.LogError("Nothing to copy!");
+                    return;
+                }
+                var _selectedPath = originalPrefabPath;
+                if (!AssetDatabase.CopyAsset(_selectedPath, pathName))
+                {
+                    Debug.LogError("Copy UIPage failed!");
+                    return;
+                }
+
+                var _newPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(pathName);
+
+                var _animator = _newPrefab.GetComponent<Animator>();
+                if (_animator == null)
+                {
+                    _animator = _newPrefab.AddComponent<Animator>();
+                }
+                if (_animator.runtimeAnimatorController != null)
+                {
+                    var _controllerPath = AssetDatabase.GetAssetPath(
+                        _animator.runtimeAnimatorController
+                    );
+                    var _copiedControllerPath = _controllerPath.Replace(
+                        Path.GetFileName(_controllerPath),
+                        Path.GetFileNameWithoutExtension(pathName) + ".controller"
+                    );
+                    if (!AssetDatabase.CopyAsset(_controllerPath, _copiedControllerPath))
+                    {
+                        Debug.LogError("Copy AnimatorController failed!");
+                        return;
+                    }
+                    _animator.runtimeAnimatorController =
+                        AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(
+                            _copiedControllerPath
+                        );
+                }
+
+                ProjectWindowUtil.ShowCreatedAsset(_newPrefab);
+
+                PrefabStageUtility.OpenPrefab(pathName);
+                //SceneView.lastActiveSceneView.FrameSelected();
+
+                Selection.activeGameObject = _newPrefab;
+
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+        }
+
         [MenuItem("Assets/Create/UIPage 预制体", priority = 30)]
         public static void CreateUIPrefab()
         {
@@ -46,6 +103,7 @@ namespace UNIHper.Art.Editor
             {
                 AssetDatabase.CreateFolder("Assets/ArtAssets", "UI Pages");
             }
+
             Selection.activeObject = AssetDatabase.LoadAssetAtPath(
                 "Assets/ArtAssets/UI Pages",
                 typeof(Object)
@@ -53,11 +111,50 @@ namespace UNIHper.Art.Editor
 
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
                 0,
-                ScriptableObject.CreateInstance<DOCreatePrefab>(),
+                ScriptableObject.CreateInstance<DOCreateUIPage>(),
                 "NewUI.prefab",
                 EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D,
                 "ArtAssets/UI Pages"
             );
+        }
+
+        [MenuItem("Assets/Create/复制 UIPage预制体 (含页面动画) %w", priority = 31)]
+        public static void CreateUIPrefabCopy()
+        {
+            var _selected = Selection.activeObject;
+            if (_selected == null)
+            {
+                return;
+            }
+
+            DOCopyUIPage.originalPrefabPath = AssetDatabase.GetAssetPath(
+                Selection.activeGameObject
+            );
+
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
+                0,
+                ScriptableObject.CreateInstance<DOCopyUIPage>(),
+                "NewUI.prefab",
+                EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D,
+                "ArtAssets/UI Pages"
+            );
+        }
+
+        [MenuItem("Assets/Create/复制 UIPage预制体 (含页面动画) %w", true)]
+        public static bool CreateUIPrefabCopyValidate()
+        {
+            var _selected = Selection.activeGameObject;
+            if (_selected == null)
+            {
+                return false;
+            }
+            var _selectedPath = AssetDatabase.GetAssetPath(_selected);
+            if (!_selectedPath.StartsWith("Assets/ArtAssets/UI Pages"))
+            {
+                return false;
+            }
+
+            return true;
         }
 
         //[MenuItem("UNIArt/显示界面列表", priority = 102)]

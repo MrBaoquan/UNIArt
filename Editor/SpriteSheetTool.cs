@@ -9,13 +9,13 @@ namespace UNIHper.Art.Editor
 {
     public static class SpriteSheetTool
     {
-        [MenuItem("Assets/Create/UI Image 序列帧", priority = 31)]
+        [MenuItem("Assets/Create/UI Image 序列帧", priority = 35)]
         public static void CreateUIImageAnimation()
         {
             CreateSpriteAnimation(typeof(Image));
         }
 
-        [MenuItem("Assets/Create/2D Sprite 序列帧", priority = 32)]
+        [MenuItem("Assets/Create/2D Sprite 序列帧", priority = 36)]
         public static void CreateSpriteAnimation()
         {
             CreateSpriteAnimation(typeof(SpriteRenderer));
