@@ -54,7 +54,8 @@ namespace UNIHper.Art.Editor
                     )
                 );
                 animator.runtimeAnimatorController = _controller;
-                AssetDatabase.SaveAssets();
+                EditorUtility.SetDirty(animator);
+                AssetDatabase.SaveAssetIfDirty(animator);
                 AssetDatabase.Refresh();
             }
         }
