@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using UnityEditor;
 using UnityEditor.ProjectWindowCallback;
 using UnityEditor.SceneManagement;
+using TMPro.EditorUtilities;
 
 namespace UNIHper.Art.Editor
 {
@@ -195,6 +196,21 @@ namespace UNIHper.Art.Editor
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
+        }
+
+        private static void importTMPEssentialResourcesIfNotExists()
+        {
+            string[] _settings = AssetDatabase.FindAssets("t:TMP_Settings");
+            if (_settings.Length > 0)
+                return;
+            string packageFullPath = TMP_EditorUtility.packageFullPath;
+
+            //TMP Menu import way: TMP_PackageUtilities.ImportProjectResourcesMenu();
+
+            AssetDatabase.ImportPackage(
+                packageFullPath + "/Package Resources/TMP Essential Resources.unitypackage",
+                false
+            );
         }
     }
 }

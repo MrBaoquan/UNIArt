@@ -2,7 +2,8 @@
     "name": "UNIHper.Art.Editor",
     "rootNamespace": "",
     "references": [
-        "GUID:43b9e380168589043975ac76943daba9"
+        "GUID:43b9e380168589043975ac76943daba9",
+        "GUID:6546d7765b4165b40850b3667f981c26"
     ],
     "includePlatforms": [
         "Editor"
