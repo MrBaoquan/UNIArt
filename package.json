@@ -1,0 +1,12 @@
+{
+    "name": "com.parful.uniart",
+    "author": {
+        "name": "MrBaoquan",
+        "email": "mrma617@gmail.com"
+    },
+    "version": "1.1.0",
+    "displayName": "UNIArt",
+    "unity": "2019.1",
+    "type": "tool",
+    "dependencies": {}
+}
