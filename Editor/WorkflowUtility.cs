@@ -196,6 +196,7 @@ namespace UNIHper.Art.Editor
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
             }
+            importTMPEssentialResourcesIfNotExists();
         }
 
         private static void importTMPEssentialResourcesIfNotExists()
