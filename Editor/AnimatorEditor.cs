@@ -39,6 +39,7 @@ namespace UNIHper.Art.Editor
             if (defaultSaveDir == string.Empty)
                 defaultSaveDir = Application.dataPath;
             createController((Animator)target);
+            UnityEditorInternal.InternalEditorUtility.SetIsInspectorExpanded(target, true);
         }
 
         private void createController(Animator animator)
