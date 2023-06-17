@@ -158,14 +158,20 @@ namespace UNIHper.Art.Editor
             return true;
         }
 
-        //[MenuItem("UNIArt/显示界面列表", priority = 102)]
+        [MenuItem("Assets/转到UI界面列表 %g", priority = 102)]
         public static void ShowUIList()
         {
             var _uiPrefabsFolder = AssetDatabase.LoadAssetAtPath(
                 "Assets/ArtAssets/UI Pages",
                 typeof(Object)
             );
-            AssetDatabase.OpenAsset(_uiPrefabsFolder);
+
+            EditorGUIUtility.PingObject(_uiPrefabsFolder);
+            if (Selection.activeObject == _uiPrefabsFolder)
+            {
+                AssetDatabase.OpenAsset(_uiPrefabsFolder);
+            }
+
             Selection.activeObject = _uiPrefabsFolder;
         }
 
