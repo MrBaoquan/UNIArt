@@ -5,6 +5,7 @@ using UnityEngine.UI;
 using UnityEditor;
 using UnityEditor.ProjectWindowCallback;
 using UnityEditor.SceneManagement;
+using TMPro;
 using TMPro.EditorUtilities;
 
 namespace UNIHper.Art.Editor
@@ -208,16 +209,45 @@ namespace UNIHper.Art.Editor
         private static void importTMPEssentialResourcesIfNotExists()
         {
             string[] _settings = AssetDatabase.FindAssets("t:TMP_Settings");
-            if (_settings.Length > 0)
-                return;
-            string packageFullPath = TMP_EditorUtility.packageFullPath;
+            if (_settings.Length <= 0)
+            {
+                string packageFullPath = TMP_EditorUtility.packageFullPath;
+                //TMP Menu import way: TMP_PackageUtilities.ImportProjectResourcesMenu();
+                AssetDatabase.ImportPackage(
+                    packageFullPath + "/Package Resources/TMP Essential Resources.unitypackage",
+                    false
+                );
 
-            //TMP Menu import way: TMP_PackageUtilities.ImportProjectResourcesMenu();
+                AssetDatabase.importPackageCompleted += importTMPCallback;
+            }
+            else
+            {
+                setDefaultTMPFont();
+            }
+        }
 
-            AssetDatabase.ImportPackage(
-                packageFullPath + "/Package Resources/TMP Essential Resources.unitypackage",
-                false
+        private static void importTMPCallback(string packageName)
+        {
+            setDefaultTMPFont();
+            AssetDatabase.importPackageCompleted -= importTMPCallback;
+        }
+
+        private static void setDefaultTMPFont()
+        {
+            var fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
+                "Assets/ArtAssets/Fonts/DefaultTMPFont.asset"
             );
+            if (fontAsset == null)
+            {
+                return;
+            }
+            // TMPro 3.2版本前defaultFontAsset未公开，且3.2版本未发布，暂时使用反射设置
+            System.Type _type = typeof(TMP_Settings);
+            var _field = _type.GetField(
+                "m_defaultFontAsset",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
+            _field.SetValue(TMP_Settings.instance, fontAsset);
         }
     }
 }
