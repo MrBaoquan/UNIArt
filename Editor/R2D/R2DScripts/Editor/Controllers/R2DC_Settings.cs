@@ -101,7 +101,6 @@ namespace R2D
 
             int contextIndex = 0;
 
-            Debug.LogWarning(availableContexts.Count);
             for (int i = 0; i < availableContexts.Count; i++)
             {
                 if (state.context.instanceId == availableContexts[i].instanceId)
