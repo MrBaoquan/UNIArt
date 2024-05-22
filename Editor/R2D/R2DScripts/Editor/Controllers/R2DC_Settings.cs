@@ -8,7 +8,6 @@ namespace R2D
     using UnityEngine;
     using System.Collections.Generic;
     using System.Linq;
-    using Sirenix.Utilities;
 
     public class R2DC_Settings
     {
@@ -66,6 +65,7 @@ namespace R2D
                 {
                     _allCanvas
                         .Where(_canvas => _canvas.gameObject.name == "R2D Canvas")
+                        .ToList()
                         .ForEach(_canvas =>
                         {
                             GameObject.DestroyImmediate(_canvas.gameObject);
@@ -73,6 +73,7 @@ namespace R2D
                 }
                 GameObject
                     .FindObjectsOfType<Canvas>()
+                    .ToList()
                     .ForEach(_canvas =>
                     {
                         contextNames.Add(_canvas.name);
