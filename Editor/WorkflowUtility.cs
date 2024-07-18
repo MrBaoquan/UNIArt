@@ -73,7 +73,7 @@ namespace UNIHper.Art.Editor
                     );
                     var _copiedControllerPath = _controllerPath.Replace(
                         Path.GetFileName(_controllerPath),
-                        Path.GetFileNameWithoutExtension(pathName) + ".controller"
+                        Path.GetFileNameWithoutExtension(pathName) + "_Controller.controller"
                     );
                     if (!AssetDatabase.CopyAsset(_controllerPath, _copiedControllerPath))
                     {
@@ -101,13 +101,13 @@ namespace UNIHper.Art.Editor
         [MenuItem("Assets/Create/UIPage 预制体", priority = 30)]
         public static void CreateUIPrefab()
         {
-            if (!AssetDatabase.IsValidFolder("Assets/ArtAssets/UI Pages"))
+            if (!AssetDatabase.IsValidFolder("Assets/ArtAssets/UI Prefabs/Windows"))
             {
-                AssetDatabase.CreateFolder("Assets/ArtAssets", "UI Pages");
+                AssetDatabase.CreateFolder("Assets/ArtAssets/UI Prefabs", "Windows");
             }
 
             Selection.activeObject = AssetDatabase.LoadAssetAtPath(
-                "Assets/ArtAssets/UI Pages",
+                "Assets/ArtAssets/UI Prefabs/Windows",
                 typeof(Object)
             );
 
@@ -138,7 +138,7 @@ namespace UNIHper.Art.Editor
                 ScriptableObject.CreateInstance<DOCopyUIPage>(),
                 "NewUI.prefab",
                 EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D,
-                "ArtAssets/UI Pages"
+                "ArtAssets/UI Prefabs/Windows"
             );
         }
 
@@ -151,7 +151,7 @@ namespace UNIHper.Art.Editor
                 return false;
             }
             var _selectedPath = AssetDatabase.GetAssetPath(_selected);
-            if (!_selectedPath.StartsWith("Assets/ArtAssets/UI Pages"))
+            if (!_selectedPath.StartsWith("Assets/ArtAssets/UI Prefabs/Windows"))
             {
                 return false;
             }
@@ -163,7 +163,7 @@ namespace UNIHper.Art.Editor
         public static void ShowUIList()
         {
             var _uiPrefabsFolder = AssetDatabase.LoadAssetAtPath(
-                "Assets/ArtAssets/UI Pages",
+                "Assets/ArtAssets/UI Prefabs/Windows",
                 typeof(Object)
             );
 
@@ -188,7 +188,7 @@ namespace UNIHper.Art.Editor
                 AssetDatabase.Refresh();
             }
             bool _dirty = false;
-            new List<string> { "UI Pages", "Textures", "Audios", "Fonts", "Animations" }.ForEach(
+            new List<string> { "UI Prefabs", "Textures", "Audios", "Fonts", "Animations" }.ForEach(
                 (folderName) =>
                 {
                     if (!AssetDatabase.IsValidFolder($"Assets/ArtAssets/{folderName}"))

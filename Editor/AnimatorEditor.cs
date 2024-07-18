@@ -51,7 +51,7 @@ namespace UNIHper.Art.Editor
 
                 var _controller = AnimatorController.CreateAnimatorControllerAtPath(
                     AssetDatabase.GenerateUniqueAssetPath(
-                        $"Assets/ArtAssets/Animations/{animator.gameObject.name}.controller"
+                        $"Assets/ArtAssets/Animations/{animator.gameObject.name}_Controller.controller"
                     )
                 );
                 animator.runtimeAnimatorController = _controller;
