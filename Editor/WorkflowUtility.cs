@@ -159,7 +159,7 @@ namespace UNIHper.Art.Editor
             return true;
         }
 
-        [MenuItem("Assets/转到UI界面列表 %g", priority = 102)]
+        [MenuItem("Assets/转到UI界面列表 %g", priority = 50)]
         public static void ShowUIList()
         {
             var _uiPrefabsFolder = AssetDatabase.LoadAssetAtPath(
