@@ -189,6 +189,7 @@ namespace UNIHper.Art.Editor
         public static void CopySVNURL()
         {
             var repoUrl = ProjectRepoUrl();
+
             EditorGUIUtility.systemCopyBuffer = repoUrl;
             EditorUtility.DisplayDialog("SVN 仓库地址已复制到剪贴板", repoUrl, "OK");
         }
@@ -690,6 +691,7 @@ namespace UNIHper.Art.Editor
         public static string ProjectRepoUrl()
         {
             var _assetRepoUrl = SVNIntegration.AssetPathToURL("Assets");
+            _assetRepoUrl = Uri.UnescapeDataString(_assetRepoUrl);
             return _assetRepoUrl.Substring(0, _assetRepoUrl.LastIndexOf("/"));
         }
     }
