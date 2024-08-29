@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Sirenix.Utilities;
 using UnityEditor;
 using UnityEngine;
 
@@ -55,6 +56,18 @@ namespace UNIHper.Art.Editor
             }
 
             Commit(paths, true);
+        }
+
+        [MenuItem("Assets/Tortoise SVN/✏️  修改仓库名", false, SVNMenuOrderOffset + 15)]
+        public static void RenameSVNRemote()
+        {
+            RenameSVNRepoWindow.ShowWindow();
+        }
+
+        [MenuItem("Assets/Tortoise SVN/🔄  切换仓库源", false, SVNMenuOrderOffset + 16)]
+        public static void SwitchSVNRemote()
+        {
+            SwitchSVNRepoWindow.ShowWindow();
         }
 
         [MenuItem("Assets/Tortoise SVN/\U0001F50D  检查修改", false, SVNMenuOrderOffset + 31)]
@@ -693,6 +706,40 @@ namespace UNIHper.Art.Editor
             var _assetRepoUrl = SVNIntegration.AssetPathToURL("Assets");
             _assetRepoUrl = Uri.UnescapeDataString(_assetRepoUrl);
             return _assetRepoUrl.Substring(0, _assetRepoUrl.LastIndexOf("/"));
+        }
+
+        // 查看仓库作者列表
+        public static Dictionary<string, int> GetRepoAuthors()
+        {
+            var result = ShellUtils.ExecuteCommand("svn", $"log --quiet --xml", true);
+            if (result.HasErrors)
+            {
+                Debug.LogError($"SVN Error: {result.Error}");
+            }
+            return ParseSVNLog(result.Output)
+                .OrderByDescending(x => x.Value)
+                .Take(10)
+                .ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        private static Dictionary<string, int> ParseSVNLog(string logOutput)
+        {
+            var authorStats = new Dictionary<string, int>();
+
+            var xmlDoc = new System.Xml.XmlDocument();
+            xmlDoc.LoadXml(logOutput);
+
+            var logEntries = xmlDoc.SelectNodes("//logentry/author");
+            foreach (System.Xml.XmlNode authorNode in logEntries)
+            {
+                var author = authorNode.InnerText;
+                if (authorStats.ContainsKey(author))
+                    authorStats[author]++;
+                else
+                    authorStats[author] = 1;
+            }
+
+            return authorStats;
         }
     }
 }

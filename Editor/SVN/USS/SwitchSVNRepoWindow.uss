@@ -1,0 +1,23 @@
+.unity-button {
+    width: 120px;
+    font-size: 12px;
+    -unity-font-style: normal;
+    height: 30px;
+}
+
+.unity-label {
+    color: rgb(255, 255, 255);
+}
+
+#input_newRepoName > TextInput {
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+#input_newRepoUrl > Label {
+    width: 80px;
+    max-width: 80px;
+    min-width: 80px;
+}
