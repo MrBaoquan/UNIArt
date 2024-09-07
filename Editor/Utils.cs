@@ -138,5 +138,14 @@ namespace UNIHper.Art.Editor
             // 返回缩放后的宽高
             return (targetWidth, targetHeight);
         }
+
+        public static string GetAnimationFolderByPath(string path)
+        {
+            if (UNIArtSettings.IsTemplateAsset(path))
+            {
+                return UNIArtSettings.GetExternalTemplateRootBySubAsset(path) + "/Animations";
+            }
+            return "Assets/ArtAssets/Animations";
+        }
     }
 }

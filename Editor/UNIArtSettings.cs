@@ -9,7 +9,7 @@ public class UNIArtSettings : ScriptableObject
 {
     public bool showHierarchyComponentIcon = true;
 
-    public float DelayStart = 0.2f;
+    public float DelayRetry = 0.1f;
     public List<string> excludeHierarchyMethods = new List<string> { "OnItemGUI" };
 
     public string TemplateSVNRepo = "http://svn.andcrane.com/repo/UNIArtTemplates";

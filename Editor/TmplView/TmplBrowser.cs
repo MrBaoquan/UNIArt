@@ -53,7 +53,7 @@ namespace UNIHper.Art.Editor
             var _builtinTemplateButton = new TmplButton();
             _builtinTemplateButton.TemplateID = BuiltInTemplateID;
 
-            _builtinTemplateButton.Q<Label>("title").text = "通用模板";
+            _builtinTemplateButton.Q<Label>("title").text = "公用模板";
             _builtinTemplateButton.style.flexGrow = 0;
             _builtinTemplateButton.style.flexShrink = 0;
             var _templateListRoot = labelFromUXML.Q<VisualElement>("template-list");
@@ -63,14 +63,27 @@ namespace UNIHper.Art.Editor
             if (!Directory.Exists(UNIArtSettings.DefaultSettings.TemplateLocalFolder))
             {
                 Directory.CreateDirectory(UNIArtSettings.DefaultSettings.TemplateLocalFolder);
+                AssetDatabase.Refresh();
             }
 
+            _builtinTemplateButton.Refresh();
             if (!_builtinTemplateButton.IsInstalled)
             {
+                Debug.Log($"尝试安装公用模板...");
                 SVNIntegration.AddExternal(
                     UNIArtSettings.DefaultSettings.TemplateLocalFolder,
                     UNIArtSettings.GetExternalTemplateFolderUrl(BuiltInTemplateID)
                 );
+                SVNIntegration.Update(UNIArtSettings.DefaultSettings.TemplateLocalFolder);
+                _builtinTemplateButton.Refresh();
+                if (_builtinTemplateButton.IsInstalled)
+                {
+                    Debug.Log($"公用模板安装成功.");
+                }
+                else
+                {
+                    Debug.LogWarning($"公用模板安装失败.");
+                }
             }
         }
 
@@ -160,14 +173,14 @@ namespace UNIHper.Art.Editor
             root.Q<Button>("btn_newUI")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
-                    EditorApplication.ExecuteMenuItem("Assets/Create/UIPage 预制体");
+                    WorkflowUtility.CreateUIPrefab();
                 });
 
             // UI页面列表
             root.Q<Button>("btn_uiList")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
-                    EditorApplication.ExecuteMenuItem("Assets/转到UI界面列表");
+                    WorkflowUtility.ShowUIList();
                 });
 
             Action<PrefabStage> refreshLocationButtonState = (_) =>
@@ -337,6 +350,7 @@ namespace UNIHper.Art.Editor
             refreshTemplateAssets();
         }
 
+        // 刷新模板内容
         private void refreshTemplateContent()
         {
             var _templateContent = rootVisualElement.Q<VisualElement>("template-content");

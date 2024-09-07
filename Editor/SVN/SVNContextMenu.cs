@@ -14,7 +14,7 @@ namespace UNIHper.Art.Editor
 
 #region SVN菜单栏
 
-        [MenuItem("Assets/\u2935   SVN 更新资源", priority = 61)]
+        [MenuItem("Assets/\u2935   SVN 更新资源", priority = 64)]
         public static void UpdateAll()
         {
             // It is recommended to freeze Unity while updating.
@@ -23,7 +23,7 @@ namespace UNIHper.Art.Editor
             Update(GetRootAssetPath(), false, wait: true);
         }
 
-        [MenuItem("Assets/\u2197  SVN 提交资源", priority = 62)]
+        [MenuItem("Assets/\u2197  SVN 提交资源", priority = 65)]
         public static void CommitAll()
         {
             var paths = GetSelectedAssetPaths().ToList();
@@ -46,7 +46,7 @@ namespace UNIHper.Art.Editor
             Commit(GetRootAssetPath(), false);
         }
 
-        const int SVNMenuOrderOffset = 62;
+        const int SVNMenuOrderOffset = 65;
 
         [MenuItem("Assets/Tortoise SVN/\u2197  提交", false, SVNMenuOrderOffset + 1)]
         public static void CommitSelected()

@@ -739,7 +739,7 @@ namespace UNIHper.Art.Editor
                 Debug.LogError(result.Error);
                 return false;
             }
-            Debug.LogWarning(result.Output);
+
             return !result.HasErrors;
         }
 
@@ -751,10 +751,10 @@ namespace UNIHper.Art.Editor
 
             var _targetPaths = assetPaths.Concat(metaPaths);
             var _targetPathsStr = string.Join(" ", _targetPaths);
-            Debug.Log($"Commit {_targetPathsStr}");
+
             var result = ShellUtils.ExecuteCommand(
                 SVN_Command,
-                $"commit -m \"auto commit\" {_targetPathsStr}",
+                $"commit -m \"UNIArt Auto Commit\" {_targetPathsStr}",
                 true
             );
 
@@ -764,7 +764,6 @@ namespace UNIHper.Art.Editor
                 return false;
             }
 
-            Debug.Log(result.Output);
             return true;
         }
 

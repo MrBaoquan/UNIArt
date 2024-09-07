@@ -52,7 +52,7 @@ namespace UNIHper.Art.Editor
         {
             public static string originalPrefabPath = string.Empty;
 
-            public override void Action(int instanceId, string pathName, string resourceFile)
+            public override void Action(int instanceId, string newFilePath, string resourceFile)
             {
                 if (string.IsNullOrEmpty(originalPrefabPath))
                 {
@@ -60,13 +60,13 @@ namespace UNIHper.Art.Editor
                     return;
                 }
                 var _selectedPath = originalPrefabPath;
-                if (!AssetDatabase.CopyAsset(_selectedPath, pathName))
+                if (!AssetDatabase.CopyAsset(_selectedPath, newFilePath))
                 {
                     Debug.LogError("Copy UIPage failed!");
                     return;
                 }
 
-                var _newPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(pathName);
+                var _newPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(newFilePath);
 
                 var _animator = _newPrefab.GetComponent<Animator>();
                 if (_animator != null)
@@ -77,10 +77,13 @@ namespace UNIHper.Art.Editor
                         var _controllerPath = AssetDatabase.GetAssetPath(
                             _animator.runtimeAnimatorController
                         );
-                        var _copiedControllerPath = _controllerPath.Replace(
-                            Path.GetFileName(_controllerPath),
-                            Path.GetFileNameWithoutExtension(pathName) + "_Controller.controller"
-                        );
+
+                        var _animationFolder = Utils.GetAnimationFolderByPath(newFilePath);
+
+                        var _copiedControllerPath =
+                            $"{_animationFolder}/{Path.GetFileNameWithoutExtension(newFilePath)}_Controller.controller";
+                        Debug.LogWarning(_copiedControllerPath);
+
                         if (!AssetDatabase.CopyAsset(_controllerPath, _copiedControllerPath))
                         {
                             Debug.LogError("Copy AnimatorController failed!");
@@ -93,7 +96,7 @@ namespace UNIHper.Art.Editor
                     }
                 }
 
-                PrefabStageUtility.OpenPrefab(pathName);
+                PrefabStageUtility.OpenPrefab(newFilePath);
                 SceneView.lastActiveSceneView.FrameSelected();
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
@@ -104,7 +107,7 @@ namespace UNIHper.Art.Editor
                         ProjectWindowUtil.ShowCreatedAsset(_newPrefab);
                         Selection.activeObject = _newPrefab;
                     },
-                    0.2f
+                    UNIArtSettings.DefaultSettings.DelayRetry
                 );
             }
         }
@@ -120,7 +123,7 @@ namespace UNIHper.Art.Editor
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
                 0,
                 ScriptableObject.CreateInstance<DOCreateUIPage>(),
-                $"{UIPageFolder}/NewUI.prefab",
+                $"{UIPageFolder}/新页面.prefab",
                 EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D,
                 string.Empty
             );
@@ -129,27 +132,25 @@ namespace UNIHper.Art.Editor
         [MenuItem("Assets/Create/复制 UIPage预制体 (含页面动画) %w", priority = 31)]
         public static void CreateUIPageCopy()
         {
-            var _selected = TmplBrowser.selectedAssetItem?.gameObject ?? Selection.activeGameObject;
+            var selectedObject =
+                TmplBrowser.selectedAssetItem?.gameObject ?? Selection.activeGameObject;
 
-            if (_selected == null)
+            if (selectedObject == null)
             {
                 return;
             }
-            var _selectedPath = AssetDatabase.GetAssetPath(_selected);
-            CopyPrefab(
-                AssetDatabase.GetAssetPath(_selected),
-                Path.GetDirectoryName(_selectedPath) + "/NewUI.prefab"
-            );
+            var _selectedPath = AssetDatabase.GetAssetPath(selectedObject);
+            CopyPrefab(AssetDatabase.GetAssetPath(selectedObject), _selectedPath);
         }
 
         public static void CopyPrefabToUIPage(string assetPath)
         {
-            CopyPrefab(assetPath, UIPageFolder + "/NewUI.prefab");
+            CopyPrefab(assetPath, $"{UIPageFolder}/{Path.GetFileName(assetPath)}");
         }
 
         public static void CopyPrefabToUIComponent(string assetPath)
         {
-            CopyPrefab(assetPath, UIComponentFolder + "/NewUI.prefab");
+            CopyPrefab(assetPath, $"{UIComponentFolder}/{Path.GetFileName(assetPath)}");
         }
 
         public static void CopyPrefab(string assetPath, string destFile)
@@ -198,9 +199,13 @@ namespace UNIHper.Art.Editor
             FocusProjectBrowser();
             var _uiPrefabsFolder = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(UIPageFolder);
             AssetDatabase.OpenAsset(_uiPrefabsFolder);
-            Utils.Delay(() => AssetDatabase.OpenAsset(_uiPrefabsFolder), 0.1f);
+            Utils.Delay(
+                () => AssetDatabase.OpenAsset(_uiPrefabsFolder),
+                UNIArtSettings.DefaultSettings.DelayRetry
+            );
         }
 
+        [MenuItem("Assets/定位正在编辑的预制体 &g", priority = 51)]
         public static void LocationPrefab()
         {
             FocusProjectBrowser();

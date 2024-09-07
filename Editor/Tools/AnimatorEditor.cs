@@ -39,11 +39,10 @@ namespace UNIHper.Art.Editor
         {
             if (defaultSaveDir == string.Empty)
                 defaultSaveDir = Application.dataPath;
-            createController((Animator)target);
             UnityEditorInternal.InternalEditorUtility.SetIsInspectorExpanded(target, true);
         }
 
-        private void createController(Animator animator)
+        private AnimatorController createController(Animator animator)
         {
             if (animator.runtimeAnimatorController == null)
             {
@@ -77,6 +76,7 @@ namespace UNIHper.Art.Editor
                 AssetDatabase.SaveAssetIfDirty(animator);
                 AssetDatabase.Refresh();
             }
+            return animator.runtimeAnimatorController as AnimatorController;
         }
 
         public override void OnInspectorGUI()
@@ -232,65 +232,67 @@ namespace UNIHper.Art.Editor
                     }
                     EditorGUILayout.EndHorizontal();
                 }
+            }
 
-                // 创建新动画
-                if (editTarget.action == EditAction.Create)
+            // 创建新动画
+            if (editTarget.action == EditAction.Create)
+            {
+                EditorGUILayout.BeginHorizontal();
+                GUILayout.Label("", GUILayout.Width(10));
+                EditorGUI.BeginChangeCheck();
+                editTarget.content = EditorGUILayout.TextField(
+                    editTarget.content,
+                    GUILayout.Width(120)
+                );
+
+                if (EditorGUI.EndChangeCheck())
                 {
-                    EditorGUILayout.BeginHorizontal();
-                    GUILayout.Label("", GUILayout.Width(10));
-                    EditorGUI.BeginChangeCheck();
-                    editTarget.content = EditorGUILayout.TextField(
-                        editTarget.content,
-                        GUILayout.Width(120)
-                    );
-
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        editTarget.content = editTarget.content.Trim();
-                    }
-
-                    GUI.backgroundColor = Color.red;
-                    if (GUILayout.Button("取消"))
-                    {
-                        editTarget.action = EditAction.None;
-                    }
-
-                    GUI.backgroundColor = Color.green;
-                    if (GUILayout.Button("确认"))
-                    {
-                        if (!string.IsNullOrEmpty(editTarget.content))
-                        {
-                            var _subAssetNames = AssetDatabase
-                                .LoadAllAssetRepresentationsAtPath(
-                                    AssetDatabase.GetAssetPath(controller)
-                                )
-                                .Where(_ => _.GetType() == typeof(AnimationClip))
-                                .Select(_ => _.name)
-                                .ToList();
-                            // generate unique animation name
-                            if (_subAssetNames.Contains(editTarget.content))
-                            {
-                                int i = 1;
-                                while (_subAssetNames.Contains($"{editTarget.content} ({i})"))
-                                {
-                                    i++;
-                                }
-                                editTarget.content = $"{editTarget.content} ({i})";
-                            }
-                            AnimationClip clip = new AnimationClip();
-                            clip.name = editTarget.content;
-                            AssetDatabase.AddObjectToAsset(clip, controller);
-                            AssetDatabase.SaveAssetIfDirty(controller);
-                            onNewAnimationCreated(controller, clip);
-                        }
-                        editTarget.content = string.Empty;
-                        editTarget.action = EditAction.None;
-                    }
-                    GUILayout.Label("", GUILayout.Width(50));
-                    GUILayout.Label("", GUILayout.Width(50));
-                    GUILayout.Label("", GUILayout.Width(25));
-                    EditorGUILayout.EndHorizontal();
+                    editTarget.content = editTarget.content.Trim();
                 }
+
+                GUI.backgroundColor = Color.red;
+                if (GUILayout.Button("取消"))
+                {
+                    editTarget.action = EditAction.None;
+                }
+
+                GUI.backgroundColor = Color.green;
+                if (GUILayout.Button("确认"))
+                {
+                    if (!string.IsNullOrEmpty(editTarget.content))
+                    {
+                        controller = createController((Animator)target);
+
+                        var _subAssetNames = AssetDatabase
+                            .LoadAllAssetRepresentationsAtPath(
+                                AssetDatabase.GetAssetPath(controller)
+                            )
+                            .Where(_ => _.GetType() == typeof(AnimationClip))
+                            .Select(_ => _.name)
+                            .ToList();
+                        // generate unique animation name
+                        if (_subAssetNames.Contains(editTarget.content))
+                        {
+                            int i = 1;
+                            while (_subAssetNames.Contains($"{editTarget.content} ({i})"))
+                            {
+                                i++;
+                            }
+                            editTarget.content = $"{editTarget.content} ({i})";
+                        }
+                        AnimationClip clip = new AnimationClip();
+                        clip.name = editTarget.content;
+                        AssetDatabase.AddObjectToAsset(clip, controller);
+                        AssetDatabase.SaveAssetIfDirty(controller);
+                        onNewAnimationCreated(controller, clip);
+                    }
+                    editTarget.content = string.Empty;
+                    editTarget.action = EditAction.None;
+                }
+                GUILayout.Label("", GUILayout.Width(50));
+                GUILayout.Label("", GUILayout.Width(50));
+                GUILayout.Label("", GUILayout.Width(25));
+                EditorGUILayout.EndHorizontal();
             }
 
             EditorGUILayout.Space();
