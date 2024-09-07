@@ -4,12 +4,13 @@
         "name": "MrBaoquan",
         "email": "mrma617@gmail.com"
     },
-    "version": "1.0.5_1",
+    "version": "1.0.6-preview",
     "displayName": "UNIArt",
     "unity": "2019.1",
     "type": "tool",
     "changelogUrl": "http://upm.andcrane.com:4873/-/web/detail/com.parful.uniart",
     "dependencies": {
-        "com.unity.textmeshpro": "3.0.8"
+        "com.unity.textmeshpro": "3.0.8",
+        "com.unity.editorcoroutines": "1.0.0"
     }
 }

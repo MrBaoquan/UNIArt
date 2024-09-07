@@ -34,6 +34,7 @@ namespace UNIHper.Art.Editor
             public int WaitTimeout; // WaitTimeout is in milliseconds. -1 means forever. Only if WaitForOutput is true.
             public bool SkipTimeoutError;
             public IShellMonitor Monitor;
+            public Encoding OutputEncoding;
         }
 
         public struct ShellResult
@@ -120,8 +121,7 @@ namespace UNIHper.Art.Editor
             string command,
             string args,
             string workingDirectory,
-            int waitTimeout,
-            IShellMonitor monitor = null
+            Encoding outputEncoding
         )
         {
             return ExecuteCommand(
@@ -130,9 +130,28 @@ namespace UNIHper.Art.Editor
                     Command = command,
                     Args = args,
                     WaitForOutput = true,
-                    WaitTimeout = waitTimeout,
+                    WaitTimeout = -1,
+                    OutputEncoding = outputEncoding,
                     WorkingDirectory = workingDirectory,
-                    Monitor = monitor
+                }
+            );
+        }
+
+        public static ShellResult ExecuteCommand(
+            string command,
+            string args,
+            Encoding outputEncoding,
+            bool waitForOutput = true
+        )
+        {
+            return ExecuteCommand(
+                new ShellArgs()
+                {
+                    Command = command,
+                    Args = args,
+                    OutputEncoding = outputEncoding,
+                    WaitTimeout = -1,
+                    WaitForOutput = waitForOutput
                 }
             );
         }
@@ -142,6 +161,7 @@ namespace UNIHper.Art.Editor
             shellArgs.Command = shellArgs.Command ?? string.Empty;
             shellArgs.Args = shellArgs.Args ?? string.Empty;
             shellArgs.WorkingDirectory = shellArgs.WorkingDirectory ?? string.Empty;
+            shellArgs.OutputEncoding = shellArgs.OutputEncoding ?? Encoding.Default;
 
             ShellResult result = new ShellResult();
 
@@ -173,6 +193,7 @@ namespace UNIHper.Art.Editor
             processStartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             processStartInfo.UseShellExecute = false;
             processStartInfo.WorkingDirectory = shellArgs.WorkingDirectory;
+            processStartInfo.StandardOutputEncoding = shellArgs.OutputEncoding;
 
             Process process;
             try

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,6 +26,22 @@ namespace UNIHper.Art.Editor
         [MenuItem("Assets/\u2197  SVN 提交资源", priority = 62)]
         public static void CommitAll()
         {
+            var paths = GetSelectedAssetPaths().ToList();
+            if (paths.Count == 1 && paths[0].StartsWith("Assets/ArtAssets/#Templates/"))
+            {
+                var _selectedPath = paths[0];
+                var _external = SVNIntegration
+                    .GetExternals("Assets/ArtAssets/#Templates")
+                    .Select(_ => _.Dir)
+                    .Where(x => _selectedPath.StartsWith($"Assets/ArtAssets/#Templates/{x}"))
+                    .FirstOrDefault();
+                if (!string.IsNullOrEmpty(_external))
+                {
+                    CommitExternal($"Assets/ArtAssets/#Templates/{_external}");
+                    return;
+                }
+            }
+
             // TortoiseSVN handles nested repositories gracefully. SnailSVN - not so much. :(
             Commit(GetRootAssetPath(), false);
         }
@@ -288,6 +305,23 @@ namespace UNIHper.Art.Editor
             }
         }
 
+        public static void CommitExternal(string externalPath)
+        {
+            // if (string.IsNullOrEmpty(pathsArg))
+            //     return;
+
+            var result = ShellUtils.ExecuteCommand(
+                ClientCommand,
+                $"/command:commit /path:\".\"",
+                externalPath,
+                Encoding.GetEncoding(936)
+            );
+            if (result.HasErrors)
+            {
+                // Debug.LogError($"SVN Error: {result.Error}");
+            }
+        }
+
         private static IEnumerable<string> GetRootAssetPath()
         {
             yield return "."; // The root folder of the project (not the Assets folder).
@@ -324,7 +358,7 @@ namespace UNIHper.Art.Editor
             return paths;
         }
 
-        protected static string AssetPathsToContextPaths(
+        public static string AssetPathsToContextPaths(
             IEnumerable<string> assetPaths,
             bool includeMeta
         )
@@ -707,6 +741,28 @@ namespace UNIHper.Art.Editor
             return _assetRepoUrl.Substring(0, _assetRepoUrl.LastIndexOf("/"));
         }
 
+        // 查看SVN仓库文件夹列表
+        public static List<string> GetRepoFolders(string repoUrl)
+        {
+            var result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"list {repoUrl}",
+                Encoding.GetEncoding(936)
+            );
+
+            if (result.HasErrors)
+            {
+                Debug.LogError($"SVN Error: {result.Error}");
+                return new List<string>();
+            }
+
+            return result.Output
+                .Split(new[] { '\r', '\n' }, System.StringSplitOptions.RemoveEmptyEntries)
+                .Where(_ => _.EndsWith("/"))
+                .Select(_ => _.TrimEnd('/'))
+                .ToList();
+        }
+
         // 查看仓库作者列表
         public static Dictionary<string, int> GetRepoAuthors()
         {
@@ -714,6 +770,7 @@ namespace UNIHper.Art.Editor
             if (result.HasErrors)
             {
                 Debug.LogError($"SVN Error: {result.Error}");
+                return new Dictionary<string, int>();
             }
             return ParseSVNLog(result.Output)
                 .OrderByDescending(x => x.Value)

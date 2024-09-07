@@ -1,0 +1,40 @@
+Label {
+    color: rgb(255, 255, 255);
+}
+
+.group_button:hover {
+    background-color: rgb(214, 60, 60);
+}
+
+.selected {
+    background-color: rgb(214, 60, 60);
+}
+
+.full-page {
+    height: 100%;
+    width: 100%;
+    background-color: rgba(255, 0, 0, 0.64);
+    max-height: none;
+    min-height: auto;
+}
+
+ToolbarButton:focus {
+    border-left-color: rgba(0, 0, 0, 0);
+    border-right-color: rgba(0, 0, 0, 0);
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: rgba(0, 0, 0, 0);
+}
+
+ToolbarButton:hover {
+    -unity-background-image-tint-color: rgb(159, 159, 159);
+}
+
+ToolbarButton {
+    margin-right: 4px;
+    margin-left: 4px;
+    -unity-background-image-tint-color: rgb(217, 217, 217);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+}

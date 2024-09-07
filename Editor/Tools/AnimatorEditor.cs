@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 
 namespace UNIHper.Art.Editor
@@ -46,12 +47,29 @@ namespace UNIHper.Art.Editor
         {
             if (animator.runtimeAnimatorController == null)
             {
-                if (!AssetDatabase.IsValidFolder("Assets/ArtAssets/Animations"))
-                    AssetDatabase.CreateFolder("Assets/ArtAssets", "Animations");
+                var _gameObject = animator.gameObject;
+
+                var _WorkFolder = "Assets/ArtAssets";
+                var _assetPath = Utils.GetPrefabAssetPathByAnyGameObject(_gameObject);
+                if (UNIArtSettings.IsTemplateAsset(_assetPath))
+                {
+                    var _templateRoot = UNIArtSettings.GetExternalTemplateRootBySubAsset(
+                        _assetPath
+                    );
+                    if (!string.IsNullOrEmpty(_templateRoot))
+                    {
+                        _WorkFolder = _templateRoot;
+                    }
+                }
+
+                var _animationFolder = Path.Combine(_WorkFolder, "Animations").ToForwardSlash();
+
+                if (!AssetDatabase.IsValidFolder(_animationFolder))
+                    AssetDatabase.CreateFolder(_WorkFolder, "Animations");
 
                 var _controller = AnimatorController.CreateAnimatorControllerAtPath(
                     AssetDatabase.GenerateUniqueAssetPath(
-                        $"Assets/ArtAssets/Animations/{animator.gameObject.name}_Controller.controller"
+                        $"{_animationFolder}/{animator.gameObject.name}_Controller.controller"
                     )
                 );
                 animator.runtimeAnimatorController = _controller;
@@ -328,6 +346,10 @@ namespace UNIHper.Art.Editor
 
         private void onNewAnimationCreated(AnimatorController controller, AnimationClip clip)
         {
+            if (controller.layers.Length <= 0)
+            {
+                controller.AddLayer("Base Layer");
+            }
             var _stateMachine = controller.layers[0].stateMachine;
             var _animationClips = controller.animationClips;
 

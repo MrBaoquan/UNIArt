@@ -711,5 +711,227 @@ namespace UNIHper.Art.Editor
 
             return statusData;
         }
+
+        public static bool IsWorkingCopy(string path)
+        {
+            var result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"info \"{SVNFormatPath(path)}\"",
+                COMMAND_TIMEOUT
+            );
+
+            return !result.HasErrors
+                && !string.IsNullOrEmpty(ExtractLineValue("URL:", result.Output));
+        }
+
+        public static bool AddToWorkspace(IEnumerable<string> assetPaths, bool includeMeta = true)
+        {
+            var metaPaths = includeMeta
+                ? assetPaths.Select(path => path + ".meta")
+                : new List<string>();
+
+            var _targetPaths = assetPaths.Concat(metaPaths);
+            var _targetPathsStr = string.Join(" ", _targetPaths);
+
+            var result = ShellUtils.ExecuteCommand(SVN_Command, $"add {_targetPathsStr}", true);
+            if (result.HasErrors)
+            {
+                Debug.LogError(result.Error);
+                return false;
+            }
+            Debug.LogWarning(result.Output);
+            return !result.HasErrors;
+        }
+
+        public static bool Commit(IEnumerable<string> assetPaths, bool includeMeta = true)
+        {
+            var metaPaths = includeMeta
+                ? assetPaths.Select(path => path + ".meta")
+                : new List<string>();
+
+            var _targetPaths = assetPaths.Concat(metaPaths);
+            var _targetPathsStr = string.Join(" ", _targetPaths);
+            Debug.Log($"Commit {_targetPathsStr}");
+            var result = ShellUtils.ExecuteCommand(
+                SVN_Command,
+                $"commit -m \"auto commit\" {_targetPathsStr}",
+                true
+            );
+
+            if (result.HasErrors)
+            {
+                Debug.LogError(result.Error);
+                return false;
+            }
+
+            Debug.Log(result.Output);
+            return true;
+        }
+
+        public static List<(string Dir, string Url)> GetExternals(string path)
+        {
+            var result = ShellUtils.ExecuteCommand(
+                SVN_Command,
+                $"propget svn:externals \"{path}\"",
+                Encoding.GetEncoding(936),
+                true
+            );
+
+            if (result.HasErrors)
+            {
+                return new List<(string, string)>();
+            }
+
+            var externals = new List<(string, string)>();
+            foreach (var line in result.Output.Split('\n'))
+            {
+                if (line.StartsWith("svn: "))
+                    continue;
+
+                var parts = line.Split(' ');
+                if (parts.Length < 2)
+                {
+                    continue;
+                }
+
+                var externalPath = parts[0];
+                var externalUrl = parts[1];
+
+                externals.Add((externalPath, externalUrl));
+            }
+
+            return externals;
+        }
+
+        public static bool HasExternal(string externalPath, string ExternalDir)
+        {
+            var _externals = GetExternals(externalPath);
+            return _externals.Any(x => x.Dir == ExternalDir);
+        }
+
+        // 添加external
+        public static void AddExternal(string externalPath, string externalUrl)
+        {
+            // 如果external不是工作副本,则使用svn add将其添加到工作副本中
+            if (!IsWorkingCopy(externalPath))
+            {
+                AddToWorkspace(new List<string> { externalPath });
+                Commit(new List<string> { externalPath });
+            }
+
+            var _externals = GetExternals(externalPath);
+
+            if (_externals.Exists(_ => _.Url == externalUrl))
+            {
+                return;
+            }
+
+            // 设置外部
+            var _folderName = Path.GetFileName(externalUrl);
+            _externals.Add((_folderName, externalUrl));
+
+            var _externalsStr = string.Join(
+                Environment.NewLine,
+                _externals.Select(x => $"\"{x.Item1}\" \"{x.Item2}\"")
+            );
+
+            var _args = $"propset svn:externals \"{_externalsStr}\" {externalPath}";
+
+            var result = ShellUtils.ExecuteCommand("svn", _args, Encoding.GetEncoding(936), true);
+            if (result.HasErrors)
+            {
+                Debug.LogError($"SVN Error: {result.Error}");
+                return;
+            }
+
+            // 更新外部资源
+            var workingDir = $"{SVNConextMenu.ProjectRootUnity}/{externalPath}";
+            result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"update",
+                workingDir,
+                Encoding.GetEncoding(936)
+            );
+            if (result.HasErrors)
+            {
+                Debug.LogError($"SVN Error: {result.Error}");
+                return;
+            }
+
+            AssetDatabase.Refresh();
+        }
+
+        public static void RemoveExternal(string externalPath, string externalUrl)
+        {
+            var _externals = GetExternals(externalPath);
+
+            var _folderName = Path.GetFileName(externalUrl);
+            var _external = _externals.FirstOrDefault(x => x.Dir == _folderName);
+            if (_external == default)
+            {
+                return;
+            }
+
+            _externals.Remove(_external);
+
+            var _externalsStr = string.Join(
+                Environment.NewLine,
+                _externals.Select(x => $"\"{x.Item1}\" \"{x.Item2}\"")
+            );
+
+            var _args = $"propset svn:externals \"{_externalsStr}\" {externalPath}";
+
+            var result = ShellUtils.ExecuteCommand("svn", _args, Encoding.GetEncoding(936), true);
+            if (result.HasErrors)
+            {
+                Debug.LogError($"SVN Error: {result.Error}");
+                return;
+            }
+
+            var workingDir = $"{SVNConextMenu.ProjectRootUnity}/{externalPath}";
+            result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"update",
+                workingDir,
+                Encoding.GetEncoding(936)
+            );
+            if (result.HasErrors)
+            {
+                Debug.LogError($"SVN Error: {result.Error}");
+                return;
+            }
+
+            var removeTarget = $"{workingDir}/{_folderName}";
+
+            // 移除 .meta
+            var metaPath = removeTarget + ".meta";
+            if (File.Exists(metaPath))
+            {
+                File.Delete(metaPath);
+            }
+
+            AssetDatabase.Refresh();
+        }
+
+        public static bool Update(string workingDir)
+        {
+            if (!IsWorkingCopy(workingDir))
+            {
+                return false;
+            }
+
+            var result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"update",
+                workingDir,
+                Encoding.GetEncoding(936)
+            );
+            if (result.HasErrors)
+            {
+                Debug.LogError($"SVN Error: {result.Error}");
+                return false;
+            }
+            return true;
+        }
     }
 }
