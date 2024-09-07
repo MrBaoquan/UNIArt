@@ -82,7 +82,6 @@ namespace UNIHper.Art.Editor
 
                         var _copiedControllerPath =
                             $"{_animationFolder}/{Path.GetFileNameWithoutExtension(newFilePath)}_Controller.controller";
-                        Debug.LogWarning(_copiedControllerPath);
 
                         if (!AssetDatabase.CopyAsset(_controllerPath, _copiedControllerPath))
                         {
