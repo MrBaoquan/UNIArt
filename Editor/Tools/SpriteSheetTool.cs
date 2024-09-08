@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     public static class SpriteSheetTool
     {

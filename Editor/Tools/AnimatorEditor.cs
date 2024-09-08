@@ -6,7 +6,7 @@ using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     public enum EditAction
     {
@@ -75,6 +75,7 @@ namespace UNIHper.Art.Editor
                 EditorUtility.SetDirty(animator);
                 AssetDatabase.SaveAssetIfDirty(animator);
                 AssetDatabase.Refresh();
+                Selection.activeGameObject = animator.gameObject;
             }
             return animator.runtimeAnimatorController as AnimatorController;
         }
@@ -301,48 +302,6 @@ namespace UNIHper.Art.Editor
             {
                 editTarget.action = EditAction.Create;
                 editTarget.content = "新动画";
-                // AnimationClip clip = new AnimationClip();
-                // clip.name = "New Animation";
-
-                // string _animSavePath = EditorUtility.SaveFilePanel(
-                //     "保存动画",
-                //     defaultSaveDir,
-                //     "新动画",
-                //     "anim"
-                // );
-
-                // if (!string.IsNullOrEmpty(_animSavePath))
-                // {
-                //     var _projectDir =
-                //         Path.GetDirectoryName(Application.dataPath).Replace("\\", "/") + "/";
-                //     if (!_animSavePath.StartsWith(_projectDir))
-                //     {
-                //         EditorUtility.DisplayDialog("错误", "动画文件必须保存在工程目录下", "确定");
-                //         return;
-                //     }
-
-                //     defaultSaveDir = Path.GetDirectoryName(_animSavePath).Replace("\\", "/");
-
-                //     _animSavePath = _animSavePath.Replace(_projectDir, "");
-
-                //     AssetDatabase.CreateAsset(clip, _animSavePath);
-
-                //     if (controller is null)
-                //     {
-                //         var _controllerPath = Path.Combine(
-                //             Path.GetDirectoryName(_animSavePath),
-                //             animator.gameObject.name + ".controller"
-                //         );
-                //         controller = AnimatorController.CreateAnimatorControllerAtPathWithClip(
-                //             _controllerPath,
-                //             clip
-                //         );
-                //         animator.runtimeAnimatorController = controller;
-                //     }
-                //     AssetDatabase.SaveAssets();
-                //     AssetDatabase.Refresh();
-                //     onNewAnimationCreated(controller, clip);
-                // }
             }
         }
 

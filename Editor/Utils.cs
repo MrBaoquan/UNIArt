@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     public static class Utils
     {

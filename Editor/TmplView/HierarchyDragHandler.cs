@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     [InitializeOnLoad]
     public static class HierarchyDragHandler

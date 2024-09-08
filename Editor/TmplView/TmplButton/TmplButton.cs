@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     public class TmplButton : SelectableView
     {

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEditor;
-namespace UNIHper.Art.Editor
+
+namespace UNIArt.Editor
 {
     //
     //  This extension allow to drag&drop subassets while pressing 'Alt'
@@ -21,26 +22,31 @@ namespace UNIHper.Art.Editor
         {
             // Break - key modifier doen't pressed
             var activated = Event.current.alt;
-            if (activated == false) return;
+            if (activated == false)
+                return;
 
             // Break - OnGUI() call not for mouse target
             var within = selectionRect.Contains(Event.current.mousePosition);
-            if (within == false) return;
+            if (within == false)
+                return;
 
-            // Break - destination match one of sources 
+            // Break - destination match one of sources
             var target = AssetDatabase.GUIDToAssetPath(guid);
             var targetInSources = Array.IndexOf(DragAndDrop.paths, target) != -1;
-            if (targetInSources) return;
+            if (targetInSources)
+                return;
 
             // Break - unity default moving
             var targetIsFolder = AssetDatabase.IsValidFolder(target);
             if (targetIsFolder)
                 foreach (var asset in DragAndDrop.objectReferences)
-                    if (AssetDatabase.IsMainAsset(asset)) return;
+                    if (AssetDatabase.IsMainAsset(asset))
+                        return;
 
             // Break - there is Unity restriction to use GameObjects as SubAssets
             foreach (var obj in DragAndDrop.objectReferences)
-                if (obj is GameObject) return;
+                if (obj is GameObject)
+                    return;
 
             if (Event.current.type == EventType.DragUpdated)
             {
@@ -65,7 +71,9 @@ namespace UNIHper.Art.Editor
                 var sourceIsMain = AssetDatabase.IsMainAsset(source);
                 var sourceAssets = new List<UnityEngine.Object>() { source };
                 if (sourceIsMain)
-                    sourceAssets.AddRange(AssetDatabase.LoadAllAssetRepresentationsAtPath(sourcePath));
+                    sourceAssets.AddRange(
+                        AssetDatabase.LoadAllAssetRepresentationsAtPath(sourcePath)
+                    );
 
                 // Peform move assets from source file to destination
                 foreach (var asset in sourceAssets)
@@ -110,7 +118,11 @@ namespace UNIHper.Art.Editor
             }
         }
 
-        private static List<UnityEngine.Object> GetHiddenReferences(UnityEngine.Object asset, string refsPath = null, List<UnityEngine.Object> refs = null)
+        private static List<UnityEngine.Object> GetHiddenReferences(
+            UnityEngine.Object asset,
+            string refsPath = null,
+            List<UnityEngine.Object> refs = null
+        )
         {
             if (refsPath == null)
                 refsPath = AssetDatabase.GetAssetPath(asset);

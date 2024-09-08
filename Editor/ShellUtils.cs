@@ -3,7 +3,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     public delegate void ShellRequestAbortEventHandler(bool kill);
 

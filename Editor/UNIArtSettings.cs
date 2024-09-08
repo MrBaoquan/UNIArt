@@ -1,129 +1,132 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using UNIHper.Art.Editor;
+
 using UnityEditor;
 using UnityEngine;
 
-public class UNIArtSettings : ScriptableObject
+namespace UNIArt.Editor
 {
-    public bool showHierarchyComponentIcon = true;
-
-    public float DelayRetry = 0.1f;
-    public List<string> excludeHierarchyMethods = new List<string> { "OnItemGUI" };
-
-    public string TemplateSVNRepo = "http://svn.andcrane.com/repo/UNIArtTemplates";
-    public string TemplateLocalFolder = "Assets/ArtAssets/#Templates";
-
-    public static string GetExternalTemplateFolderUrl(string templateName)
+    public class UNIArtSettings : ScriptableObject
     {
-        return DefaultSettings.TemplateSVNRepo + "/" + templateName;
-    }
+        public bool showHierarchyComponentIcon = true;
 
-    public static string GetExternalTemplateFolder(string templateName)
-    {
-        return DefaultSettings.TemplateLocalFolder + "/" + templateName;
-    }
+        public float DelayRetry = 0.1f;
+        public List<string> excludeHierarchyMethods = new List<string> { "OnItemGUI" };
 
-    public static bool IsTemplateAsset(string assetPath)
-    {
-        return assetPath.ToForwardSlash().StartsWith(DefaultSettings.TemplateLocalFolder + "/");
-    }
+        public string TemplateSVNRepo = "http://svn.andcrane.com/repo/UNIArtTemplates";
+        public string TemplateLocalFolder = "Assets/ArtAssets/#Templates";
 
-    public static string GetTemplateNameBySubAsset(string assetPath)
-    {
-        var _path = assetPath.ToForwardSlash();
-        string _pattern = @"^Assets/ArtAssets/\#Templates/(?<templateName>[^/]+)/.*$";
-        var _match = Regex.Match(_path, _pattern);
-        if (_match.Success)
+        public static string GetExternalTemplateFolderUrl(string templateName)
         {
-            return _match.Groups["templateName"].Value;
+            return DefaultSettings.TemplateSVNRepo + "/" + templateName;
         }
-        return string.Empty;
-    }
 
-    // 根据资源名获取模板文件夹根目录
-    public static string GetExternalTemplateRootBySubAsset(string assetPath)
-    {
-        var _templateName = GetTemplateNameBySubAsset(assetPath);
-        if (string.IsNullOrEmpty(_templateName))
+        public static string GetExternalTemplateFolder(string templateName)
         {
+            return DefaultSettings.TemplateLocalFolder + "/" + templateName;
+        }
+
+        public static bool IsTemplateAsset(string assetPath)
+        {
+            return assetPath.ToForwardSlash().StartsWith(DefaultSettings.TemplateLocalFolder + "/");
+        }
+
+        public static string GetTemplateNameBySubAsset(string assetPath)
+        {
+            var _path = assetPath.ToForwardSlash();
+            string _pattern = @"^Assets/ArtAssets/\#Templates/(?<templateName>[^/]+)/.*$";
+            var _match = Regex.Match(_path, _pattern);
+            if (_match.Success)
+            {
+                return _match.Groups["templateName"].Value;
+            }
             return string.Empty;
         }
-        return GetExternalTemplateFolder(_templateName);
-    }
 
-    private static UNIArtSettings instance;
-    public static UNIArtSettings DefaultSettings
-    {
-        get
+        // 根据资源名获取模板文件夹根目录
+        public static string GetExternalTemplateRootBySubAsset(string assetPath)
         {
-            if (instance != null)
-                return instance;
-
-            var _default = AssetDatabase
-                .FindAssets("t:UNIArtSettings")
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Select(AssetDatabase.LoadAssetAtPath<UNIArtSettings>)
-                .FirstOrDefault();
-
-            if (_default != null)
+            var _templateName = GetTemplateNameBySubAsset(assetPath);
+            if (string.IsNullOrEmpty(_templateName))
             {
-                instance = _default;
+                return string.Empty;
+            }
+            return GetExternalTemplateFolder(_templateName);
+        }
+
+        private static UNIArtSettings instance;
+        public static UNIArtSettings DefaultSettings
+        {
+            get
+            {
+                if (instance != null)
+                    return instance;
+
+                var _default = AssetDatabase
+                    .FindAssets("t:UNIArtSettings")
+                    .Select(AssetDatabase.GUIDToAssetPath)
+                    .Select(AssetDatabase.LoadAssetAtPath<UNIArtSettings>)
+                    .FirstOrDefault();
+
+                if (_default != null)
+                {
+                    instance = _default;
+                    return instance;
+                }
+
+                instance = CreateInstance<UNIArtSettings>();
+                AssetDatabase.CreateAsset(instance, "Assets/Resources/UNIArt Settings.asset");
+                AssetDatabase.Refresh();
                 return instance;
             }
-
-            instance = CreateInstance<UNIArtSettings>();
-            AssetDatabase.CreateAsset(instance, "Assets/Resources/UNIArt Settings.asset");
-            AssetDatabase.Refresh();
-            return instance;
         }
+
+        // 你可以添加更多字段
     }
 
-    // 你可以添加更多字段
-}
-
-public class UNIArtSettingsProvider : SettingsProvider
-{
-    private SerializedObject settingsObject;
-
-    public UNIArtSettingsProvider(string path, SettingsScope scope)
-        : base(path, scope) { }
-
-    public override void OnGUI(string searchContext)
+    public class UNIArtSettingsProvider : SettingsProvider
     {
-        if (settingsObject == null)
+        private SerializedObject settingsObject;
+
+        public UNIArtSettingsProvider(string path, SettingsScope scope)
+            : base(path, scope) { }
+
+        public override void OnGUI(string searchContext)
         {
-            settingsObject = new SerializedObject(UNIArtSettings.DefaultSettings);
-        }
-
-        if (settingsObject != null)
-        {
-            settingsObject.Update();
-
-            // 自动生成与所有字段相关的 UI
-            SerializedProperty property = settingsObject.GetIterator();
-            property.NextVisible(true); // 跳过 `m_Script` 字段
-
-            while (property.NextVisible(false)) // 遍历所有属性
+            if (settingsObject == null)
             {
-                EditorGUILayout.PropertyField(property, true);
+                settingsObject = new SerializedObject(UNIArtSettings.DefaultSettings);
             }
 
-            settingsObject.ApplyModifiedProperties();
-        }
-        else
-        {
-            GUILayout.Label("No AutoGeneratedSettings asset found.");
-        }
-    }
+            if (settingsObject != null)
+            {
+                settingsObject.Update();
 
-    [SettingsProvider]
-    public static SettingsProvider CreateAutoGeneratedSettingsProvider()
-    {
-        return new UNIArtSettingsProvider("Project/UNIArt", SettingsScope.Project)
+                // 自动生成与所有字段相关的 UI
+                SerializedProperty property = settingsObject.GetIterator();
+                property.NextVisible(true); // 跳过 `m_Script` 字段
+
+                while (property.NextVisible(false)) // 遍历所有属性
+                {
+                    EditorGUILayout.PropertyField(property, true);
+                }
+
+                settingsObject.ApplyModifiedProperties();
+            }
+            else
+            {
+                GUILayout.Label("No AutoGeneratedSettings asset found.");
+            }
+        }
+
+        [SettingsProvider]
+        public static SettingsProvider CreateAutoGeneratedSettingsProvider()
         {
-            keywords = new[] { "auto", "settings", "generated" }
-        };
+            return new UNIArtSettingsProvider("Project/UNIArt", SettingsScope.Project)
+            {
+                keywords = new[] { "auto", "settings", "generated" }
+            };
+        }
     }
 }

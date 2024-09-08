@@ -8,13 +8,13 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     public class TmplBrowser : EditorWindow
     {
         const string BuiltInTemplateID = "Standard";
 
-        [MenuItem("Window/UNIArt 工作台", priority = 1399)] //1499
+        [MenuItem("Window/UNIArt 工作台 &1", priority = 1399)] //1499
         public static void ShowExample()
         {
             TmplBrowser wnd = GetWindow<TmplBrowser>();
@@ -479,7 +479,8 @@ namespace UNIHper.Art.Editor
             buttonContainer.Clear();
             assetItems.Clear();
 
-            var _templateRoot = $"Assets/ArtAssets/#Templates/{_templateID}/Prefabs/{_filterID}";
+            var _templateRoot =
+                $"{UNIArtSettings.DefaultSettings.TemplateLocalFolder}/{_templateID}/Prefabs/{_filterID}";
 
             if (!Directory.Exists(_templateRoot))
             {

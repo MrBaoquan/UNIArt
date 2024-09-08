@@ -2,8 +2,9 @@ using System;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using UNIHper.Art;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     [CustomEditor(typeof(Ghost))]
     public class GhostEditor : UnityEditor.Editor

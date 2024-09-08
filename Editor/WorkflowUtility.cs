@@ -9,7 +9,7 @@ using TMPro;
 using TMPro.EditorUtilities;
 using System;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     internal class WorkflowUtility
     {
@@ -192,7 +192,7 @@ namespace UNIHper.Art.Editor
             return true;
         }
 
-        [MenuItem("Assets/转到UI界面列表 %g", priority = 50)]
+        [MenuItem("Assets/转到UI界面列表 &2", priority = 50)]
         public static void ShowUIList()
         {
             FocusProjectBrowser();
@@ -204,7 +204,7 @@ namespace UNIHper.Art.Editor
             );
         }
 
-        [MenuItem("Assets/定位正在编辑的预制体 &g", priority = 51)]
+        [MenuItem("Assets/定位正在编辑的预制体 &3", priority = 51)]
         public static void LocationPrefab()
         {
             FocusProjectBrowser();

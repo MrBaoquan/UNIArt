@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     [InitializeOnLoad]
     public class HierarchyComponentIcons

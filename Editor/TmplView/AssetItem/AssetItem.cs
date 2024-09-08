@@ -7,7 +7,7 @@ using UnityEngine.Events;
 using System;
 using System.IO;
 
-namespace UNIHper.Art.Editor
+namespace UNIArt.Editor
 {
     public class AssetItem : SelectableView
     {
