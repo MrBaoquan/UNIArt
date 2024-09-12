@@ -8,7 +8,6 @@ namespace UNIArt.Editor
 {
     public class RenameSVNRepoWindow : EditorWindow
     {
-        [MenuItem("Tools/SVN Remote Rename")]
         public static void ShowWindow()
         {
             var window = GetWindow<RenameSVNRepoWindow>();

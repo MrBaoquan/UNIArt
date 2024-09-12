@@ -9,10 +9,33 @@ namespace UNIArt.Editor
 {
     public class UNIArtSettings : ScriptableObject
     {
-        public bool showHierarchyComponentIcon = true;
+        const string editorPrefsPrefix = "UNIArt_";
+        private const string enableHierarchyIcon = editorPrefsPrefix + "enableHierarchyIcon";
+        private const string enableHierarchyCheckbox =
+            editorPrefsPrefix + "enableHierarchyCheckbox";
 
-        public float DelayRetry = 0.1f;
-        public List<string> excludeHierarchyMethods = new List<string> { "OnItemGUI" };
+        private const string delayRetry = editorPrefsPrefix + "uniart_delayRetry";
+        public static float DelayRetry
+        {
+            get => EditorPrefs.GetFloat(delayRetry, 0.2f);
+            set => EditorPrefs.SetFloat(delayRetry, value);
+        }
+
+        public static bool EnableHierachyIcon
+        {
+            get => EditorPrefs.GetBool(enableHierarchyIcon, true);
+            set => EditorPrefs.SetBool(enableHierarchyIcon, value);
+        }
+
+        public static bool EnableHierachyCheckbox
+        {
+            get => EditorPrefs.GetBool(enableHierarchyCheckbox, true);
+            set => EditorPrefs.SetBool(enableHierarchyCheckbox, value);
+        }
+
+        public static bool EnableHierachyItemGUI => EnableHierachyIcon || EnableHierachyCheckbox;
+
+        public static List<string> excludeHierarchyMethods => new List<string> { "OnItemGUI" };
 
         public string TemplateSVNRepo = "http://svn.andcrane.com/repo/UNIArtTemplates";
         public string TemplateLocalFolder = "Assets/ArtAssets/#Templates";
@@ -82,7 +105,41 @@ namespace UNIArt.Editor
             }
         }
 
-        // 你可以添加更多字段
+        // 创建一个设置提供者
+        [SettingsProvider]
+        public static SettingsProvider CreatePreferencesProvider()
+        {
+            var provider = new SettingsProvider("Preferences/UNIArt", SettingsScope.User)
+            {
+                label = "UNIArt",
+                // 绘制偏好设置界面
+                guiHandler = (searchContext) =>
+                {
+                    GUILayout.Space(16);
+                    EditorGUI.indentLevel++;
+                    var _defaultLabelWidth = EditorGUIUtility.labelWidth;
+                    // EditorGUILayout.LabelField("Custom Preferences", EditorStyles.boldLabel);
+                    // 设置文本标签的宽度
+                    EditorGUIUtility.labelWidth = 250;
+                    EnableHierachyCheckbox = EditorGUILayout.Toggle(
+                        "Enable Hirarchy Checkbox",
+                        EnableHierachyCheckbox,
+                        // 指定宽度
+                        GUILayout.Width(300)
+                    );
+
+                    EnableHierachyIcon = EditorGUILayout.Toggle(
+                        "Enable Hirarchy Icon",
+                        EnableHierachyIcon
+                    );
+                    EditorGUIUtility.labelWidth = _defaultLabelWidth;
+                    EditorGUI.indentLevel--;
+                },
+                keywords = new[] { "Custom", "Preferences", "Feature" }
+            };
+
+            return provider;
+        }
     }
 
     public class UNIArtSettingsProvider : SettingsProvider
@@ -110,6 +167,12 @@ namespace UNIArt.Editor
                 while (property.NextVisible(false)) // 遍历所有属性
                 {
                     EditorGUILayout.PropertyField(property, true);
+                }
+                if (settingsObject.hasModifiedProperties)
+                {
+                    Debug.LogWarning(
+                        "UNIArtSettings has been modified, please restart the editor to take effect."
+                    );
                 }
 
                 settingsObject.ApplyModifiedProperties();

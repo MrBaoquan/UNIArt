@@ -6,7 +6,7 @@
  */
 using UnityEngine;
 
-namespace UNIHper.Art
+namespace UNIArt.Runtime
 {
     [DisallowMultipleComponent]
     public class Ghost : MonoBehaviour { }

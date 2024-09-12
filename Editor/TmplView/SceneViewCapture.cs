@@ -180,6 +180,7 @@ namespace UNIArt.Editor
 
                 var _captureRect = _rectangle;
                 _captureRect.y += _deltaY;
+                _captureRect.x = _windowRect.x + _captureRect.x;
 
                 HideCapture();
 

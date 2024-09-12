@@ -23,6 +23,7 @@ namespace UNIArt.Editor
         public bool IsInstalled { get; protected set; } = false;
 
         public string RootFolder => UNIArtSettings.GetExternalTemplateFolder(TemplateID);
+        public string ExternalRepoUrl => UNIArtSettings.GetExternalTemplateFolderUrl(TemplateID);
 
         public void Refresh()
         {
@@ -32,6 +33,7 @@ namespace UNIArt.Editor
             );
         }
 
+        // 拉取最新资源
         public bool Pull()
         {
             if (!IsInstalled)

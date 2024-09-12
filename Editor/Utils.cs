@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Unity.EditorCoroutines.Editor;
@@ -61,6 +62,11 @@ namespace UNIArt.Editor
         {
             yield return new EditorWaitForSeconds(duration);
             callback();
+        }
+
+        public static bool IsPrefabStage()
+        {
+            return PrefabStageUtility.GetCurrentPrefabStage() != null;
         }
 
         public static string PrefabStageAssetPath()
@@ -146,6 +152,19 @@ namespace UNIArt.Editor
                 return UNIArtSettings.GetExternalTemplateRootBySubAsset(path) + "/Animations";
             }
             return "Assets/ArtAssets/Animations";
+        }
+
+        public static bool DeleteProjectAsset(string path)
+        {
+            return AssetDatabase.DeleteAsset(path);
+        }
+
+        public static void ForceRecompile()
+        {
+            AssetDatabase.ImportAsset(
+                PackageAssetPath("UNIArt.Editor.asmdef"),
+                ImportAssetOptions.ForceUpdate
+            );
         }
     }
 }

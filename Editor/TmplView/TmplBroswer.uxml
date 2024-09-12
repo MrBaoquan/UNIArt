@@ -32,6 +32,6 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="img_preview" style="flex-grow: 1; position: absolute; width: 276px; height: 169px; display: none; align-self: auto; right: 195px; top: -8px; -unity-background-scale-mode: stretch-to-fill; align-items: auto; border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); border-left-width: 2px; border-right-width: 2px; border-top-width: 2px; border-bottom-width: 2px; border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px;" />
+        <ui:VisualElement name="img_preview" style="flex-grow: 1; position: absolute; width: 276px; height: 169px; display: none; align-self: auto; right: 195px; top: -8px; align-items: auto; border-top-left-radius: 6px; border-bottom-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.13); border-right-color: rgba(255, 255, 255, 0.13); border-top-color: rgba(255, 255, 255, 0.13); border-bottom-color: rgba(255, 255, 255, 0.13);" />
     </ui:VisualElement>
 </ui:UXML>

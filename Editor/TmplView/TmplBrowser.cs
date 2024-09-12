@@ -28,6 +28,7 @@ namespace UNIArt.Editor
         public int selectedTemplateID = 0;
         public TmplButton selectedTemplateButton =>
             selectedTemplateID < templateButtons.Count ? templateButtons[selectedTemplateID] : null;
+
         public int selectedFilterID = 0;
         public FilterButton selectedFilterButton =>
             selectedFilterID < filterButtons.Count ? filterButtons[selectedFilterID] : null;
@@ -104,9 +105,7 @@ namespace UNIArt.Editor
                 {
                     SVNIntegration.AddExternal(
                         UNIArtSettings.DefaultSettings.TemplateLocalFolder,
-                        UNIArtSettings.GetExternalTemplateFolderUrl(
-                            selectedTemplateButton.TemplateID
-                        )
+                        selectedTemplateButton.ExternalRepoUrl
                     );
                     selectedTemplateButton.Refresh();
                     refreshTemplateContent();
@@ -160,6 +159,10 @@ namespace UNIArt.Editor
                 {
                     if (selectedTemplateButton?.Pull() ?? false)
                     {
+                        SVNIntegration.AddExternal(
+                            UNIArtSettings.DefaultSettings.TemplateLocalFolder,
+                            selectedTemplateButton.ExternalRepoUrl
+                        );
                         selectTemplateID(selectedTemplateID);
                         Debug.Log($"模板资源[{selectedTemplateButton.TemplateID}]更新完成.");
                     }

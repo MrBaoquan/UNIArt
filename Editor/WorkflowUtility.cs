@@ -106,7 +106,7 @@ namespace UNIArt.Editor
                         ProjectWindowUtil.ShowCreatedAsset(_newPrefab);
                         Selection.activeObject = _newPrefab;
                     },
-                    UNIArtSettings.DefaultSettings.DelayRetry
+                    UNIArtSettings.DelayRetry
                 );
             }
         }
@@ -198,10 +198,7 @@ namespace UNIArt.Editor
             FocusProjectBrowser();
             var _uiPrefabsFolder = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(UIPageFolder);
             AssetDatabase.OpenAsset(_uiPrefabsFolder);
-            Utils.Delay(
-                () => AssetDatabase.OpenAsset(_uiPrefabsFolder),
-                UNIArtSettings.DefaultSettings.DelayRetry
-            );
+            Utils.Delay(() => AssetDatabase.OpenAsset(_uiPrefabsFolder), UNIArtSettings.DelayRetry);
         }
 
         [MenuItem("Assets/定位正在编辑的预制体 &3", priority = 51)]
@@ -252,16 +249,19 @@ namespace UNIArt.Editor
                 AssetDatabase.Refresh();
             }
             importTMPEssentialResourcesIfNotExists();
+            KeepHierarchyGUIPriority();
+        }
 
-            Utils.RemoveHierarchyWindowItemOnGUI(
-                UNIArtSettings.DefaultSettings.excludeHierarchyMethods
-            );
+        private static void KeepHierarchyGUIPriority()
+        {
+            if (!UNIArtSettings.EnableHierachyItemGUI)
+                return;
+
+            Utils.RemoveHierarchyWindowItemOnGUI(UNIArtSettings.excludeHierarchyMethods);
             Utils.Delay(
                 () =>
                 {
-                    Utils.RemoveHierarchyWindowItemOnGUI(
-                        UNIArtSettings.DefaultSettings.excludeHierarchyMethods
-                    );
+                    Utils.RemoveHierarchyWindowItemOnGUI(UNIArtSettings.excludeHierarchyMethods);
                 },
                 0.5f
             );
