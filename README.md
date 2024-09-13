@@ -6,8 +6,10 @@
 - Animator 动画管理
 
 ## 更新记录
+- v1.0.6-preview.4
+  - 优化UNIArt设置项
 
-- v1.0.7-preview.3
+- v1.0.6-preview.3
   - 模板仓库携带版本信息，防止更新破坏工程
   - 优化程序集定义
   - 新增UNIArt设置项

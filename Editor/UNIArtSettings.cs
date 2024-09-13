@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -9,31 +10,65 @@ namespace UNIArt.Editor
 {
     public class UNIArtSettings : ScriptableObject
     {
-        const string editorPrefsPrefix = "UNIArt_";
-        private const string enableHierarchyIcon = editorPrefsPrefix + "enableHierarchyIcon";
-        private const string enableHierarchyCheckbox =
-            editorPrefsPrefix + "enableHierarchyCheckbox";
-
-        private const string delayRetry = editorPrefsPrefix + "uniart_delayRetry";
-        public static float DelayRetry
+        public class Editor
         {
-            get => EditorPrefs.GetFloat(delayRetry, 0.2f);
-            set => EditorPrefs.SetFloat(delayRetry, value);
-        }
+            const string editorPrefsPrefix = "UNIArt_";
+            private const string enableHierarchyIcon = editorPrefsPrefix + "enableHierarchyIcon";
+            private const string enableHierarchyCheckbox =
+                editorPrefsPrefix + "enableHierarchyCheckbox";
+            private const string delayRetry = editorPrefsPrefix + "uniart_delayRetry";
 
-        public static bool EnableHierachyIcon
-        {
-            get => EditorPrefs.GetBool(enableHierarchyIcon, true);
-            set => EditorPrefs.SetBool(enableHierarchyIcon, value);
-        }
+            public static ReactiveProperty<float> DelayRetry = new ReactiveProperty<float>(
+                EditorPrefs.GetFloat(delayRetry, 0.2f)
+            );
 
-        public static bool EnableHierachyCheckbox
-        {
-            get => EditorPrefs.GetBool(enableHierarchyCheckbox, true);
-            set => EditorPrefs.SetBool(enableHierarchyCheckbox, value);
-        }
+            public static ReactiveProperty<bool> EnableHierarchyIcon = new ReactiveProperty<bool>(
+                EditorPrefs.GetBool(enableHierarchyIcon, true)
+            );
 
-        public static bool EnableHierachyItemGUI => EnableHierachyIcon || EnableHierachyCheckbox;
+            public static ReactiveProperty<bool> EnableHierarchyCheckbox =
+                new ReactiveProperty<bool>(EditorPrefs.GetBool(enableHierarchyCheckbox, true));
+
+            public static ReactiveProperty<bool> EnableHierarchyItemGUI =
+                new ReactiveProperty<bool>(
+                    EnableHierarchyCheckbox.Value || EnableHierarchyIcon.Value
+                );
+
+            static Editor()
+            {
+                DelayRetry.Value = EditorPrefs.GetFloat(delayRetry, 0.2f);
+                EnableHierarchyIcon.Value = EditorPrefs.GetBool(enableHierarchyIcon, true);
+                EnableHierarchyCheckbox.Value = EditorPrefs.GetBool(enableHierarchyCheckbox, true);
+
+                Action refreshProperty = () =>
+                {
+                    EnableHierarchyItemGUI.Value =
+                        EnableHierarchyCheckbox.Value || EnableHierarchyIcon.Value;
+                };
+
+                EnableHierarchyItemGUI.OnValueChanged += (value) =>
+                {
+                    Utils.ForceRecompile();
+                };
+
+                DelayRetry.OnValueChanged += (value) =>
+                {
+                    EditorPrefs.SetFloat(delayRetry, value);
+                };
+
+                EnableHierarchyIcon.OnValueChanged += (value) =>
+                {
+                    EditorPrefs.SetBool(enableHierarchyIcon, value);
+                    refreshProperty();
+                };
+
+                EnableHierarchyCheckbox.OnValueChanged += (value) =>
+                {
+                    EditorPrefs.SetBool(enableHierarchyCheckbox, value);
+                    refreshProperty();
+                };
+            }
+        }
 
         public static List<string> excludeHierarchyMethods => new List<string> { "OnItemGUI" };
 
@@ -42,17 +77,17 @@ namespace UNIArt.Editor
 
         public static string GetExternalTemplateFolderUrl(string templateName)
         {
-            return DefaultSettings.TemplateSVNRepo + "/" + templateName;
+            return Project.TemplateSVNRepo + "/" + templateName;
         }
 
         public static string GetExternalTemplateFolder(string templateName)
         {
-            return DefaultSettings.TemplateLocalFolder + "/" + templateName;
+            return Project.TemplateLocalFolder + "/" + templateName;
         }
 
         public static bool IsTemplateAsset(string assetPath)
         {
-            return assetPath.ToForwardSlash().StartsWith(DefaultSettings.TemplateLocalFolder + "/");
+            return assetPath.ToForwardSlash().StartsWith(Project.TemplateLocalFolder + "/");
         }
 
         public static string GetTemplateNameBySubAsset(string assetPath)
@@ -79,7 +114,7 @@ namespace UNIArt.Editor
         }
 
         private static UNIArtSettings instance;
-        public static UNIArtSettings DefaultSettings
+        public static UNIArtSettings Project
         {
             get
             {
@@ -116,26 +151,31 @@ namespace UNIArt.Editor
                 guiHandler = (searchContext) =>
                 {
                     GUILayout.Space(16);
-                    EditorGUI.indentLevel++;
+
+                    EditorGUI.indentLevel += 2;
+
                     var _defaultLabelWidth = EditorGUIUtility.labelWidth;
-                    // EditorGUILayout.LabelField("Custom Preferences", EditorStyles.boldLabel);
-                    // 设置文本标签的宽度
-                    EditorGUIUtility.labelWidth = 250;
-                    EnableHierachyCheckbox = EditorGUILayout.Toggle(
-                        "Enable Hirarchy Checkbox",
-                        EnableHierachyCheckbox,
-                        // 指定宽度
-                        GUILayout.Width(300)
+
+                    EditorGUIUtility.labelWidth = 260;
+                    // 绘制分组标题
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Space(16);
+                    GUILayout.Label("Hierarchy View", EditorStyles.boldLabel);
+                    GUILayout.EndHorizontal();
+
+                    Editor.EnableHierarchyCheckbox.Value = EditorGUILayout.Toggle(
+                        "Component Checkbox",
+                        Editor.EnableHierarchyCheckbox.Value
                     );
 
-                    EnableHierachyIcon = EditorGUILayout.Toggle(
-                        "Enable Hirarchy Icon",
-                        EnableHierachyIcon
+                    Editor.EnableHierarchyIcon.Value = EditorGUILayout.Toggle(
+                        "Component Icon",
+                        Editor.EnableHierarchyIcon.Value
                     );
                     EditorGUIUtility.labelWidth = _defaultLabelWidth;
-                    EditorGUI.indentLevel--;
+                    EditorGUI.indentLevel -= 2;
                 },
-                keywords = new[] { "Custom", "Preferences", "Feature" }
+                keywords = new[] { "Custom", "UNIArt" }
             };
 
             return provider;
@@ -153,7 +193,7 @@ namespace UNIArt.Editor
         {
             if (settingsObject == null)
             {
-                settingsObject = new SerializedObject(UNIArtSettings.DefaultSettings);
+                settingsObject = new SerializedObject(UNIArtSettings.Project);
             }
 
             if (settingsObject != null)

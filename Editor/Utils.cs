@@ -162,7 +162,7 @@ namespace UNIArt.Editor
         public static void ForceRecompile()
         {
             AssetDatabase.ImportAsset(
-                PackageAssetPath("UNIArt.Editor.asmdef"),
+                PackageAssetPath("Editor/UNIArt.Editor.asmdef"),
                 ImportAssetOptions.ForceUpdate
             );
         }

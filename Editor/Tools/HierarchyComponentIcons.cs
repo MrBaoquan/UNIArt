@@ -19,9 +19,6 @@ namespace UNIArt.Editor
             { typeof(Camera), "相机" },
         };
 
-        static bool enableHierarchyIcon = true;
-        static bool enableHierarchyCheckbox = true;
-
         static HierarchyComponentIcons()
         {
             componentTypes = new List<Type>
@@ -34,10 +31,7 @@ namespace UNIArt.Editor
                 typeof(MonoScript)
             };
 
-            enableHierarchyIcon = UNIArtSettings.EnableHierachyIcon;
-            enableHierarchyCheckbox = UNIArtSettings.EnableHierachyCheckbox;
-
-            if (!enableHierarchyIcon && !enableHierarchyCheckbox)
+            if (!UNIArtSettings.Editor.EnableHierarchyItemGUI.Value)
                 return;
 
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyWindowItemOnGUI;
@@ -73,7 +67,7 @@ namespace UNIArt.Editor
             if (obj == null)
                 return;
 
-            if (enableHierarchyCheckbox)
+            if (UNIArtSettings.Editor.EnableHierarchyCheckbox.Value)
             {
                 if (!prefabStageRootNames.Contains(obj.name) && Utils.IsPrefabStage())
                 {
@@ -90,7 +84,7 @@ namespace UNIArt.Editor
                 }
             }
 
-            if (!enableHierarchyIcon)
+            if (!UNIArtSettings.Editor.EnableHierarchyIcon.Value)
                 return;
 
             // 设置初始图标位置

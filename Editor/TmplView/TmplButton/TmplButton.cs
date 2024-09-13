@@ -28,7 +28,7 @@ namespace UNIArt.Editor
         public void Refresh()
         {
             IsInstalled = SVNIntegration.HasExternal(
-                UNIArtSettings.DefaultSettings.TemplateLocalFolder,
+                UNIArtSettings.Project.TemplateLocalFolder,
                 TemplateID
             );
         }
@@ -54,7 +54,7 @@ namespace UNIArt.Editor
                 return false;
             }
 
-            if (!SVNIntegration.Update(UNIArtSettings.DefaultSettings.TemplateLocalFolder))
+            if (!SVNIntegration.Update(UNIArtSettings.Project.TemplateLocalFolder))
             {
                 Debug.LogWarning("Failed to checkout external template.");
                 return false;

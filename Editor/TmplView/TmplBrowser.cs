@@ -61,9 +61,9 @@ namespace UNIArt.Editor
             _templateListRoot.parent.Insert(0, _builtinTemplateButton);
             templateButtons.Add(_builtinTemplateButton);
 
-            if (!Directory.Exists(UNIArtSettings.DefaultSettings.TemplateLocalFolder))
+            if (!Directory.Exists(UNIArtSettings.Project.TemplateLocalFolder))
             {
-                Directory.CreateDirectory(UNIArtSettings.DefaultSettings.TemplateLocalFolder);
+                Directory.CreateDirectory(UNIArtSettings.Project.TemplateLocalFolder);
                 AssetDatabase.Refresh();
             }
 
@@ -72,10 +72,10 @@ namespace UNIArt.Editor
             {
                 Debug.Log($"尝试安装公用模板...");
                 SVNIntegration.AddExternal(
-                    UNIArtSettings.DefaultSettings.TemplateLocalFolder,
+                    UNIArtSettings.Project.TemplateLocalFolder,
                     UNIArtSettings.GetExternalTemplateFolderUrl(BuiltInTemplateID)
                 );
-                SVNIntegration.Update(UNIArtSettings.DefaultSettings.TemplateLocalFolder);
+                SVNIntegration.Update(UNIArtSettings.Project.TemplateLocalFolder);
                 _builtinTemplateButton.Refresh();
                 if (_builtinTemplateButton.IsInstalled)
                 {
@@ -104,7 +104,7 @@ namespace UNIArt.Editor
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
                     SVNIntegration.AddExternal(
-                        UNIArtSettings.DefaultSettings.TemplateLocalFolder,
+                        UNIArtSettings.Project.TemplateLocalFolder,
                         selectedTemplateButton.ExternalRepoUrl
                     );
                     selectedTemplateButton.Refresh();
@@ -116,7 +116,7 @@ namespace UNIArt.Editor
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
                     SVNIntegration.RemoveExternal(
-                        UNIArtSettings.DefaultSettings.TemplateLocalFolder,
+                        UNIArtSettings.Project.TemplateLocalFolder,
                         UNIArtSettings.GetExternalTemplateFolderUrl(
                             selectedTemplateButton.TemplateID
                         )
@@ -138,13 +138,13 @@ namespace UNIArt.Editor
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
                     var _externals = SVNIntegration.GetExternals(
-                        UNIArtSettings.DefaultSettings.TemplateLocalFolder
+                        UNIArtSettings.Project.TemplateLocalFolder
                     );
                     templateButtons
                         .Where(_button => !_externals.Any(_ => _.Dir == _button.TemplateID))
                         .ToList()
                         .ForEach(_ => _.CleanDir());
-                    if (SVNIntegration.Update(UNIArtSettings.DefaultSettings.TemplateLocalFolder))
+                    if (SVNIntegration.Update(UNIArtSettings.Project.TemplateLocalFolder))
                     {
                         var lastTemplateID = selectedTemplateID;
                         Refresh();
@@ -160,7 +160,7 @@ namespace UNIArt.Editor
                     if (selectedTemplateButton?.Pull() ?? false)
                     {
                         SVNIntegration.AddExternal(
-                            UNIArtSettings.DefaultSettings.TemplateLocalFolder,
+                            UNIArtSettings.Project.TemplateLocalFolder,
                             selectedTemplateButton.ExternalRepoUrl
                         );
                         selectTemplateID(selectedTemplateID);
@@ -483,7 +483,7 @@ namespace UNIArt.Editor
             assetItems.Clear();
 
             var _templateRoot =
-                $"{UNIArtSettings.DefaultSettings.TemplateLocalFolder}/{_templateID}/Prefabs/{_filterID}";
+                $"{UNIArtSettings.Project.TemplateLocalFolder}/{_templateID}/Prefabs/{_filterID}";
 
             if (!Directory.Exists(_templateRoot))
             {

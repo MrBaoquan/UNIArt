@@ -827,7 +827,19 @@ namespace UNIArt.Editor
 
             var externals = new List<ExternalProperty>();
 
-            Regex regex = new Regex(@"(\S+)(?:\s+-r(\d+))?\s+(\S+)");
+            // 调整后的正则表达式，确保 URL 和修订版本号正确匹配
+            Regex regex = new Regex(
+                @"
+        (?:(?<dir1>\S+)\s+)?             # 匹配目录名，可能在最前面
+        (?:-r\s*(?<rev>\d+))?            # 可选的 -r 修订版本
+        \s*                              # 可选空格
+        (?<url>http[^\s@]+)              # 匹配 URL，不包括 @ 及其后的修订版本号
+        (?:@(?<urlrev>\d+))?             # 可选的 @ 修订版本号
+        (?:\s+(?<dir2>\S+))?             # 匹配目录名，可能在最后面
+    ",
+                RegexOptions.IgnorePatternWhitespace
+            );
+
             foreach (var line in result.Output.Split('\n'))
             {
                 if (line.StartsWith("svn: "))
@@ -837,16 +849,24 @@ namespace UNIArt.Editor
 
                 if (match.Success)
                 {
-                    string dir = match.Groups[1].Value; // 获取路径
-                    string revision = match.Groups[2].Success ? match.Groups[2].Value : ""; // 获取版本号
-                    string url = match.Groups[3].Value; // 获取 URL
+                    // 目录名可能在 dir1 或 dir2 中
+                    string dir = match.Groups["dir1"].Success
+                        ? match.Groups["dir1"].Value
+                        : match.Groups["dir2"].Value;
+                    string url = match.Groups["url"].Value; // 获取完整的 URL，不包括 @ 后面的部分
+                    // 修订版本号可能来自 -r 或 @
+                    string revision = match.Groups["rev"].Success
+                        ? match.Groups["rev"].Value
+                        : match.Groups["urlrev"].Success
+                            ? match.Groups["urlrev"].Value
+                            : "";
 
                     externals.Add(
                         new ExternalProperty()
                         {
                             Dir = dir,
                             Url = url,
-                            Revision = revision == "" ? -1 : int.Parse(revision)
+                            Revision = revision == "" ? -1 : int.Parse(revision) // 如果没有修订版本号，设为 -1
                         }
                     );
                 }
