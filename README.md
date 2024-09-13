@@ -6,8 +6,9 @@
 - Animator 动画管理
 
 ## 更新记录
-- v1.0.6-preview.4
+- v1.0.6-preview.4&5 
   - 优化UNIArt设置项
+  - 修复Odin依赖bug
 
 - v1.0.6-preview.3
   - 模板仓库携带版本信息，防止更新破坏工程

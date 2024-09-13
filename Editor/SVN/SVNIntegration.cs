@@ -1,11 +1,9 @@
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Sirenix.Utilities;
 using UnityEditor;
 using UnityEngine;
 
@@ -921,6 +919,7 @@ namespace UNIArt.Editor
 
             _externals
                 .Where(_external => _external.Revision == -1)
+                .ToList()
                 .ForEach(_external => _external.Revision = GetLastChangedRevision(_external.Url));
 
             var _externalsStr = formatExternals(_externals);
