@@ -57,17 +57,7 @@ namespace UNIArt.Editor
                 _previewTex ?? defaultPrefabIcon;
         }
 
-        public string PreviewPath => _getPreviewPath();
-
-        private string _getPreviewPath()
-        {
-            var _fileName = AssetPath
-                .ToForwardSlash()
-                .Replace(TemplateRootFolder + "/", "")
-                .Replace("/", "_")
-                .Replace(".prefab", ".png");
-            return TemplatePreviewFolder + "/" + _fileName;
-        }
+        public string PreviewPath => UNIArtSettings.GetPreviewPathByAsset(AssetPath); // _getPreviewPath();
 
         public AssetItem()
         {
@@ -78,7 +68,6 @@ namespace UNIArt.Editor
             );
 
             visualTree.CloneTree(this);
-            this.RegisterCallback<MouseDownEvent>(evt => OnMouseDown(evt));
 
             this.AddManipulator(
                 new ContextualMenuManipulator(
@@ -99,6 +88,14 @@ namespace UNIArt.Editor
                                 WorkflowUtility.CopyPrefabToUIComponent(AssetPath);
                             },
                             DropdownMenuAction.AlwaysEnabled
+                        );
+                        evt.menu.AppendSeparator();
+                        evt.menu.AppendAction(
+                            "打开所在文件夹",
+                            (x) =>
+                            {
+                                EditorUtility.RevealInFinder(assetPath);
+                            }
                         );
                         evt.menu.AppendSeparator();
                         evt.menu.AppendAction(
@@ -133,11 +130,11 @@ namespace UNIArt.Editor
             );
 
             handleHoverEvent();
+            PrepareStartDrag();
             handleDoubleClick(() =>
             {
                 Type projectBrowserType = Type.GetType("UnityEditor.ProjectBrowser, UnityEditor");
                 EditorWindow.GetWindow(projectBrowserType).Focus();
-
                 EditorGUIUtility.PingObject(gameObject);
             });
         }
@@ -150,20 +147,8 @@ namespace UNIArt.Editor
 
         private void handleHoverEvent()
         {
-            this.RegisterCallback<MouseEnterEvent>(evt =>
+            Action preparePreview = () =>
             {
-                lastMousePosition = evt.mousePosition;
-            });
-
-            this.RegisterCallback<MouseMoveEvent>(evt =>
-            {
-                var _deltaLength = (evt.mousePosition - lastMousePosition).sqrMagnitude;
-                if (_deltaLength < 100)
-                {
-                    return;
-                }
-
-                lastMousePosition = evt.mousePosition;
                 if (hoverCoroutine != null)
                 {
                     OnHidePreview.Invoke(this);
@@ -173,17 +158,47 @@ namespace UNIArt.Editor
                     ShowPreviewAfterDelay(),
                     this
                 );
+            };
+
+            this.RegisterCallback<MouseEnterEvent>(evt =>
+            {
+                evt.StopPropagation();
+                lastMousePosition = evt.mousePosition;
+                preparePreview();
+            });
+
+            this.RegisterCallback<MouseMoveEvent>(evt =>
+            {
+                evt.StopPropagation();
+                var _deltaLength = (evt.mousePosition - lastMousePosition).sqrMagnitude;
+                lastMousePosition = evt.mousePosition;
+                if (_deltaLength < 4)
+                {
+                    return;
+                }
+                preparePreview();
+                evt.StopPropagation();
             });
 
             // 注册鼠标移出事件
             this.RegisterCallback<MouseLeaveEvent>(evt =>
             {
-                // 如果鼠标移出，停止协程并关闭预览窗口
+                evt.StopPropagation();
                 if (hoverCoroutine != null)
                 {
                     EditorCoroutineUtility.StopCoroutine(hoverCoroutine);
                     OnHidePreview.Invoke(this);
                 }
+            });
+
+            this.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                OnHidePreview.Invoke(this);
+            });
+
+            this.RegisterCallback<MouseUpEvent>(evt =>
+            {
+                OnHidePreview.Invoke(this);
             });
         }
 
@@ -193,9 +208,11 @@ namespace UNIArt.Editor
             OnShowPreview.Invoke(previewTex, lastMousePosition);
         }
 
+        private float lastClickTime = 0f;
+        private const float doubleClickThreshold = 0.3f; // 双击的时间间隔阈值（秒）
+
         private void OnMouseDown(MouseDownEvent evt)
         {
-            evt.StopPropagation();
             // 如果鼠标移出，停止协程并关闭预览窗口
             if (hoverCoroutine != null)
             {
@@ -204,6 +221,42 @@ namespace UNIArt.Editor
             }
             if (evt.button == 0) // 左键点击
             {
+                float timeSinceLastClick = Time.realtimeSinceStartup - lastClickTime;
+
+                if (timeSinceLastClick < doubleClickThreshold) { }
+                else { }
+
+                lastClickTime = Time.realtimeSinceStartup;
+
+                evt.StopPropagation();
+            }
+        }
+
+        private void PrepareStartDrag()
+        {
+            bool isMouseDown = false;
+            Vector2 mouseDownPosition = Vector2.zero;
+            this.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                if (evt.button != 0)
+                    return;
+                isMouseDown = true;
+                mouseDownPosition = evt.mousePosition;
+            });
+
+            this.RegisterCallback<MouseUpEvent>(evt =>
+            {
+                isMouseDown = false;
+            });
+
+            this.RegisterCallback<MouseMoveEvent>(evt =>
+            {
+                if (evt.button != 0 || !isMouseDown)
+                    return;
+                var _delta = (evt.mousePosition - mouseDownPosition).magnitude;
+                if (_delta < 5f)
+                    return;
+                isMouseDown = false;
                 var _sp = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
                 DragAndDrop.PrepareStartDrag();
                 DragAndDrop.objectReferences = new UnityEngine.Object[] { _sp }; // 拖拽时不关联具体对象
@@ -211,10 +264,7 @@ namespace UNIArt.Editor
 
                 DragAndDrop.visualMode = DragAndDropVisualMode.Link;
                 DragAndDrop.StartDrag("AssetItem");
-
-                // 结束拖拽事件处理
-                // evt.StopPropagation();
-            }
+            });
         }
 
         private void handleDoubleClick(Action onDoubleClick)
@@ -223,9 +273,8 @@ namespace UNIArt.Editor
             double _lastClickTime = 0;
             const double DoubleClickThreshold = 0.3f; // 双击的时间间隔阈值
 
-            this.RegisterCallback<PointerDownEvent>(evt =>
+            this.RegisterCallback<MouseDownEvent>(evt =>
             {
-                evt.StopPropagation();
                 if (evt.button == 0) // 检查是否为左键点击
                 {
                     double timeSinceLastClick = EditorApplication.timeSinceStartup - _lastClickTime;
@@ -238,6 +287,7 @@ namespace UNIArt.Editor
                         {
                             onDoubleClick();
                             _clickCount = 0;
+                            evt.StopPropagation();
                         }
                     }
                     else

@@ -74,6 +74,7 @@ namespace UNIArt.Editor
 
         public string TemplateSVNRepo = "http://svn.andcrane.com/repo/UNIArtTemplates";
         public string TemplateLocalFolder = "Assets/ArtAssets/#Templates";
+        public string ArtFolder = "Assets/ArtAssets";
 
         public static string GetExternalTemplateFolderUrl(string templateName)
         {
@@ -102,6 +103,18 @@ namespace UNIArt.Editor
             return string.Empty;
         }
 
+        public static string GetPreviewPathByAsset(string assetPath)
+        {
+            var TemplateRootFolder = GetExternalTemplateRootBySubAsset(assetPath);
+            var TemplatePreviewFolder = TemplateRootFolder + "/Previews";
+            var _fileName = assetPath
+                .ToForwardSlash()
+                .Replace(TemplateRootFolder + "/", "")
+                .Replace("/", "_")
+                .Replace(".prefab", ".png");
+            return TemplatePreviewFolder + "/" + _fileName;
+        }
+
         // 根据资源名获取模板文件夹根目录
         public static string GetExternalTemplateRootBySubAsset(string assetPath)
         {
@@ -111,6 +124,13 @@ namespace UNIArt.Editor
                 return string.Empty;
             }
             return GetExternalTemplateFolder(_templateName);
+        }
+
+        public static bool IsSampleTemplateAsset(string path1, string path2)
+        {
+            var _path1 = path1.ToForwardSlash();
+            var _path2 = path2.ToForwardSlash();
+            return GetTemplateNameBySubAsset(_path1) == GetTemplateNameBySubAsset(_path2);
         }
 
         private static UNIArtSettings instance;

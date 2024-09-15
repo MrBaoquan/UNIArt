@@ -116,7 +116,7 @@ namespace UNIArt.Editor
         {
             if (!AssetDatabase.IsValidFolder(UIPageFolder))
             {
-                AssetDatabase.CreateFolder(UIPagePrefabRoot, "Windows");
+                Utils.CreateFolderIfNotExist(UIPageFolder);
             }
 
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(

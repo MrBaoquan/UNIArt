@@ -215,6 +215,55 @@ namespace UNIArt.Editor
                     root.Q<Slider>("asset_zoom").value -= delta * 1.6f; // 调整灵敏度
                 }
             });
+
+            var contentView = rootVisualElement.Q<VisualElement>("template-content");
+            contentView.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
+            contentView.RegisterCallback<DragPerformEvent>(OnDragPerform);
+
+            contentView.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                if (evt.keyCode == KeyCode.R && evt.ctrlKey)
+                {
+                    Debug.LogWarning("Refreshing...");
+                    refreshTemplateAssets();
+                }
+            });
+        }
+
+        private void OnDragUpdated(DragUpdatedEvent evt)
+        {
+            if (DragAndDrop.paths.Length < 0)
+            {
+                return;
+            }
+            var _currentTmplPath = CurrentTmplPath;
+
+            if (
+                DragAndDrop.paths.Any(
+                    _ =>
+                        _ == selectedAssetItem?.AssetPath
+                        || Path.GetDirectoryName(_).ToForwardSlash()
+                            == _currentTmplPath.TrimEnd('/')
+                )
+            )
+            {
+                return;
+            }
+
+            DragAndDrop.visualMode = DragAndDropVisualMode.Copy; // 允许拖拽复制操作
+        }
+
+        private void OnDragPerform(DragPerformEvent evt)
+        {
+            var _currentTmplPath = CurrentTmplPath;
+            if (string.IsNullOrEmpty(_currentTmplPath))
+            {
+                return;
+            }
+
+            Utils.MoveAssetsWithDependencies(DragAndDrop.paths, _currentTmplPath, true);
+            refreshTemplateAssets();
+            DragAndDrop.AcceptDrag();
         }
 
         public static int CalculatePreviewDir(
@@ -269,6 +318,10 @@ namespace UNIArt.Editor
             Vector2 mousePosition = position;
 
             Vector2 windowSize = rootVisualElement.contentRect.size;
+
+            // 修补大小
+            int fixedSize = 19;
+
             var _maxSize = windowSize * 0.5f;
 
             var _previewTex = rootVisualElement.Q<VisualElement>("img_preview");
@@ -289,33 +342,34 @@ namespace UNIArt.Editor
                 mousePosition
             );
 
+            Vector2 padding = Vector2.one * 2;
             if (dir == 3) // 左下
             {
                 _previewTex.style.left = StyleKeyword.Auto;
-                _previewTex.style.right = windowSize.x - mousePosition.x;
-                _previewTex.style.top = mousePosition.y;
+                _previewTex.style.right = windowSize.x - mousePosition.x + padding.x;
+                _previewTex.style.top = mousePosition.y + padding.y - fixedSize;
                 _previewTex.style.bottom = StyleKeyword.Auto;
             }
             else if (dir == 4) // 右下
             {
-                _previewTex.style.left = mousePosition.x;
+                _previewTex.style.left = mousePosition.x + padding.x;
                 _previewTex.style.right = StyleKeyword.Auto;
-                _previewTex.style.top = mousePosition.y;
+                _previewTex.style.top = mousePosition.y + padding.y - fixedSize;
                 _previewTex.style.bottom = StyleKeyword.Auto;
             }
             else if (dir == 1) // 左上
             {
                 _previewTex.style.left = StyleKeyword.Auto;
-                _previewTex.style.right = windowSize.x - mousePosition.x;
+                _previewTex.style.right = windowSize.x - mousePosition.x + padding.x;
                 _previewTex.style.top = StyleKeyword.Auto;
-                _previewTex.style.bottom = windowSize.y - mousePosition.y;
+                _previewTex.style.bottom = windowSize.y - mousePosition.y + padding.y + fixedSize;
             }
             else if (dir == 2) // 右上
             {
-                _previewTex.style.left = mousePosition.x;
+                _previewTex.style.left = mousePosition.x + padding.x;
                 _previewTex.style.right = StyleKeyword.Auto;
                 _previewTex.style.top = StyleKeyword.Auto;
-                _previewTex.style.bottom = windowSize.y - mousePosition.y;
+                _previewTex.style.bottom = windowSize.y - mousePosition.y + padding.y + fixedSize;
             }
 
             _previewTex.style.display = DisplayStyle.Flex;
@@ -471,6 +525,15 @@ namespace UNIArt.Editor
 
         // 当前选中的资源项
         public static AssetItem selectedAssetItem = null;
+
+        public string CurrentTmplPath => currentTmplPath();
+
+        private string currentTmplPath()
+        {
+            var _tmplRoot = selectedTemplateButton.RootFolder;
+            var _filterPath = selectedFilterButton.FilterPath;
+            return $"{_tmplRoot}/Prefabs/{_filterPath}";
+        }
 
         private void refreshTemplateAssets()
         {

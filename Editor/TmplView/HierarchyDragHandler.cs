@@ -10,10 +10,11 @@ namespace UNIArt.Editor
         {
             // 注册层次视图拖拽事件的回调
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyDrag;
-            // EditorApplication.projectWindowItemInstanceOnGUI += OnHierarchyDrag;
+            // EditorApplication.projectWindowItemOnGUI += OnProjectWindowItemOnGUI;
             SceneView.duringSceneGui += OnSceneGUI;
             DragAndDrop.AddDropHandler(HierarchyDropHandler);
             DragAndDrop.AddDropHandler(SceneDropHandler);
+            DragAndDrop.AddDropHandler(ProjectBrowserDropHandler);
         }
 
         static bool isDragPerform = false;
@@ -60,6 +61,11 @@ namespace UNIArt.Editor
             handleDropEvent();
         }
 
+        // private static void OnProjectWindowItemOnGUI(string guid, Rect selectionRect)
+        // {
+        //     selectionRect.Contains(evt.mousePosition)
+        // }
+
         private static void handleDropEvent()
         {
             Event evt = Event.current;
@@ -91,6 +97,19 @@ namespace UNIArt.Editor
             return DragAndDrop.paths != null
                 && DragAndDrop.paths.Length > 0
                 && DragAndDrop.paths[0].StartsWith("Assets/ArtAssets/#Templates");
+        }
+
+        static DragAndDropVisualMode ProjectBrowserDropHandler(
+            int dragInstanceId,
+            string dropUponPath,
+            bool perform
+        )
+        {
+            if (!perform || !dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder))
+                return DragAndDropVisualMode.None;
+
+            Utils.MoveAssetsWithDependencies(DragAndDrop.paths, dropUponPath, false);
+            return DragAndDropVisualMode.None;
         }
     }
 }

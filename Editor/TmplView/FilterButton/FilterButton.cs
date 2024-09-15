@@ -14,6 +14,8 @@ namespace UNIArt.Editor
         public string assetGUID = string.Empty;
         public string FilterID = string.Empty;
 
+        public string FilterPath => FilterID == "全部" ? string.Empty : FilterID;
+
         public void Select()
         {
             if (!this.Q<VisualElement>("root").ClassListContains("selected"))
