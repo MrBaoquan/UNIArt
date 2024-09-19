@@ -257,13 +257,14 @@ namespace UNIArt.Editor
                 if (_delta < 5f)
                     return;
                 isMouseDown = false;
-                var _sp = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                var _target = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
                 DragAndDrop.PrepareStartDrag();
-                DragAndDrop.objectReferences = new UnityEngine.Object[] { _sp }; // 拖拽时不关联具体对象
-                DragAndDrop.paths = new string[] { assetPath }; // 自定义拖拽路径
+                DragAndDrop.objectReferences = new UnityEngine.Object[] { _target };
+                DragAndDrop.paths = new string[] { assetPath };
 
                 DragAndDrop.visualMode = DragAndDropVisualMode.Link;
-                DragAndDrop.StartDrag("AssetItem");
+                DragAndDrop.StartDrag("Drag Asset");
+                DragAndDrop.SetGenericData("AssetItem", this);
             });
         }
 

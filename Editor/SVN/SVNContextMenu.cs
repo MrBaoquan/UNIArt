@@ -23,24 +23,41 @@ namespace UNIArt.Editor
             Update(GetRootAssetPath(), false, wait: true);
         }
 
+        private static bool isSelectedExternal()
+        {
+            var paths = GetSelectedAssetPaths().ToList();
+            return paths.Count == 1
+                && paths[0].StartsWith(UNIArtSettings.Project.TemplateLocalFolder);
+        }
+
         [MenuItem("Assets/\u2197  SVN 提交资源", priority = 65)]
         public static void CommitAll()
         {
-            var paths = GetSelectedAssetPaths().ToList();
-            if (paths.Count == 1 && paths[0].StartsWith("Assets/ArtAssets/#Templates/"))
+            if (isSelectedExternal())
             {
-                var _selectedPath = paths[0];
-                var _external = SVNIntegration
-                    .GetExternals("Assets/ArtAssets/#Templates")
-                    .Select(_ => _.Dir)
-                    .Where(x => _selectedPath.StartsWith($"Assets/ArtAssets/#Templates/{x}"))
-                    .FirstOrDefault();
-                if (!string.IsNullOrEmpty(_external))
-                {
-                    CommitExternal($"Assets/ArtAssets/#Templates/{_external}");
-                    return;
-                }
+                CommitExternal(
+                    UNIArtSettings.GetExternalTemplateRootBySubAsset(
+                        GetSelectedAssetPaths().First()
+                    )
+                );
+                return;
             }
+
+            // var paths = GetSelectedAssetPaths().ToList();
+            // if (paths.Count == 1 && paths[0].StartsWith("Assets/ArtAssets/#Templates/"))
+            // {
+            //     var _selectedPath = paths[0];
+            //     var _external = SVNIntegration
+            //         .GetExternals("Assets/ArtAssets/#Templates")
+            //         .Select(_ => _.Dir)
+            //         .Where(x => _selectedPath.StartsWith($"Assets/ArtAssets/#Templates/{x}"))
+            //         .FirstOrDefault();
+            //     if (!string.IsNullOrEmpty(_external))
+            //     {
+            //         CommitExternal($"Assets/ArtAssets/#Templates/{_external}");
+            //         return;
+            //     }
+            // }
 
             // TortoiseSVN handles nested repositories gracefully. SnailSVN - not so much. :(
             Commit(GetRootAssetPath(), false);

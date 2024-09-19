@@ -4,9 +4,9 @@ using UnityEditor;
 namespace UNIArt.Editor
 {
     [InitializeOnLoad]
-    public static class HierarchyDragHandler
+    public static class DragDropHandler
     {
-        static HierarchyDragHandler()
+        static DragDropHandler()
         {
             // 注册层次视图拖拽事件的回调
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyDrag;
@@ -18,7 +18,7 @@ namespace UNIArt.Editor
         }
 
         static bool isDragPerform = false;
-        static bool isAltPressed = false;
+        static bool isCtrlPressed = false;
 
         static DragAndDropVisualMode HierarchyDropHandler(
             int dropTargetInstanceID,
@@ -29,7 +29,7 @@ namespace UNIArt.Editor
         {
             if (perform)
             {
-                isAltPressed = Event.current.modifiers == EventModifiers.Alt;
+                isCtrlPressed = Event.current.modifiers == EventModifiers.Control;
                 isDragPerform = true;
             }
             return DragAndDropVisualMode.None;
@@ -45,7 +45,7 @@ namespace UNIArt.Editor
         {
             if (perform)
             {
-                isAltPressed = Event.current.modifiers == EventModifiers.Alt;
+                isCtrlPressed = Event.current.modifiers == EventModifiers.Control;
                 isDragPerform = true;
             }
             return DragAndDropVisualMode.None;
@@ -76,7 +76,7 @@ namespace UNIArt.Editor
                 if (_newObj == null)
                     return;
 
-                if (!isAltPressed)
+                if (!isCtrlPressed)
                 {
                     if (PrefabUtility.IsPartOfAnyPrefab(_newObj))
                     {
@@ -94,9 +94,7 @@ namespace UNIArt.Editor
 
         private static bool isArtAssetDrag()
         {
-            return DragAndDrop.paths != null
-                && DragAndDrop.paths.Length > 0
-                && DragAndDrop.paths[0].StartsWith("Assets/ArtAssets/#Templates");
+            return DragAndDrop.GetGenericData("AssetItem") != null;
         }
 
         static DragAndDropVisualMode ProjectBrowserDropHandler(

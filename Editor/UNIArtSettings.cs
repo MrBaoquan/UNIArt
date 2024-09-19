@@ -76,6 +76,15 @@ namespace UNIArt.Editor
         public string TemplateLocalFolder = "Assets/ArtAssets/#Templates";
         public string ArtFolder = "Assets/ArtAssets";
 
+        // 依赖文件排除文件夹
+        public List<string> dependencyExcludeFolders = new List<string> { "Assets/TextMesh Pro", };
+
+        // 依赖文件排除文件
+        internal List<string> dependencyExcludeFiles = new List<string>
+        {
+            "Assets/ArtAssets/Fonts/DefaultTMPFont.asset",
+        };
+
         public static string GetExternalTemplateFolderUrl(string templateName)
         {
             return Project.TemplateSVNRepo + "/" + templateName;
@@ -94,7 +103,7 @@ namespace UNIArt.Editor
         public static string GetTemplateNameBySubAsset(string assetPath)
         {
             var _path = assetPath.ToForwardSlash();
-            string _pattern = @"^Assets/ArtAssets/\#Templates/(?<templateName>[^/]+)/.*$";
+            string _pattern = @"^Assets/ArtAssets/\#Templates/(?<templateName>[^/]+)(/.*)?$";
             var _match = Regex.Match(_path, _pattern);
             if (_match.Success)
             {

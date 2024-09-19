@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Packages/com.parful.uniart/Editor/TmplView/TmplBroswer.uss?fileID=7433441132597879392&amp;guid=4f3d453b97492d24da5f3621ef25cce3&amp;type=3#TmplBroswer" />
-    <ui:VisualElement name="root" style="flex-grow: 1; flex-direction: column; flex-shrink: 1; align-items: stretch;">
+    <ui:VisualElement name="root" focusable="true" style="flex-grow: 1; flex-direction: column; flex-shrink: 1; align-items: stretch;">
         <uie:Toolbar name="Toolbar" style="width: auto; flex-shrink: 1; flex-grow: 0; display: flex; max-height: 27px; align-items: center; margin-top: 2px; margin-bottom: 2px; height: 27px;">
             <uie:ToolbarButton display-tooltip-when-elided="true" name="btn_updateAll" tooltip="更新全部模板资源" style="background-image: url(&apos;project://database/Packages/com.parful.uniart/Assets/Icon/%E6%9B%B4%E6%96%B0%E7%BC%93%E5%AD%98.png?fileID=2800000&amp;guid=f3fe6613cfbba4540981e9200162fb1d&amp;type=3#更新缓存&apos;); width: 21px; height: 21px; border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0; margin-right: 10px; margin-left: 14px;" />
             <uie:ToolbarSpacer style="flex-grow: 1;" />

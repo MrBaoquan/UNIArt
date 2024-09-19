@@ -22,6 +22,8 @@ namespace UNIArt.Editor
 
         public bool IsInstalled { get; protected set; } = false;
 
+        public int FilterID { get; set; } = 0;
+
         public string RootFolder => UNIArtSettings.GetExternalTemplateFolder(TemplateID);
         public string ExternalRepoUrl => UNIArtSettings.GetExternalTemplateFolderUrl(TemplateID);
 

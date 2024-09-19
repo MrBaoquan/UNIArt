@@ -38,7 +38,7 @@ namespace UNIArt.Editor
             buildUI();
             registerUIEvents();
             Refresh();
-            selectTemplateID(0);
+            selectTemplate(0);
         }
 
         private void buildUI()
@@ -108,7 +108,7 @@ namespace UNIArt.Editor
                         selectedTemplateButton.ExternalRepoUrl
                     );
                     selectedTemplateButton.Refresh();
-                    refreshTemplateContent();
+                    refreshTemplateView();
                 });
 
             // 移除模板
@@ -122,7 +122,7 @@ namespace UNIArt.Editor
                         )
                     );
                     selectedTemplateButton.Refresh();
-                    refreshTemplateContent();
+                    refreshTemplateView();
                 });
 
             // 资源视图缩放
@@ -148,7 +148,7 @@ namespace UNIArt.Editor
                     {
                         var lastTemplateID = selectedTemplateID;
                         Refresh();
-                        selectTemplateID(lastTemplateID);
+                        selectTemplate(lastTemplateID);
                         Debug.Log("模板库更新完成.");
                     }
                 });
@@ -163,7 +163,7 @@ namespace UNIArt.Editor
                             UNIArtSettings.Project.TemplateLocalFolder,
                             selectedTemplateButton.ExternalRepoUrl
                         );
-                        selectTemplateID(selectedTemplateID);
+                        selectTemplate(selectedTemplateID);
                         Debug.Log($"模板资源[{selectedTemplateButton.TemplateID}]更新完成.");
                     }
                     else
@@ -220,12 +220,11 @@ namespace UNIArt.Editor
             contentView.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
             contentView.RegisterCallback<DragPerformEvent>(OnDragPerform);
 
-            contentView.RegisterCallback<KeyDownEvent>(evt =>
+            root.RegisterCallback<KeyDownEvent>(evt =>
             {
                 if (evt.keyCode == KeyCode.R && evt.ctrlKey)
                 {
-                    Debug.LogWarning("Refreshing...");
-                    refreshTemplateAssets();
+                    refreshTemplateFilters();
                 }
             });
         }
@@ -236,14 +235,14 @@ namespace UNIArt.Editor
             {
                 return;
             }
+            if (DragAndDrop.GetGenericData("AssetItem") != null)
+            {
+                return;
+            }
             var _currentTmplPath = CurrentTmplPath;
-
             if (
                 DragAndDrop.paths.Any(
-                    _ =>
-                        _ == selectedAssetItem?.AssetPath
-                        || Path.GetDirectoryName(_).ToForwardSlash()
-                            == _currentTmplPath.TrimEnd('/')
+                    _ => Path.GetDirectoryName(_).ToForwardSlash() == _currentTmplPath.TrimEnd('/')
                 )
             )
             {
@@ -382,25 +381,25 @@ namespace UNIArt.Editor
             _previewTex.style.display = DisplayStyle.None;
         }
 
-        private void selectTemplateID(int id)
+        private void selectTemplate(int id)
         {
             selectedTemplateID = id;
-            var _templateButton = templateButtons[id];
+            var _curTemplate = templateButtons[id];
 
             templateButtons.ForEach(_t => _t.Deselect());
-            _templateButton.Select();
+            _curTemplate.Select();
 
-            refreshTemplateContent();
-            selectFilterID(0);
+            refreshTemplateView();
         }
 
-        private void selectFilterID(int id)
+        private void setTemplateFilter(int filterID)
         {
             if (!selectedTemplateButton.IsInstalled)
                 return;
 
-            selectedFilterID = id;
-            var _filterButton = filterButtons[id];
+            selectedTemplateButton.FilterID = filterID;
+            selectedFilterID = filterID;
+            var _filterButton = filterButtons[filterID];
 
             filterButtons.ForEach(_f => _f.Deselect());
             _filterButton.Select();
@@ -408,7 +407,7 @@ namespace UNIArt.Editor
         }
 
         // 刷新模板内容
-        private void refreshTemplateContent()
+        private void refreshTemplateView()
         {
             var _templateContent = rootVisualElement.Q<VisualElement>("template-content");
             var _templateMgr = rootVisualElement.Q<VisualElement>("template-mgr");
@@ -456,7 +455,7 @@ namespace UNIArt.Editor
             templateButtons.ForEach(
                 _t =>
                     _t.RegisterCallback<MouseDownEvent>(
-                        evt => selectTemplateID(templateButtons.IndexOf(_t))
+                        evt => selectTemplate(templateButtons.IndexOf(_t))
                     )
             );
         }
@@ -509,12 +508,12 @@ namespace UNIArt.Editor
             {
                 _filterButton.RegisterCallback<MouseDownEvent>(evt =>
                 {
-                    selectFilterID(filterButtons.IndexOf(_filterButton));
+                    setTemplateFilter(filterButtons.IndexOf(_filterButton));
                 });
             });
 
             validateFilterID();
-            selectFilterID(selectedFilterID);
+            setTemplateFilter(selectedTemplateButton.FilterID);
 
             rootVisualElement
                 .Q<Button>("btn_uninstall")

@@ -204,8 +204,15 @@ namespace UNIArt.Editor
             {
                 return "ScriptableObjects";
             }
+            else if (
+                assetType == typeof(UnityEngine.Font) || assetType == typeof(TMPro.TMP_FontAsset)
+            )
+            {
+                return "Fonts";
+            }
             else
             {
+                // Debug.LogWarning(assetType);
                 // 返回默认文件夹
                 return "Misc";
             }
@@ -237,6 +244,37 @@ namespace UNIArt.Editor
             );
         }
 
+        // 获取指定路径的资源被哪些资源依赖
+        public static List<string> GetReverseDependencies(
+            string[] searchInFolders,
+            string assetPath
+        )
+        {
+            return AssetDatabase
+                .FindAssets("t:Object", searchInFolders)
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(_ => _ != assetPath)
+                .Where(_ => AssetDatabase.GetDependencies(_, false).Contains(assetPath))
+                .ToList();
+        }
+
+        // 在当前模板内是否被其他预制体依赖
+        public static bool CheckIfHasReverseDependencies(
+            string assetPath,
+            List<string> excludeFiles
+        )
+        {
+            var _dependencyTemplateRoot = UNIArtSettings.GetExternalTemplateRootBySubAsset(
+                assetPath
+            );
+            var _reverseDependencies = GetReverseDependencies(
+                    new string[] { _dependencyTemplateRoot },
+                    assetPath
+                )
+                .Where(_ => !excludeFiles.Contains(_));
+            return _reverseDependencies.Count() > 0;
+        }
+
         // 移动资源到模板资源文件夹, 同步移动依赖
         public static void MoveAssetsWithDependencies(
             string[] assetPaths,
@@ -254,10 +292,6 @@ namespace UNIArt.Editor
                 ? UNIArtSettings.GetExternalTemplateRootBySubAsset(dropUponPath)
                 : UNIArtSettings.Project.ArtFolder;
 
-            Func<string, bool> assetDependencyCondition = isDropOnTemplate
-                ? _path => !_path.StartsWith(assetRoot) // 拖拽为模板资源 处理非目标模板库内的资源依赖
-                : _path => UNIArtSettings.IsTemplateAsset(_path); // 拖拽为项目资源 处理目标模板库内中的资源依赖
-
             var _folders = assetPaths.Where(_ => AssetDatabase.IsValidFolder(_));
             assetPaths = assetPaths.Except(_folders).ToArray();
             var _folderAssets = _folders
@@ -266,21 +300,48 @@ namespace UNIArt.Editor
 
             assetPaths = assetPaths.Concat(_folderAssets).ToArray();
 
+            Func<string, bool> filterDependencyCondition = isDropOnTemplate
+                ? _path => !_path.StartsWith(assetRoot) // 拖拽到模板库 仅处理非当前模板库内的资源依赖
+                : _path => UNIArtSettings.IsTemplateAsset(_path); // 拖拽到项目库 仅处理模板库内中的资源依赖
+
             assetPaths
                 .ToList()
                 .ForEach(assetPath =>
                 {
+                    // 依赖资源的处理
                     var _dependencies = AssetDatabase
-                        .GetDependencies(assetPath)
-                        .Where(_ => _.StartsWith(UNIArtSettings.Project.ArtFolder)) // 只处理UNIArt相关资源
-                        .Where(assetDependencyCondition)
-                        .Where(_ => _ != assetPath);
+                        .GetDependencies(assetPath, false)
+                        .Where(_ => !_.StartsWith("Packages/")) // 排除包内资源
+                        .Where(
+                            _ =>
+                                !UNIArtSettings.Project.dependencyExcludeFolders.Any(
+                                    _folder => _.StartsWith(_folder)
+                                )
+                        )
+                        .Where(_ => _ != assetPath)
+                        .Where(filterDependencyCondition);
+
+                    // Debug.LogError(assetPath);
+                    // Debug.Log($"dependencies: {_dependencies.Count()}");
 
                     foreach (var _dependencyPath in _dependencies)
                     {
                         var _templateFolder = ".*";
                         if (UNIArtSettings.IsTemplateAsset(_dependencyPath))
                         {
+                            if (
+                                CheckIfHasReverseDependencies(
+                                    _dependencyPath,
+                                    new List<string> { assetPath }
+                                )
+                            )
+                            {
+                                Debug.LogWarning(
+                                    $"{_dependencyPath} has more than one reference in template library, skip."
+                                );
+                                continue;
+                            }
+
                             var _templateID = UNIArtSettings.GetTemplateNameBySubAsset(
                                 _dependencyPath
                             );
@@ -291,37 +352,37 @@ namespace UNIArt.Editor
                         var _srcPath = Regex.Replace(_dependencyPath, _regex, string.Empty);
                         var _dstPath = $"{assetRoot}/{_folder}/{_srcPath}";
 
-                        // Debug.LogWarning($"origin: {_srcPath}, new: {_dstPath}");
-
                         CreateFolderIfNotExist(Path.GetDirectoryName(_dstPath));
                         _dstPath = AssetDatabase.GenerateUniqueAssetPath(_dstPath);
                         AssetDatabase.MoveAsset(_dependencyPath, _dstPath);
+                        AssetDatabase.Refresh();
                     }
 
+                    // 资源本身的处理
                     var _oldPath = assetPath;
                     var _newPath = $"{dropUponPath}/{Path.GetFileName(_oldPath)}";
                     _newPath = AssetDatabase.GenerateUniqueAssetPath(_newPath);
-
-                    // 移动预览图依赖
-                    if (isDropOnTemplate && UNIArtSettings.IsTemplateAsset(assetPath)) // 释放目标和源目标都是模板资源
-                    {
-                        var _previewPath = UNIArtSettings.GetPreviewPathByAsset(assetPath);
-                        var _destPreviewPath = UNIArtSettings.GetPreviewPathByAsset(_newPath);
-                        if (File.Exists(_previewPath))
-                        {
-                            CreateFolderIfNotExist(Path.GetDirectoryName(_destPreviewPath));
-                            _destPreviewPath = AssetDatabase.GenerateUniqueAssetPath(
-                                _destPreviewPath
-                            );
-                            AssetDatabase.MoveAsset(_previewPath, _destPreviewPath);
-                            AssetDatabase.Refresh();
-                        }
-                    }
 
                     if (includeSelf)
                     {
                         AssetDatabase.MoveAsset(_oldPath, _newPath);
                         AssetDatabase.Refresh();
+                    }
+
+                    // 移动预览图依赖
+                    if (isDropOnTemplate && UNIArtSettings.IsTemplateAsset(assetPath)) // 释放目标和源目标都是模板资源
+                    {
+                        var _previewPath = UNIArtSettings.GetPreviewPathByAsset(assetPath);
+                        var _dstPreviewPath = UNIArtSettings.GetPreviewPathByAsset(_newPath);
+                        if (File.Exists(_previewPath))
+                        {
+                            CreateFolderIfNotExist(Path.GetDirectoryName(_dstPreviewPath));
+                            _dstPreviewPath = AssetDatabase.GenerateUniqueAssetPath(
+                                _dstPreviewPath
+                            );
+                            AssetDatabase.MoveAsset(_previewPath, _dstPreviewPath);
+                            AssetDatabase.Refresh();
+                        }
                     }
                 });
         }
