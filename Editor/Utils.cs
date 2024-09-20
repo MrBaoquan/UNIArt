@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Sirenix.Utilities;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEditor.Animations;
