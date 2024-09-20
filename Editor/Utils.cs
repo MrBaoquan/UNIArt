@@ -417,7 +417,7 @@ namespace UNIArt.Editor
                         if (File.Exists(_previewPath))
                         {
                             CreateFolderIfNotExist(Path.GetDirectoryName(_dstPreviewPath));
-                            Debug.Log(_dstPreviewPath);
+                            // Debug.Log(_dstPreviewPath);
                             _dstPreviewPath = AssetDatabase.GenerateUniqueAssetPath(
                                 _dstPreviewPath
                             );
