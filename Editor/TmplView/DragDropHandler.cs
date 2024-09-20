@@ -103,10 +103,27 @@ namespace UNIArt.Editor
             bool perform
         )
         {
-            if (!perform || !dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder))
-                return DragAndDropVisualMode.None;
+            // 1. 从工作台拖拽到项目文件夹 需要处理依赖
+            // 2. 项目文件夹内按住alt拖拽到项目文件夹 需要处理依赖
+            if (
+                perform
+                && (
+                    (
+                        Event.current.modifiers == EventModifiers.Alt
+                        && dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder)
+                    ) || isArtAssetDrag()
+                )
+            )
+            {
+                Utils.MoveAssetsWithDependencies(DragAndDrop.paths, dropUponPath, false);
+                EditorApplication.delayCall += () =>
+                {
+                    TmplBrowser.RefreshContentView();
+                };
 
-            Utils.MoveAssetsWithDependencies(DragAndDrop.paths, dropUponPath, false);
+                return DragAndDropVisualMode.None;
+            }
+
             return DragAndDropVisualMode.None;
         }
     }

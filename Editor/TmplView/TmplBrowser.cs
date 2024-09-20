@@ -15,7 +15,7 @@ namespace UNIArt.Editor
         const string BuiltInTemplateID = "Standard";
 
         [MenuItem("Window/UNIArt 工作台 &1", priority = 1399)] //1499
-        public static void ShowExample()
+        public static void ShowUNIArtWindow()
         {
             TmplBrowser wnd = GetWindow<TmplBrowser>();
             wnd.titleContent = new GUIContent(
@@ -23,6 +23,12 @@ namespace UNIArt.Editor
                 EditorGUIUtility.IconContent("Folder Icon").image
             );
             wnd.minSize = new Vector2(640, 360);
+        }
+
+        public static void RefreshContentView()
+        {
+            TmplBrowser wnd = GetWindow<TmplBrowser>(false, "UNIArt 共创平台", false);
+            wnd.RefreshTemplateFilters();
         }
 
         public int selectedTemplateID = 0;
@@ -68,7 +74,9 @@ namespace UNIArt.Editor
             }
 
             _builtinTemplateButton.Refresh();
-            if (!_builtinTemplateButton.IsInstalled)
+            if (
+                UNIArtSettings.Project.InstallStandardDefault && !_builtinTemplateButton.IsInstalled
+            )
             {
                 Debug.Log($"尝试安装公用模板...");
                 SVNIntegration.AddExternal(
@@ -224,7 +232,7 @@ namespace UNIArt.Editor
             {
                 if (evt.keyCode == KeyCode.R && evt.ctrlKey)
                 {
-                    refreshTemplateFilters();
+                    RefreshTemplateFilters();
                 }
             });
         }
@@ -260,9 +268,13 @@ namespace UNIArt.Editor
                 return;
             }
 
-            Utils.MoveAssetsWithDependencies(DragAndDrop.paths, _currentTmplPath, true);
-            refreshTemplateAssets();
+            Utils.MoveAssetsWithDependencies(
+                DragAndDrop.paths,
+                _currentTmplPath.ToForwardSlash().TrimEnd('/'),
+                true
+            );
             DragAndDrop.AcceptDrag();
+            RefreshTemplateFilters();
         }
 
         public static int CalculatePreviewDir(
@@ -399,10 +411,10 @@ namespace UNIArt.Editor
 
             selectedTemplateButton.FilterID = filterID;
             selectedFilterID = filterID;
-            var _filterButton = filterButtons[filterID];
+            // var _filterButton = selectedFilterButton; // filterButtons[filterID];
 
             filterButtons.ForEach(_f => _f.Deselect());
-            _filterButton.Select();
+            selectedFilterButton.Select();
             refreshTemplateAssets();
         }
 
@@ -417,7 +429,7 @@ namespace UNIArt.Editor
                 _templateContent.style.display = DisplayStyle.Flex;
                 _templateMgr.style.display = DisplayStyle.None;
 
-                refreshTemplateFilters();
+                RefreshTemplateFilters();
             }
             else
             {
@@ -477,7 +489,7 @@ namespace UNIArt.Editor
         }
 
         // 刷新模板筛选列表
-        private void refreshTemplateFilters()
+        public void RefreshTemplateFilters()
         {
             validateTemplateID();
             var _templateRoot =
@@ -517,7 +529,12 @@ namespace UNIArt.Editor
 
             rootVisualElement
                 .Q<Button>("btn_uninstall")
-                .SetEnabled(!selectedTemplateButton.IsBuiltIn);
+                .SetEnabled(
+                    !(
+                        selectedTemplateButton.IsBuiltIn
+                        && UNIArtSettings.Project.InstallStandardDefault
+                    )
+                );
         }
 
         List<AssetItem> assetItems = new List<AssetItem>();
@@ -583,7 +600,7 @@ namespace UNIArt.Editor
         public void Refresh()
         {
             refreshTemplateMenuList();
-            refreshTemplateFilters();
+            RefreshTemplateFilters();
             refreshTemplateAssets();
         }
 

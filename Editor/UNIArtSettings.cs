@@ -74,7 +74,11 @@ namespace UNIArt.Editor
 
         public string TemplateSVNRepo = "http://svn.andcrane.com/repo/UNIArtTemplates";
         public string TemplateLocalFolder = "Assets/ArtAssets/#Templates";
-        public string ArtFolder = "Assets/ArtAssets";
+
+        // 默认是否安装Standard模板
+        public bool InstallStandardDefault = true;
+
+        internal string ArtFolder = "Assets/ArtAssets";
 
         // 依赖文件排除文件夹
         public List<string> dependencyExcludeFolders = new List<string> { "Assets/TextMesh Pro", };

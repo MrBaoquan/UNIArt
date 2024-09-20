@@ -1,6 +1,7 @@
 :root {
     font-size: 12px;
-    -unity-font-style: normal;
+    -unity-font: url('project://database/Packages/com.parful.uniart/Assets/Fonts/AlibabaPuHuiTi-2-55-Regular.ttf?fileID=12800000&guid=0c0f5166b27a688418cdff3e976caa45&type=3#AlibabaPuHuiTi-2-55-Regular');
+    color: rgb(255, 255, 255);
 }
 
 Label {

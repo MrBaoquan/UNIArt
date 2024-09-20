@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Sirenix.Utilities;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -15,6 +16,25 @@ namespace UNIArt.Editor
 {
     public static class Utils
     {
+        [MenuItem("Tools/Test")]
+        private static void test()
+        {
+            AssetDatabase
+                .FindAssets("t:AnimationClip", new[] { "Assets/ArtAssets/Animations" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .ForEach(_ =>
+                {
+                    Debug.LogWarning(
+                        AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(_).GetType()
+                    );
+                    Debug.Log(
+                        AssetDatabase.IsMainAsset(
+                            AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(_)
+                        )
+                    );
+                });
+        }
+
         const string packageName = "com.parful.uniart";
 
         public static string ToForwardSlash(this string path)
@@ -292,19 +312,31 @@ namespace UNIArt.Editor
                 ? UNIArtSettings.GetExternalTemplateRootBySubAsset(dropUponPath)
                 : UNIArtSettings.Project.ArtFolder;
 
-            var _folders = assetPaths.Where(_ => AssetDatabase.IsValidFolder(_));
-            assetPaths = assetPaths.Except(_folders).ToArray();
-            var _folderAssets = _folders
-                .SelectMany(_ => AssetDatabase.FindAssets("t:Object", new[] { _ }))
-                .Select(_ => AssetDatabase.GUIDToAssetPath(_));
+            var _folders = assetPaths.Where(_ => AssetDatabase.IsValidFolder(_)).ToList();
 
-            assetPaths = assetPaths.Concat(_folderAssets).ToArray();
+            if (_folders.Count > 0)
+            {
+                var _folderAssets = AssetDatabase
+                    .FindAssets("t:Object", _folders.ToArray())
+                    .Select(AssetDatabase.GUIDToAssetPath)
+                    .ToList();
+                assetPaths = assetPaths.Concat(_folderAssets).Distinct().ToArray();
+            }
 
             Func<string, bool> filterDependencyCondition = isDropOnTemplate
+                //? _path => true // 拖拽到模板库 处理所有依赖
                 ? _path => !_path.StartsWith(assetRoot) // 拖拽到模板库 仅处理非当前模板库内的资源依赖
                 : _path => UNIArtSettings.IsTemplateAsset(_path); // 拖拽到项目库 仅处理模板库内中的资源依赖
 
+            Func<string, bool> excludeCondition = _path =>
+            {
+                return !UNIArtSettings.Project.dependencyExcludeFolders.Any(
+                        _folder => _path.StartsWith(_folder)
+                    ) && !UNIArtSettings.Project.dependencyExcludeFiles.Contains(_path);
+            };
+
             assetPaths
+                .Where(_ => !AssetDatabase.IsValidFolder(_))
                 .ToList()
                 .ForEach(assetPath =>
                 {
@@ -312,12 +344,7 @@ namespace UNIArt.Editor
                     var _dependencies = AssetDatabase
                         .GetDependencies(assetPath, false)
                         .Where(_ => !_.StartsWith("Packages/")) // 排除包内资源
-                        .Where(
-                            _ =>
-                                !UNIArtSettings.Project.dependencyExcludeFolders.Any(
-                                    _folder => _.StartsWith(_folder)
-                                )
-                        )
+                        .Where(excludeCondition)
                         .Where(_ => _ != assetPath)
                         .Where(filterDependencyCondition);
 
@@ -329,6 +356,10 @@ namespace UNIArt.Editor
                         var _templateFolder = ".*";
                         if (UNIArtSettings.IsTemplateAsset(_dependencyPath))
                         {
+                            var _templateID = UNIArtSettings.GetTemplateNameBySubAsset(
+                                _dependencyPath
+                            );
+
                             if (
                                 CheckIfHasReverseDependencies(
                                     _dependencyPath,
@@ -341,16 +372,16 @@ namespace UNIArt.Editor
                                 );
                                 continue;
                             }
-
-                            var _templateID = UNIArtSettings.GetTemplateNameBySubAsset(
-                                _dependencyPath
-                            );
                             _templateFolder = @$"#Templates/{_templateID}";
                         }
                         var _folder = GetFolderByAssetType(_dependencyPath);
                         var _regex = $@"^Assets/(ArtAssets/)?.*?({_templateFolder}/)?({_folder}/)?";
                         var _srcPath = Regex.Replace(_dependencyPath, _regex, string.Empty);
                         var _dstPath = $"{assetRoot}/{_folder}/{_srcPath}";
+                        if (_srcPath == _dstPath) // 源路径和目标路径一致则忽略
+                        {
+                            continue;
+                        }
 
                         CreateFolderIfNotExist(Path.GetDirectoryName(_dstPath));
                         _dstPath = AssetDatabase.GenerateUniqueAssetPath(_dstPath);
@@ -361,7 +392,17 @@ namespace UNIArt.Editor
                     // 资源本身的处理
                     var _oldPath = assetPath;
                     var _newPath = $"{dropUponPath}/{Path.GetFileName(_oldPath)}";
+
+                    var _depFolder = _folders.Where(_ => assetPath.StartsWith(_)).Min();
+                    if (!string.IsNullOrEmpty(_depFolder))
+                    {
+                        _depFolder = Path.GetDirectoryName(_depFolder).ToForwardSlash() + "/";
+                        _newPath = $"{dropUponPath}/{_oldPath.Replace(_depFolder, string.Empty)}";
+                        CreateFolderIfNotExist(Path.GetDirectoryName(_newPath));
+                    }
+
                     _newPath = AssetDatabase.GenerateUniqueAssetPath(_newPath);
+                    // Debug.Log($"Move {_oldPath} to {_newPath}");
 
                     if (includeSelf)
                     {
@@ -377,6 +418,7 @@ namespace UNIArt.Editor
                         if (File.Exists(_previewPath))
                         {
                             CreateFolderIfNotExist(Path.GetDirectoryName(_dstPreviewPath));
+                            Debug.Log(_dstPreviewPath);
                             _dstPreviewPath = AssetDatabase.GenerateUniqueAssetPath(
                                 _dstPreviewPath
                             );
@@ -385,6 +427,7 @@ namespace UNIArt.Editor
                         }
                     }
                 });
+            AssetDatabase.Refresh();
         }
     }
 }
