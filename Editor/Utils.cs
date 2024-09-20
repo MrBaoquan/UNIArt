@@ -15,24 +15,24 @@ namespace UNIArt.Editor
 {
     public static class Utils
     {
-        [MenuItem("Tools/Test")]
-        private static void test()
-        {
-            AssetDatabase
-                .FindAssets("t:AnimationClip", new[] { "Assets/ArtAssets/Animations" })
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .ForEach(_ =>
-                {
-                    Debug.LogWarning(
-                        AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(_).GetType()
-                    );
-                    Debug.Log(
-                        AssetDatabase.IsMainAsset(
-                            AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(_)
-                        )
-                    );
-                });
-        }
+        // [MenuItem("Tools/Test")]
+        // private static void test()
+        // {
+        //     AssetDatabase
+        //         .FindAssets("t:AnimationClip", new[] { "Assets/ArtAssets/Animations" })
+        //         .Select(AssetDatabase.GUIDToAssetPath)
+        //         .ForEach(_ =>
+        //         {
+        //             Debug.LogWarning(
+        //                 AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(_).GetType()
+        //             );
+        //             Debug.Log(
+        //                 AssetDatabase.IsMainAsset(
+        //                     AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(_)
+        //                 )
+        //             );
+        //         });
+        // }
 
         const string packageName = "com.parful.uniart";
 
