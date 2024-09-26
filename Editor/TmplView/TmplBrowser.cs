@@ -485,7 +485,8 @@ namespace UNIArt.Editor
             {
                 previewTex.style.transformOrigin = new TransformOrigin(
                     new Length(100, LengthUnit.Percent),
-                    new Length(0, LengthUnit.Percent)
+                    new Length(0, LengthUnit.Percent),
+                    0
                 );
                 previewTex.style.left = StyleKeyword.Auto;
                 previewTex.style.right = windowSize.x - mousePosition.x + padding.x;
@@ -496,7 +497,8 @@ namespace UNIArt.Editor
             {
                 previewTex.style.transformOrigin = new TransformOrigin(
                     new Length(0, LengthUnit.Percent),
-                    new Length(0, LengthUnit.Percent)
+                    new Length(0, LengthUnit.Percent),
+                    0
                 );
                 previewTex.style.left = mousePosition.x + padding.x;
                 previewTex.style.right = StyleKeyword.Auto;
@@ -507,7 +509,8 @@ namespace UNIArt.Editor
             {
                 previewTex.style.transformOrigin = new TransformOrigin(
                     new Length(100, LengthUnit.Percent),
-                    new Length(100, LengthUnit.Percent)
+                    new Length(100, LengthUnit.Percent),
+                    0
                 );
 
                 previewTex.style.left = StyleKeyword.Auto;
@@ -519,7 +522,8 @@ namespace UNIArt.Editor
             {
                 previewTex.style.transformOrigin = new TransformOrigin(
                     new Length(0, LengthUnit.Percent),
-                    new Length(100, LengthUnit.Percent)
+                    new Length(100, LengthUnit.Percent),
+                    0
                 );
                 previewTex.style.left = mousePosition.x + padding.x;
                 previewTex.style.right = StyleKeyword.Auto;
