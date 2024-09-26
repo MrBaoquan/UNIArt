@@ -46,27 +46,35 @@ namespace UNIArt.Editor
                         EnableHierarchyCheckbox.Value || EnableHierarchyIcon.Value;
                 };
 
-                EnableHierarchyItemGUI.OnValueChanged += (value) =>
-                {
-                    Utils.ForceRecompile();
-                };
+                EnableHierarchyItemGUI.OnValueChanged.AddListener(
+                    (value) =>
+                    {
+                        Utils.ForceRecompile();
+                    }
+                );
 
-                DelayRetry.OnValueChanged += (value) =>
-                {
-                    EditorPrefs.SetFloat(delayRetry, value);
-                };
+                DelayRetry.OnValueChanged.AddListener(
+                    (value) =>
+                    {
+                        EditorPrefs.SetFloat(delayRetry, value);
+                    }
+                );
 
-                EnableHierarchyIcon.OnValueChanged += (value) =>
-                {
-                    EditorPrefs.SetBool(enableHierarchyIcon, value);
-                    refreshProperty();
-                };
+                EnableHierarchyIcon.OnValueChanged.AddListener(
+                    (value) =>
+                    {
+                        EditorPrefs.SetBool(enableHierarchyIcon, value);
+                        refreshProperty();
+                    }
+                );
 
-                EnableHierarchyCheckbox.OnValueChanged += (value) =>
-                {
-                    EditorPrefs.SetBool(enableHierarchyCheckbox, value);
-                    refreshProperty();
-                };
+                EnableHierarchyCheckbox.OnValueChanged.AddListener(
+                    (value) =>
+                    {
+                        EditorPrefs.SetBool(enableHierarchyCheckbox, value);
+                        refreshProperty();
+                    }
+                );
             }
         }
 
@@ -102,6 +110,16 @@ namespace UNIArt.Editor
         public static bool IsTemplateAsset(string assetPath)
         {
             return assetPath.ToForwardSlash().StartsWith(Project.TemplateLocalFolder + "/");
+        }
+
+        public static bool IsProjectUIPageAsset(string assetPath)
+        {
+            return assetPath.ToForwardSlash().StartsWith(Project.ArtFolder + "/UI Prefabs/Windows");
+        }
+
+        public static bool IsProjectUIComponentAsset(string assetPath)
+        {
+            return assetPath.ToForwardSlash().StartsWith(Project.ArtFolder + "/UI Prefabs/Widgets");
         }
 
         public static string GetTemplateNameBySubAsset(string assetPath)

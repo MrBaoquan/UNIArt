@@ -25,8 +25,38 @@ namespace UNIArt.Editor
             SceneViewCapture.onCapture = onCapture;
         }
 
+        public static void stashSceneViewSettings()
+        {
+            SceneView sceneView = SceneView.lastActiveSceneView;
+            lastShowGizmos = sceneView.drawGizmos;
+            lastShowGrid = sceneView.showGrid;
+            lastTool = Tools.current;
+
+            sceneView.showGrid = false;
+            sceneView.drawGizmos = false;
+            Tools.current = Tool.None;
+        }
+
+        public static void restoreSceneViewSettings()
+        {
+            SceneView sceneView = SceneView.lastActiveSceneView;
+            sceneView.showGrid = lastShowGrid;
+            sceneView.drawGizmos = lastShowGizmos;
+            Tools.current = lastTool;
+        }
+
         public static void ShowCapture()
         {
+            // 打开并聚焦场景视图，如果未打开则会创建一个新的
+            SceneView sceneView = EditorWindow.GetWindow<SceneView>();
+
+            // 刷新场景视图，确保场景中的元素是最新的
+            sceneView.Repaint();
+
+            // 聚焦该窗口
+            sceneView.Focus();
+
+            stashSceneViewSettings();
             // 设置默认矩形的位置
             _rectangle = new Rect(100, 100, _rectangleWidth, _rectangleHeight);
             _isDrawing = true;
@@ -188,6 +218,7 @@ namespace UNIArt.Editor
             }
             else if (btnActionID == 2)
             {
+                restoreSceneViewSettings();
                 HideCapture();
                 btnActionID = 0;
             }
@@ -255,6 +286,10 @@ namespace UNIArt.Editor
             _rectangle.position = newPosition;
         }
 
+        static bool lastShowGizmos = true;
+        static bool lastShowGrid = true;
+        static Tool lastTool = Tool.Move;
+
         public static void TakeScreenshot(Rect captureRect, string savedPath, Action onSaved = null)
         {
             EditorApplication.delayCall += () =>
@@ -280,6 +315,8 @@ namespace UNIArt.Editor
 
                 System.IO.File.WriteAllBytes(savedPath, bytes);
                 AssetDatabase.Refresh();
+
+                restoreSceneViewSettings();
 
                 onSaved?.Invoke();
             };

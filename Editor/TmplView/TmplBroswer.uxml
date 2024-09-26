@@ -8,17 +8,24 @@
             <uie:ToolbarButton display-tooltip-when-elided="true" name="btn_uiList" tooltip="UI 页面列表 ( Alt+2 )" style="background-image: url(&apos;project://database/Packages/com.parful.uniart/Assets/Icon/liebiao.png?fileID=2800000&amp;guid=70f9c40219880df4a9ad3def9d2bcd32&amp;type=3#liebiao&apos;); width: 21px; height: 21px; border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0;" />
             <uie:ToolbarButton display-tooltip-when-elided="true" name="btn_location" tooltip="定位当前编辑的预制体 ( Alt+3 )" style="background-image: url(&apos;project://database/Packages/com.parful.uniart/Assets/Icon/%E9%A1%B9%E7%9B%AE%E5%AE%9A%E4%BD%8D.png?fileID=2800000&amp;guid=c9a97a44c36e57a41abdf36e2df4e368&amp;type=3#项目定位&apos;); width: 21px; height: 21px; border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0; margin-right: 10px;" />
         </uie:Toolbar>
-        <ui:VisualElement name="VisualElement" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); align-items: stretch; flex-direction: row; padding-left: 8px; padding-right: 8px; padding-top: 8px; padding-bottom: 8px; flex-basis: auto; flex-shrink: 1; justify-content: flex-start;">
+        <ui:VisualElement name="VisualElement" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); align-items: stretch; flex-direction: row; padding-left: 8px; padding-right: 8px; padding-top: 0; padding-bottom: 8px; flex-basis: auto; flex-shrink: 1; justify-content: flex-start;">
             <ui:VisualElement name="left_tab" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); width: 170px; justify-content: flex-start; max-width: 170px; min-width: 170px;">
                 <ui:ScrollView name="template-list" style="flex-grow: 1; width: auto; flex-shrink: 1; justify-content: center; align-items: auto;" />
             </ui:VisualElement>
             <ui:VisualElement name="right_content" style="flex-grow: 1; background-color: rgb(51, 51, 51); display: flex;">
-                <ui:VisualElement name="template-content" style="flex-grow: 1; align-items: flex-start; justify-content: flex-start; display: flex; visibility: visible; flex-direction: column; flex-shrink: 1; align-self: auto;">
-                    <ui:VisualElement name="filter-tags" style="flex-direction: row; flex-wrap: wrap; padding-left: 16px; padding-right: 16px; padding-top: 8px; margin-bottom: 8px; flex-grow: 1; flex-shrink: 0; width: 100%; border-bottom-width: 1px; border-bottom-color: rgba(255, 255, 255, 0.05); padding-bottom: 8px;" />
-                    <ui:ScrollView name="asset-scrollView" style="width: auto; flex-grow: 1; justify-content: flex-start; align-items: stretch; margin-left: 0; margin-right: 16px; margin-top: 0; margin-bottom: 0; padding-left: 0; padding-right: 0; padding-top: 0; padding-bottom: 0; flex-wrap: wrap; flex-direction: column;">
-                        <ui:VisualElement style="flex-grow: 1; background-color: rgba(255, 11, 11, 0); justify-content: center; align-items: center; align-self: center; -unity-background-image-tint-color: rgb(255, 0, 0); width: auto; margin-left: 30px;">
-                            <ui:VisualElement name="asset-list" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-start; align-self: auto;" />
-                        </ui:VisualElement>
+                <ui:VisualElement name="template-content" style="flex-grow: 1; align-items: stretch; justify-content: flex-start; display: flex; visibility: visible; flex-direction: column; flex-shrink: 1; align-self: auto;">
+                    <uie:Toolbar style="height: 26px; align-items: center;">
+                        <uie:ToolbarSpacer style="flex-grow: 1;" />
+                        <uie:ToolbarSearchField focusable="true" name="asset-search" />
+                        <uie:ToolbarMenu tabindex="-1" display-tooltip-when-elided="true" name="type-filter-menu" tooltip="按类型筛选资源" class="filter-menu-all" style="border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0; background-color: rgba(60, 60, 60, 0);" />
+                        <uie:ToolbarButton display-tooltip-when-elided="true" name="btn-filter-dir" class="filter-dir-off" />
+                        <uie:ToolbarSpacer />
+                    </uie:Toolbar>
+                    <ui:ScrollView name="tags-scrollView" style="max-height: 30%; flex-shrink: 0; border-bottom-width: 1px; border-bottom-color: rgba(255, 255, 255, 0.1);">
+                        <ui:VisualElement name="filter-tags" style="flex-direction: row; flex-wrap: wrap; flex-grow: 1; flex-shrink: 0; width: 100%; padding-left: 16px; margin-top: 8px; margin-bottom: 8px;" />
+                    </ui:ScrollView>
+                    <ui:ScrollView name="asset-scrollView" style="flex-grow: 1; justify-content: flex-start; align-items: stretch; flex-wrap: wrap; flex-direction: column; margin-top: 8px;">
+                        <ui:VisualElement name="asset-list" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-start; align-self: auto; padding-left: 20px;" />
                     </ui:ScrollView>
                     <uie:Toolbar style="flex-grow: 1; width: 100%; align-items: center; justify-content: flex-start; height: 25px; max-height: 25px; min-height: 25px; flex-shrink: 1; flex-direction: row;">
                         <uie:ToolbarButton display-tooltip-when-elided="true" name="btn_update" tooltip="更新当前模板资源" style="background-image: url(&apos;project://database/Packages/com.parful.uniart/Assets/Icon/%E5%88%B7%E6%96%B0.png?fileID=2800000&amp;guid=e4a502da355e52144ad8b956092f625c&amp;type=3#刷新&apos;); height: 18px; width: 18px;" />
@@ -32,6 +39,6 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="img_preview" style="flex-grow: 1; position: absolute; width: 276px; height: 169px; display: none; align-self: auto; right: 195px; top: -8px; align-items: auto; border-top-left-radius: 6px; border-bottom-left-radius: 6px; border-top-right-radius: 6px; border-bottom-right-radius: 6px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-left-color: rgba(255, 255, 255, 0.13); border-right-color: rgba(255, 255, 255, 0.13); border-top-color: rgba(255, 255, 255, 0.13); border-bottom-color: rgba(255, 255, 255, 0.13);" />
+        <ui:VisualElement name="img_preview" style="border-left-color: rgba(255, 255, 255, 0.13); border-right-color: rgba(255, 255, 255, 0.13); border-top-color: rgba(255, 255, 255, 0.13); border-bottom-color: rgba(255, 255, 255, 0.13); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; position: absolute; background-color: rgb(34, 59, 84);" />
     </ui:VisualElement>
 </ui:UXML>

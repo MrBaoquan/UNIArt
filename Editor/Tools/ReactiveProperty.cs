@@ -1,4 +1,5 @@
 using System;
+using UnityEngine.Events;
 
 namespace UNIArt.Editor
 {
@@ -7,7 +8,7 @@ namespace UNIArt.Editor
         private T _value;
 
         // 事件：当值改变时触发
-        public event Action<T> OnValueChanged;
+        public UnityEvent<T> OnValueChanged = new UnityEvent<T>();
 
         // 构造函数，初始化默认值
         public ReactiveProperty(T initialValue = default)

@@ -14,7 +14,7 @@ namespace UNIArt.Editor
         const string previewFolderName = "Previews";
         private string assetPath;
         private Texture2D defaultPrefabIcon;
-        public GameObject gameObject = null;
+        public UnityEngine.Object assetObject = null;
         public Texture2D previewTex = null;
         public string TemplateID = string.Empty; // 所属模板ID
         public string TemplateRootFolder => UNIArtSettings.GetExternalTemplateFolder(TemplateID);
@@ -28,7 +28,7 @@ namespace UNIArt.Editor
                 assetPath = value;
                 TemplateID = UNIArtSettings.GetTemplateNameBySubAsset(value);
                 SetAssetName(Path.GetFileNameWithoutExtension(value));
-                gameObject = AssetDatabase.LoadAssetAtPath<GameObject>(value);
+                assetObject = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(value);
                 RefreshPreview();
             }
         }
@@ -48,26 +48,65 @@ namespace UNIArt.Editor
 
         public void RefreshPreview()
         {
-            var _previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(PreviewPath);
-            if (_previewTex != null)
+            defaultPrefabIcon = EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;
+
+            if (assetObject is Texture2D)
             {
-                previewTex = _previewTex;
+                previewTex = assetObject as Texture2D;
             }
+
+            if (previewTex == null && UNIArtSettings.IsTemplateAsset(assetPath))
+            {
+                previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(PreviewPath);
+            }
+            else if (UNIArtSettings.IsProjectUIPageAsset(assetPath) && assetObject is GameObject)
+            {
+                defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                    "Packages/com.parful.uniart/Assets/Icon/UIPage.png"
+                );
+            }
+            else if (UNIArtSettings.IsProjectUIComponentAsset(assetPath))
+            {
+                defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                    "Packages/com.parful.uniart/Assets/Icon/组件.png"
+                );
+            }
+
             this.Q<VisualElement>("preview").style.backgroundImage =
-                _previewTex ?? defaultPrefabIcon;
+                previewTex ?? defaultPrefabIcon;
+
+            refreshAssetIcon();
+        }
+
+        private void refreshAssetIcon()
+        {
+            var _assetType = this.Q<VisualElement>("asset-type");
+            if (assetObject is Texture2D)
+            {
+                _assetType.style.backgroundImage =
+                    EditorGUIUtility.IconContent("Image Icon").image as Texture2D;
+                return;
+            }
+
+            _assetType.style.backgroundImage =
+                EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;
         }
 
         public string PreviewPath => UNIArtSettings.GetPreviewPathByAsset(AssetPath); // _getPreviewPath();
 
         public AssetItem()
         {
-            defaultPrefabIcon = EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;
-
             var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
                 Utils.PackageAssetPath("Editor/TmplView/AssetItem/AssetItem.uxml")
             );
 
             visualTree.CloneTree(this);
+            Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfGameObject = (action) =>
+            {
+                return assetObject is GameObject
+                    ? DropdownMenuAction.Status.Normal
+                    : DropdownMenuAction.Status.Disabled;
+            };
 
             this.AddManipulator(
                 new ContextualMenuManipulator(
@@ -79,7 +118,7 @@ namespace UNIArt.Editor
                             {
                                 WorkflowUtility.CopyPrefabToUIPage(AssetPath);
                             },
-                            DropdownMenuAction.AlwaysEnabled
+                            activeIfGameObject
                         );
                         evt.menu.AppendAction(
                             "复制到项目 [UI组件]",
@@ -87,7 +126,7 @@ namespace UNIArt.Editor
                             {
                                 WorkflowUtility.CopyPrefabToUIComponent(AssetPath);
                             },
-                            DropdownMenuAction.AlwaysEnabled
+                            activeIfGameObject
                         );
                         evt.menu.AppendSeparator();
                         evt.menu.AppendAction(
@@ -102,7 +141,7 @@ namespace UNIArt.Editor
                             "选取缩略图",
                             (x) =>
                             {
-                                AssetDatabase.OpenAsset(gameObject);
+                                AssetDatabase.OpenAsset(assetObject);
                                 SceneViewCapture.OnCapture(_rect =>
                                 {
                                     var _savedPath = PreviewPath;
@@ -123,7 +162,7 @@ namespace UNIArt.Editor
                                 });
                                 SceneViewCapture.ShowCapture();
                             },
-                            DropdownMenuAction.AlwaysEnabled
+                            activeIfGameObject
                         );
                     }
                 )
@@ -133,9 +172,18 @@ namespace UNIArt.Editor
             PrepareStartDrag();
             handleDoubleClick(() =>
             {
-                Type projectBrowserType = Type.GetType("UnityEditor.ProjectBrowser, UnityEditor");
-                EditorWindow.GetWindow(projectBrowserType).Focus();
-                EditorGUIUtility.PingObject(gameObject);
+                if (UNIArtSettings.IsTemplateAsset(AssetPath) || assetObject is not GameObject)
+                {
+                    Type projectBrowserType = Type.GetType(
+                        "UnityEditor.ProjectBrowser, UnityEditor"
+                    );
+                    EditorWindow.GetWindow(projectBrowserType).Focus();
+                    EditorGUIUtility.PingObject(assetObject);
+                }
+                else
+                {
+                    AssetDatabase.OpenAsset(assetObject.GetInstanceID());
+                }
             });
         }
 
@@ -193,6 +241,8 @@ namespace UNIArt.Editor
 
             this.RegisterCallback<MouseDownEvent>(evt =>
             {
+                if (hoverCoroutine != null)
+                    EditorCoroutineUtility.StopCoroutine(hoverCoroutine);
                 OnHidePreview.Invoke(this);
             });
 
@@ -208,30 +258,6 @@ namespace UNIArt.Editor
             OnShowPreview.Invoke(previewTex, lastMousePosition);
         }
 
-        private float lastClickTime = 0f;
-        private const float doubleClickThreshold = 0.3f; // 双击的时间间隔阈值（秒）
-
-        private void OnMouseDown(MouseDownEvent evt)
-        {
-            // 如果鼠标移出，停止协程并关闭预览窗口
-            if (hoverCoroutine != null)
-            {
-                EditorCoroutineUtility.StopCoroutine(hoverCoroutine);
-                EditorWindow.GetWindow<TmplBrowser>().ClearAssetPreviewTooltip();
-            }
-            if (evt.button == 0) // 左键点击
-            {
-                float timeSinceLastClick = Time.realtimeSinceStartup - lastClickTime;
-
-                if (timeSinceLastClick < doubleClickThreshold) { }
-                else { }
-
-                lastClickTime = Time.realtimeSinceStartup;
-
-                evt.StopPropagation();
-            }
-        }
-
         private void PrepareStartDrag()
         {
             bool isMouseDown = false;
@@ -241,12 +267,15 @@ namespace UNIArt.Editor
                 if (evt.button != 0)
                     return;
                 isMouseDown = true;
+
                 mouseDownPosition = evt.mousePosition;
+                evt.StopPropagation();
             });
 
             this.RegisterCallback<MouseUpEvent>(evt =>
             {
                 isMouseDown = false;
+                evt.StopPropagation();
             });
 
             this.RegisterCallback<MouseMoveEvent>(evt =>
@@ -254,17 +283,33 @@ namespace UNIArt.Editor
                 if (evt.button != 0 || !isMouseDown)
                     return;
                 var _delta = (evt.mousePosition - mouseDownPosition).magnitude;
-                if (_delta < 5f)
+
+                var dragable =
+                    Event.current.type == EventType.MouseDown
+                    || Event.current.type == EventType.MouseDrag;
+
+                if (_delta < 5f || !dragable)
                     return;
                 isMouseDown = false;
-                var _target = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+
+                var _dragTarget = assetObject;
+                if (assetObject is Texture2D)
+                {
+                    _dragTarget = AssetDatabase.LoadAssetAtPath<GameObject>(
+                        "Packages/com.parful.uniart/Assets/Prefabs/图片.prefab"
+                    );
+                    _dragTarget.name = Path.GetFileNameWithoutExtension(assetPath);
+                }
+
                 DragAndDrop.PrepareStartDrag();
-                DragAndDrop.objectReferences = new UnityEngine.Object[] { _target };
+                DragAndDrop.objectReferences = new UnityEngine.Object[] { _dragTarget };
                 DragAndDrop.paths = new string[] { assetPath };
 
                 DragAndDrop.visualMode = DragAndDropVisualMode.Link;
                 DragAndDrop.StartDrag("Drag Asset");
                 DragAndDrop.SetGenericData("AssetItem", this);
+
+                evt.StopPropagation();
             });
         }
 

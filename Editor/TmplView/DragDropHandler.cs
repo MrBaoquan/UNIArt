@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEngine.UI;
 
 namespace UNIArt.Editor
 {
@@ -86,6 +87,23 @@ namespace UNIArt.Editor
                             InteractionMode.AutomatedAction
                         );
                     }
+                }
+
+                AssetItem dragAsset = DragAndDrop.GetGenericData("AssetItem") as AssetItem;
+                if (dragAsset == null)
+                {
+                    Debug.LogWarning("Dragged item is not a valid asset.");
+                    return;
+                }
+                if (dragAsset.assetObject is Texture2D)
+                {
+                    var _imageComponent = _newObj.GetComponent<Image>();
+
+                    _imageComponent.color = Color.white;
+                    _imageComponent.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                        dragAsset.AssetPath
+                    );
+                    _newObj.GetComponent<Image>().SetNativeSize();
                 }
 
                 evt.Use();

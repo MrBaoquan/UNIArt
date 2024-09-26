@@ -132,7 +132,7 @@ namespace UNIArt.Editor
         public static void CreateUIPageCopy()
         {
             var selectedObject =
-                TmplBrowser.selectedAssetItem?.gameObject ?? Selection.activeGameObject;
+                TmplBrowser.selectedAssetItem?.assetObject ?? Selection.activeGameObject;
 
             if (selectedObject == null)
             {
@@ -205,7 +205,7 @@ namespace UNIArt.Editor
         }
 
         [MenuItem("Assets/定位正在编辑的预制体 &3", priority = 51)]
-        public static void LocationPrefab()
+        public static void LocationStagePrefab()
         {
             FocusProjectBrowser();
             var _assetPath = Utils.PrefabStageAssetPath();

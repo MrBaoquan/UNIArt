@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Packages/com.parful.uniart/Editor/TemplateBrowser/TemplateBroswer.uss?fileID=7433441132597879392&amp;guid=4f3d453b97492d24da5f3621ef25cce3&amp;type=3#TemplateBroswer" />
-    <ui:VisualElement name="root" class="group_button" style="margin-top: 4px; margin-bottom: 4px; height: 35px; -unity-text-align: middle-left; align-items: center; justify-content: center; margin-left: 4px; margin-right: 4px; flex-shrink: 0; padding-left: 16px; padding-right: 16px; border-top-left-radius: 18px; border-bottom-left-radius: 18px; border-top-right-radius: 18px; border-bottom-right-radius: 18px;">
+    <Style src="project://database/Packages/com.parful.uniart/Editor/TmplView/TmplBroswer.uss?fileID=7433441132597879392&amp;guid=4f3d453b97492d24da5f3621ef25cce3&amp;type=3#TmplBroswer" />
+    <ui:VisualElement name="root" class="filter-button">
         <ui:Label tabindex="-1" text="安徽省科技馆" display-tooltip-when-elided="true" name="title" />
     </ui:VisualElement>
 </ui:UXML>

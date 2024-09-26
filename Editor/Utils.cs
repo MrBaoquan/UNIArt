@@ -393,6 +393,7 @@ namespace UNIArt.Editor
                     var _newPath = $"{dropUponPath}/{Path.GetFileName(_oldPath)}";
 
                     var _depFolder = _folders.Where(_ => assetPath.StartsWith(_)).Min();
+                    // Debug.LogWarning(_depFolder);
                     if (!string.IsNullOrEmpty(_depFolder))
                     {
                         _depFolder = Path.GetDirectoryName(_depFolder).ToForwardSlash() + "/";

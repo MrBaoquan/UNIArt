@@ -1,10 +1,14 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
+using Unity.EditorCoroutines.Editor;
 
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -12,7 +16,9 @@ namespace UNIArt.Editor
 {
     public class TmplBrowser : EditorWindow
     {
-        const string BuiltInTemplateID = "Standard";
+        const string EditorSelectTemplateIDKey = "LastSelectedTemplateID";
+
+        // const string BuiltInTemplateID = "Standard";
 
         [MenuItem("Window/UNIArt 工作台 &1", priority = 1399)] //1499
         public static void ShowUNIArtWindow()
@@ -31,9 +37,13 @@ namespace UNIArt.Editor
             wnd.RefreshTemplateFilters();
         }
 
-        public int selectedTemplateID = 0;
+        public int SelectedTemplateID
+        {
+            get => SessionState.GetInt(EditorSelectTemplateIDKey, 1);
+            set => SessionState.SetInt(EditorSelectTemplateIDKey, value);
+        }
         public TmplButton selectedTemplateButton =>
-            selectedTemplateID < templateButtons.Count ? templateButtons[selectedTemplateID] : null;
+            SelectedTemplateID < templateButtons.Count ? templateButtons[SelectedTemplateID] : null;
 
         public int selectedFilterID = 0;
         public FilterButton selectedFilterButton =>
@@ -44,7 +54,7 @@ namespace UNIArt.Editor
             buildUI();
             registerUIEvents();
             Refresh();
-            selectTemplate(0);
+            selectTemplate(SelectedTemplateID);
         }
 
         private void buildUI()
@@ -57,14 +67,21 @@ namespace UNIArt.Editor
             VisualElement labelFromUXML = m_VisualTreeAsset.Instantiate();
             root.Add(labelFromUXML);
 
-            var _builtinTemplateButton = new TmplButton();
-            _builtinTemplateButton.TemplateID = BuiltInTemplateID;
+            var _templateListRoot = labelFromUXML.Q<VisualElement>("template-list");
 
-            _builtinTemplateButton.Q<Label>("title").text = "公用模板";
+            var _localTemplateButton = new TmplButton();
+            _localTemplateButton.TemplateID = TmplButton.LocalTemplateTitle;
+            _localTemplateButton.style.flexGrow = 0;
+            _localTemplateButton.style.flexShrink = 0;
+            _templateListRoot.parent.Insert(0, _localTemplateButton);
+            templateButtons.Add(_localTemplateButton);
+
+            var _builtinTemplateButton = new TmplButton();
+            _builtinTemplateButton.TemplateID = TmplButton.BuiltInTemplateID;
             _builtinTemplateButton.style.flexGrow = 0;
             _builtinTemplateButton.style.flexShrink = 0;
-            var _templateListRoot = labelFromUXML.Q<VisualElement>("template-list");
-            _templateListRoot.parent.Insert(0, _builtinTemplateButton);
+
+            _templateListRoot.parent.Insert(1, _builtinTemplateButton);
             templateButtons.Add(_builtinTemplateButton);
 
             if (!Directory.Exists(UNIArtSettings.Project.TemplateLocalFolder))
@@ -81,7 +98,7 @@ namespace UNIArt.Editor
                 Debug.Log($"尝试安装公用模板...");
                 SVNIntegration.AddExternal(
                     UNIArtSettings.Project.TemplateLocalFolder,
-                    UNIArtSettings.GetExternalTemplateFolderUrl(BuiltInTemplateID)
+                    UNIArtSettings.GetExternalTemplateFolderUrl(TmplButton.BuiltInTemplateID)
                 );
                 SVNIntegration.Update(UNIArtSettings.Project.TemplateLocalFolder);
                 _builtinTemplateButton.Refresh();
@@ -94,7 +111,121 @@ namespace UNIArt.Editor
                     Debug.LogWarning($"公用模板安装失败.");
                 }
             }
+            previewTex = rootVisualElement.Q<VisualElement>("img_preview");
+
+            ToolbarSearchField searchField = rootVisualElement.Q<ToolbarSearchField>(
+                "asset-search"
+            );
+
+            EditorCoroutine searchCoroutine = null;
+            searchField.RegisterValueChangedCallback(evt =>
+            {
+                // selectedTemplateButton.SearchFilter.Value = evt.newValue;
+                if (searchCoroutine != null)
+                {
+                    EditorCoroutineUtility.StopCoroutine(searchCoroutine);
+                }
+                searchCoroutine = EditorCoroutineUtility.StartCoroutine(
+                    delaySearchFilter(
+                        evt.newValue,
+                        () =>
+                        {
+                            searchCoroutine = null;
+                        }
+                    ),
+                    this
+                );
+            });
+
+            var toolbarMenu = rootVisualElement.Q<ToolbarMenu>("type-filter-menu");
+
+            // // 添加菜单项
+            toolbarMenu.menu.AppendAction(
+                "全部",
+                action => selectedTemplateButton.FilterMode.Value = AssetFilterMode.All,
+                action =>
+                    selectedTemplateButton.FilterMode.Value == AssetFilterMode.All
+                        ? DropdownMenuAction.Status.Checked
+                        : DropdownMenuAction.Status.Normal
+            );
+
+            toolbarMenu.menu.AppendAction(
+                "预制体",
+                action => selectedTemplateButton.FilterMode.Value = AssetFilterMode.Prefab,
+                action =>
+                    selectedTemplateButton.FilterMode.Value == AssetFilterMode.Prefab
+                        ? DropdownMenuAction.Status.Checked
+                        : DropdownMenuAction.Status.Normal
+            );
+            toolbarMenu.menu.AppendAction(
+                "图片",
+                action => selectedTemplateButton.FilterMode.Value = AssetFilterMode.Texture,
+                action =>
+                    selectedTemplateButton.FilterMode.Value == AssetFilterMode.Texture
+                        ? DropdownMenuAction.Status.Checked
+                        : DropdownMenuAction.Status.Normal
+            );
+
+            var filterDirButton = rootVisualElement.Q<ToolbarButton>("btn-filter-dir");
+            filterDirButton.RegisterCallback<MouseUpEvent>(evt =>
+            {
+                selectedTemplateButton.SearchTopFolderOnly =
+                    !selectedTemplateButton.SearchTopFolderOnly;
+
+                refreshTemplateView();
+            });
         }
+
+        private void refreshFilterDirButtonStyle()
+        {
+            var filterDirButton = rootVisualElement.Q<ToolbarButton>("btn-filter-dir");
+            if (selectedTemplateButton.SearchTopFolderOnly)
+            {
+                filterDirButton.RemoveFromClassList("filter-dir-off");
+                filterDirButton.AddToClassList("filter-dir-on");
+                filterDirButton.tooltip = "查看所有文件夹";
+            }
+            else
+            {
+                filterDirButton.RemoveFromClassList("filter-dir-on");
+                filterDirButton.AddToClassList("filter-dir-off");
+                filterDirButton.tooltip = "仅查看主要文件夹";
+            }
+        }
+
+        private IEnumerator delaySearchFilter(string filter, Action finishCallback = null)
+        {
+            yield return new EditorWaitForSeconds(0.5f);
+            selectedTemplateButton.SearchFilter.Value = filter;
+            finishCallback?.Invoke();
+        }
+
+        private void syncToolbarMenuStatus()
+        {
+            var toolbarMenu = rootVisualElement.Q<ToolbarMenu>("type-filter-menu");
+            toolbarMenu.RemoveFromClassList("filter-menu-all");
+            toolbarMenu.RemoveFromClassList("filter-menu-prefab");
+            toolbarMenu.RemoveFromClassList("filter-menu-texture");
+            if (selectedTemplateButton.FilterMode.Value == AssetFilterMode.All)
+            {
+                toolbarMenu.AddToClassList("filter-menu-all");
+            }
+            else if (selectedTemplateButton.FilterMode.Value == AssetFilterMode.Prefab)
+            {
+                toolbarMenu.AddToClassList("filter-menu-prefab");
+            }
+            else if (selectedTemplateButton.FilterMode.Value == AssetFilterMode.Texture)
+            {
+                toolbarMenu.AddToClassList("filter-menu-texture");
+            }
+
+            ToolbarSearchField searchField = rootVisualElement.Q<ToolbarSearchField>(
+                "asset-search"
+            );
+            searchField.SetValueWithoutNotify(selectedTemplateButton.SearchFilter.Value);
+        }
+
+        VisualElement previewTex = null;
 
         private void registerUIEvents()
         {
@@ -154,7 +285,7 @@ namespace UNIArt.Editor
                         .ForEach(_ => _.CleanDir());
                     if (SVNIntegration.Update(UNIArtSettings.Project.TemplateLocalFolder))
                     {
-                        var lastTemplateID = selectedTemplateID;
+                        var lastTemplateID = SelectedTemplateID;
                         Refresh();
                         selectTemplate(lastTemplateID);
                         Debug.Log("模板库更新完成.");
@@ -171,7 +302,7 @@ namespace UNIArt.Editor
                             UNIArtSettings.Project.TemplateLocalFolder,
                             selectedTemplateButton.ExternalRepoUrl
                         );
-                        selectTemplate(selectedTemplateID);
+                        selectTemplate(SelectedTemplateID);
                         Debug.Log($"模板资源[{selectedTemplateButton.TemplateID}]更新完成.");
                     }
                     else
@@ -207,7 +338,7 @@ namespace UNIArt.Editor
             root.Q<Button>("btn_location")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
-                    WorkflowUtility.LocationPrefab();
+                    WorkflowUtility.LocationStagePrefab();
                 });
 
             root.RegisterCallback<MouseDownEvent>(evt =>
@@ -335,17 +466,12 @@ namespace UNIArt.Editor
 
             var _maxSize = windowSize * 0.5f;
 
-            var _previewTex = rootVisualElement.Q<VisualElement>("img_preview");
-
             var imageSize = Utils.CalculateScaledImageSize(
                 _maxSize.x,
                 _maxSize.y,
                 preview.width,
                 preview.height
             );
-
-            _previewTex.style.width = imageSize.width;
-            _previewTex.style.height = imageSize.height;
 
             var dir = CalculatePreviewDir(
                 windowSize,
@@ -354,67 +480,85 @@ namespace UNIArt.Editor
             );
 
             Vector2 padding = Vector2.one * 2;
+
             if (dir == 3) // 左下
             {
-                _previewTex.style.left = StyleKeyword.Auto;
-                _previewTex.style.right = windowSize.x - mousePosition.x + padding.x;
-                _previewTex.style.top = mousePosition.y + padding.y - fixedSize;
-                _previewTex.style.bottom = StyleKeyword.Auto;
+                previewTex.style.transformOrigin = new TransformOrigin(
+                    new Length(100, LengthUnit.Percent),
+                    new Length(0, LengthUnit.Percent)
+                );
+                previewTex.style.left = StyleKeyword.Auto;
+                previewTex.style.right = windowSize.x - mousePosition.x + padding.x;
+                previewTex.style.top = mousePosition.y + padding.y - fixedSize;
+                previewTex.style.bottom = StyleKeyword.Auto;
             }
             else if (dir == 4) // 右下
             {
-                _previewTex.style.left = mousePosition.x + padding.x;
-                _previewTex.style.right = StyleKeyword.Auto;
-                _previewTex.style.top = mousePosition.y + padding.y - fixedSize;
-                _previewTex.style.bottom = StyleKeyword.Auto;
+                previewTex.style.transformOrigin = new TransformOrigin(
+                    new Length(0, LengthUnit.Percent),
+                    new Length(0, LengthUnit.Percent)
+                );
+                previewTex.style.left = mousePosition.x + padding.x;
+                previewTex.style.right = StyleKeyword.Auto;
+                previewTex.style.top = mousePosition.y + padding.y - fixedSize;
+                previewTex.style.bottom = StyleKeyword.Auto;
             }
             else if (dir == 1) // 左上
             {
-                _previewTex.style.left = StyleKeyword.Auto;
-                _previewTex.style.right = windowSize.x - mousePosition.x + padding.x;
-                _previewTex.style.top = StyleKeyword.Auto;
-                _previewTex.style.bottom = windowSize.y - mousePosition.y + padding.y + fixedSize;
+                previewTex.style.transformOrigin = new TransformOrigin(
+                    new Length(100, LengthUnit.Percent),
+                    new Length(100, LengthUnit.Percent)
+                );
+
+                previewTex.style.left = StyleKeyword.Auto;
+                previewTex.style.right = windowSize.x - mousePosition.x + padding.x;
+                previewTex.style.top = StyleKeyword.Auto;
+                previewTex.style.bottom = windowSize.y - mousePosition.y + padding.y + fixedSize;
             }
             else if (dir == 2) // 右上
             {
-                _previewTex.style.left = mousePosition.x + padding.x;
-                _previewTex.style.right = StyleKeyword.Auto;
-                _previewTex.style.top = StyleKeyword.Auto;
-                _previewTex.style.bottom = windowSize.y - mousePosition.y + padding.y + fixedSize;
+                previewTex.style.transformOrigin = new TransformOrigin(
+                    new Length(0, LengthUnit.Percent),
+                    new Length(100, LengthUnit.Percent)
+                );
+                previewTex.style.left = mousePosition.x + padding.x;
+                previewTex.style.right = StyleKeyword.Auto;
+                previewTex.style.top = StyleKeyword.Auto;
+                previewTex.style.bottom = windowSize.y - mousePosition.y + padding.y + fixedSize;
             }
 
-            _previewTex.style.display = DisplayStyle.Flex;
-            _previewTex.style.backgroundImage = preview;
+            previewTex.style.width = imageSize.width;
+            previewTex.style.height = imageSize.height;
+            previewTex.style.backgroundImage = preview;
+            previewTex.ApplyScaleOne();
         }
 
         public void ClearAssetPreviewTooltip()
         {
-            var _previewTex = rootVisualElement.Q<VisualElement>("img_preview");
-            _previewTex.style.display = DisplayStyle.None;
+            previewTex.ApplyScaleZero();
         }
 
         private void selectTemplate(int id)
         {
-            selectedTemplateID = id;
-            var _curTemplate = templateButtons[id];
+            SelectedTemplateID = id;
+            validateTemplateID();
 
             templateButtons.ForEach(_t => _t.Deselect());
-            _curTemplate.Select();
+            selectedTemplateButton.Select();
 
             refreshTemplateView();
         }
 
         private void setTemplateFilter(int filterID)
         {
-            if (!selectedTemplateButton.IsInstalled)
+            if (!selectedTemplateButton.IsInstalled && !selectedTemplateButton.IsLocal)
                 return;
 
             selectedTemplateButton.FilterID = filterID;
             selectedFilterID = filterID;
-            // var _filterButton = selectedFilterButton; // filterButtons[filterID];
 
             filterButtons.ForEach(_f => _f.Deselect());
-            selectedFilterButton.Select();
+            selectedFilterButton?.Select();
             refreshTemplateAssets();
         }
 
@@ -424,7 +568,7 @@ namespace UNIArt.Editor
             var _templateContent = rootVisualElement.Q<VisualElement>("template-content");
             var _templateMgr = rootVisualElement.Q<VisualElement>("template-mgr");
 
-            if (selectedTemplateButton.IsInstalled)
+            if (selectedTemplateButton.IsInstalled || selectedTemplateButton.IsLocal)
             {
                 _templateContent.style.display = DisplayStyle.Flex;
                 _templateMgr.style.display = DisplayStyle.None;
@@ -448,17 +592,16 @@ namespace UNIArt.Editor
         {
             var _svnTemplateList = SVNConextMenu
                 .GetRepoFolders("http://svn.andcrane.com/repo/UNIArtTemplates")
-                .Except(new string[] { BuiltInTemplateID })
+                .Except(new string[] { TmplButton.BuiltInTemplateID })
                 .ToList();
 
             var _templateListRoot = rootVisualElement.Q<VisualElement>("template-list");
             _templateListRoot.Clear();
-            templateButtons.RemoveRange(1, templateButtons.Count - 1);
+            templateButtons.RemoveRange(2, templateButtons.Count - 2);
 
             _svnTemplateList.ForEach(_item =>
             {
                 var _templateButton = new TmplButton();
-                _templateButton.Q<Label>("title").text = _item;
                 _templateButton.TemplateID = _item;
                 _templateListRoot.Add(_templateButton);
                 templateButtons.Add(_templateButton);
@@ -472,12 +615,13 @@ namespace UNIArt.Editor
             );
         }
 
-        private void validateTemplateID()
+        private int validateTemplateID()
         {
-            if (selectedTemplateID < 0 || selectedTemplateID >= templateButtons.Count)
+            if (SelectedTemplateID < 0 || SelectedTemplateID >= templateButtons.Count)
             {
-                selectedTemplateID = 0;
+                SelectedTemplateID = 0;
             }
+            return SelectedTemplateID;
         }
 
         private void validateFilterID()
@@ -492,26 +636,18 @@ namespace UNIArt.Editor
         public void RefreshTemplateFilters()
         {
             validateTemplateID();
-            var _templateRoot =
-                $"{UNIArtSettings.GetExternalTemplateFolder(selectedTemplateButton.TemplateID)}/Prefabs";
-
-            var _templateAssetTypes = Directory.Exists(_templateRoot)
-                ? Directory
-                    .GetDirectories(_templateRoot, "*", SearchOption.TopDirectoryOnly)
-                    .Select(_ => Path.GetFileName(_))
-                    .Where(_ => !_.StartsWith("."))
-                    .ToList()
-                : new List<string>();
+            refreshFilterDirButtonStyle();
 
             var _filterTags = rootVisualElement.Q<VisualElement>("filter-tags");
             _filterTags.Clear();
             filterButtons.Clear();
 
-            _templateAssetTypes.Insert(0, "全部");
-            _templateAssetTypes.ForEach(_dir =>
+            var _templateAssetTags = selectedTemplateButton.FilterTags();
+
+            _templateAssetTags.Insert(0, string.Empty);
+            _templateAssetTags.ForEach(_dir =>
             {
                 var _filterButton = new FilterButton() { FilterID = _dir };
-                _filterButton.Q<Label>("title").text = _dir;
                 _filterTags.Add(_filterButton);
                 filterButtons.Add(_filterButton);
             });
@@ -535,6 +671,20 @@ namespace UNIArt.Editor
                         && UNIArtSettings.Project.InstallStandardDefault
                     )
                 );
+            syncToolbarMenuStatus();
+
+            selectedTemplateButton.FilterMode.OnValueChanged.RemoveAllListeners();
+            selectedTemplateButton.FilterMode.OnValueChanged.AddListener(_ =>
+            {
+                syncToolbarMenuStatus();
+                refreshTemplateAssets();
+            });
+
+            selectedTemplateButton.SearchFilter.OnValueChanged.RemoveAllListeners();
+            selectedTemplateButton.SearchFilter.OnValueChanged.AddListener(_ =>
+            {
+                refreshTemplateAssets();
+            });
         }
 
         List<AssetItem> assetItems = new List<AssetItem>();
@@ -547,41 +697,57 @@ namespace UNIArt.Editor
         private string currentTmplPath()
         {
             var _tmplRoot = selectedTemplateButton.RootFolder;
-            var _filterPath = selectedFilterButton.FilterPath;
-            return $"{_tmplRoot}/Prefabs/{_filterPath}";
+            var _filterPath = selectedFilterButton.FilterID;
+            return $"{_tmplRoot}/Prefabs/{_filterPath}".TrimEnd('/');
         }
 
+        EditorCoroutine _refreshAssetsCoroutine = null;
+
         private void refreshTemplateAssets()
+        {
+            if (_refreshAssetsCoroutine != null)
+            {
+                EditorCoroutineUtility.StopCoroutine(_refreshAssetsCoroutine);
+            }
+            _refreshAssetsCoroutine = EditorCoroutineUtility.StartCoroutine(
+                refreshTemplateAssetsAsync(),
+                this
+            );
+        }
+
+        private IEnumerator refreshTemplateAssetsAsync()
         {
             var _templateID = selectedTemplateButton.TemplateID;
             validateFilterID();
             var _filterID = selectedFilterButton.FilterID;
-            _filterID = _filterID == "全部" ? string.Empty : _filterID;
+
             var buttonContainer = rootVisualElement.Q<VisualElement>("asset-list");
             buttonContainer.Clear();
             assetItems.Clear();
 
-            var _templateRoot =
-                $"{UNIArtSettings.Project.TemplateLocalFolder}/{_templateID}/Prefabs/{_filterID}";
-
-            if (!Directory.Exists(_templateRoot))
-            {
-                Directory.CreateDirectory(_templateRoot);
-                AssetDatabase.Refresh();
-            }
+            string pattern = @$".*{selectedTemplateButton.SearchFilter.Value}.*";
 
             var _assets = AssetDatabase
-                .FindAssets("t:prefab", new string[] { _templateRoot })
+                .FindAssets(
+                    selectedTemplateButton.filterArgs(),
+                    selectedTemplateButton.FilterRootPaths(_filterID)
+                )
                 .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(
+                    _path =>
+                        string.IsNullOrEmpty(selectedTemplateButton.SearchFilter.Value)
+                            ? true
+                            : Regex.IsMatch(_path, pattern, RegexOptions.IgnoreCase)
+                )
                 .ToList();
 
-            _assets.ForEach(_path =>
+            foreach (var _path in _assets)
             {
                 var _obj = AssetDatabase.LoadAssetAtPath<GameObject>(_path);
                 var _assetItem = new AssetItem() { AssetPath = _path };
                 buttonContainer.Add(_assetItem);
                 assetItems.Add(_assetItem);
-
+                yield return new EditorWaitForSeconds(0.002f);
                 _assetItem.RegisterCallback<MouseDownEvent>(evt =>
                 {
                     evt.StopPropagation();
@@ -594,7 +760,7 @@ namespace UNIArt.Editor
                     (_tex, _pos) => ShowAssetPreviewTooltip(_tex, _pos)
                 );
                 _assetItem.OnHidePreview.AddListener(_ => ClearAssetPreviewTooltip());
-            });
+            }
         }
 
         public void Refresh()
