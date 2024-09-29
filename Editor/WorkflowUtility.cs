@@ -132,7 +132,7 @@ namespace UNIArt.Editor
         public static void CreateUIPageCopy()
         {
             var selectedObject =
-                TmplBrowser.selectedAssetItem?.assetObject ?? Selection.activeGameObject;
+                TmplBrowser.selectedAssetItem?.AssetObject ?? Selection.activeGameObject;
 
             if (selectedObject == null)
             {

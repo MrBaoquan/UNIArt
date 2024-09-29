@@ -6,6 +6,8 @@ using Unity.EditorCoroutines.Editor;
 using UnityEngine.Events;
 using System;
 using System.IO;
+using Sirenix.Utilities.Editor;
+using System.Diagnostics;
 
 namespace UNIArt.Editor
 {
@@ -14,7 +16,19 @@ namespace UNIArt.Editor
         const string previewFolderName = "Previews";
         private string assetPath;
         private Texture2D defaultPrefabIcon;
-        public UnityEngine.Object assetObject = null;
+        private UnityEngine.Object assetObject = null;
+        public UnityEngine.Object AssetObject
+        {
+            get
+            {
+                if (IsPSD && HasPSDEnity)
+                {
+                    return AssetDatabase.LoadAssetAtPath<GameObject>(AssetPath);
+                }
+                return assetObject;
+            }
+            set { assetObject = value; }
+        }
         public Texture2D previewTex = null;
         public string TemplateID = string.Empty; // 所属模板ID
         public string TemplateRootFolder => UNIArtSettings.GetExternalTemplateFolder(TemplateID);
@@ -22,13 +36,24 @@ namespace UNIArt.Editor
 
         public string AssetPath
         {
-            get { return assetPath; }
+            get
+            {
+                if (IsPSD && HasPSDEnity)
+                {
+                    return UNIArtSettings.PsdFileToPrefabPath(assetPath);
+                }
+                return assetPath;
+            }
             set
             {
                 assetPath = value;
                 TemplateID = UNIArtSettings.GetTemplateNameBySubAsset(value);
                 SetAssetName(Path.GetFileNameWithoutExtension(value));
                 assetObject = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(value);
+                if (ShouldHidden)
+                {
+                    this.style.display = DisplayStyle.None;
+                }
                 RefreshPreview();
             }
         }
@@ -55,7 +80,13 @@ namespace UNIArt.Editor
                 previewTex = assetObject as Texture2D;
             }
 
-            if (previewTex == null && UNIArtSettings.IsTemplateAsset(assetPath))
+            if (assetPath.EndsWith("#psd.prefab"))
+            {
+                previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                    UNIArtSettings.PrefabPathToPsdFile(assetPath)
+                );
+            }
+            else if (previewTex == null && UNIArtSettings.IsTemplateAsset(assetPath))
             {
                 previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(PreviewPath);
             }
@@ -81,8 +112,24 @@ namespace UNIArt.Editor
         private void refreshAssetIcon()
         {
             var _assetType = this.Q<VisualElement>("asset-type");
+            if (this.Q<VisualElement>("preview").style.backgroundImage == defaultPrefabIcon)
+            {
+                _assetType.style.backgroundImage = null;
+                return;
+            }
             if (assetObject is Texture2D)
             {
+                if (IsPSD)
+                {
+                    _assetType.style.backgroundImage = HasPSDEnity
+                        ? AssetDatabase.LoadAssetAtPath<Texture2D>(
+                            "Packages/com.parful.uniart/Assets/Icon/ps-active.png"
+                        )
+                        : AssetDatabase.LoadAssetAtPath<Texture2D>(
+                            "Packages/com.parful.uniart/Assets/Icon/ps-disabled.png"
+                        );
+                    return;
+                }
                 _assetType.style.backgroundImage =
                     EditorGUIUtility.IconContent("Image Icon").image as Texture2D;
                 return;
@@ -92,7 +139,15 @@ namespace UNIArt.Editor
                 EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;
         }
 
-        public string PreviewPath => UNIArtSettings.GetPreviewPathByAsset(AssetPath); // _getPreviewPath();
+        public string PreviewPath => UNIArtSettings.GetPreviewPathByAsset(AssetPath);
+
+        public bool IsPSD => assetPath.EndsWith(".psd");
+        public bool IsPSDPrefab => assetPath.EndsWith("#psd.prefab");
+
+        public bool HasPSDEnity => IsPSD && UNIArtSettings.PsdEntityExists(assetPath);
+        public bool HasPSDRaw => !IsPSD && UNIArtSettings.PsdRawExists(assetPath);
+
+        public bool ShouldHidden => IsPSDPrefab && HasPSDRaw;
 
         public AssetItem()
         {
@@ -103,7 +158,14 @@ namespace UNIArt.Editor
             visualTree.CloneTree(this);
             Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfGameObject = (action) =>
             {
-                return assetObject is GameObject
+                return (HasPSDEnity || assetObject is GameObject)
+                    ? DropdownMenuAction.Status.Normal
+                    : DropdownMenuAction.Status.Disabled;
+            };
+
+            Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfThumb = (action) =>
+            {
+                return (HasPSDEnity || assetObject is GameObject) && !IsPSD && !IsPSDPrefab
                     ? DropdownMenuAction.Status.Normal
                     : DropdownMenuAction.Status.Disabled;
             };
@@ -129,11 +191,38 @@ namespace UNIArt.Editor
                             activeIfGameObject
                         );
                         evt.menu.AppendSeparator();
+
                         evt.menu.AppendAction(
                             "打开所在文件夹",
                             (x) =>
                             {
                                 EditorUtility.RevealInFinder(assetPath);
+                            }
+                        );
+
+                        evt.menu.AppendAction(
+                            "在资源视图中显示",
+                            (x) =>
+                            {
+                                Utils.FocusProjectBrowser();
+                                EditorGUIUtility.PingObject(assetObject);
+                            }
+                        );
+
+                        evt.menu.AppendSeparator();
+                        evt.menu.AppendAction(
+                            "重新导入",
+                            (x) =>
+                            {
+                                if (IsPSD)
+                                {
+                                    if (HasPSDEnity)
+                                    {
+                                        AssetDatabase.DeleteAsset(AssetPath);
+                                        AssetDatabase.Refresh();
+                                    }
+                                }
+                                AssetDatabase.ImportAsset(assetPath);
                             }
                         );
                         evt.menu.AppendSeparator();
@@ -162,7 +251,7 @@ namespace UNIArt.Editor
                                 });
                                 SceneViewCapture.ShowCapture();
                             },
-                            activeIfGameObject
+                            activeIfThumb
                         );
                     }
                 )
@@ -172,18 +261,26 @@ namespace UNIArt.Editor
             PrepareStartDrag();
             handleDoubleClick(() =>
             {
-                if (UNIArtSettings.IsTemplateAsset(AssetPath) || assetObject is not GameObject)
+                if (IsPSD)
                 {
-                    Type projectBrowserType = Type.GetType(
-                        "UnityEditor.ProjectBrowser, UnityEditor"
+                    Process.Start(
+                        new ProcessStartInfo()
+                        {
+                            FileName = Utils.GetAssetAbsolutePath(assetPath),
+                            UseShellExecute = true // 使用默认应用打开
+                        }
                     );
-                    EditorWindow.GetWindow(projectBrowserType).Focus();
-                    EditorGUIUtility.PingObject(assetObject);
+                    return;
                 }
-                else
+
+                if (!UNIArtSettings.IsTemplateAsset(assetPath) && assetObject is GameObject)
                 {
                     AssetDatabase.OpenAsset(assetObject.GetInstanceID());
+                    return;
                 }
+
+                Utils.FocusProjectBrowser();
+                EditorGUIUtility.PingObject(assetObject);
             });
         }
 
@@ -292,8 +389,9 @@ namespace UNIArt.Editor
                     return;
                 isMouseDown = false;
 
-                var _dragTarget = assetObject;
-                if (assetObject is Texture2D)
+                var _dragTarget = AssetObject;
+
+                if (_dragTarget is Texture2D)
                 {
                     _dragTarget = AssetDatabase.LoadAssetAtPath<GameObject>(
                         "Packages/com.parful.uniart/Assets/Prefabs/图片.prefab"

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Unity.EditorCoroutines.Editor;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -428,6 +429,174 @@ namespace UNIArt.Editor
                     }
                 });
             AssetDatabase.Refresh();
+        }
+
+        // 是否是外部资源
+        public static bool IsExternalPath(string assetPath)
+        {
+            return Path.IsPathRooted(assetPath) && !assetPath.StartsWith(Application.dataPath);
+        }
+
+        public static bool IsProjectAsset(string assetPath)
+        {
+            return assetPath.StartsWith(Application.dataPath);
+        }
+
+        // 主方法：导入外部资产
+        public static void ImportExternalAssets(string[] assetPaths, string targetRoot)
+        {
+            var targetRootFolder = targetRoot;
+            // 检查目标根文件夹是否存在，不存在则创建
+            if (!Directory.Exists(targetRootFolder))
+            {
+                Utils.CreateFolderIfNotExist(targetRootFolder);
+            }
+
+            // 遍历每个外部资源路径
+            foreach (string externalPath in assetPaths)
+            {
+                // 检查路径是否为外部路径
+                if (IsExternalPath(externalPath))
+                {
+                    if (Directory.Exists(externalPath))
+                    {
+                        // 如果路径是文件夹，则复制文件夹及其内容并保留其文件夹名称
+                        string folderName = Path.GetFileName(externalPath); // 获取文件夹名称
+                        string targetFolder = Path.Combine(targetRootFolder, folderName);
+                        CopyFolderRecursively(externalPath, targetFolder);
+                    }
+                    else if (File.Exists(externalPath))
+                    {
+                        // 如果路径是文件，则直接复制文件到目标根文件夹
+                        CopyFile(externalPath, targetRootFolder);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"路径无效: {externalPath}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"文件路径在项目内: {externalPath}");
+                }
+            }
+
+            // 刷新AssetDatabase以更新文件夹结构
+            AssetDatabase.Refresh();
+        }
+
+        // 递归复制文件夹并保留结构
+        private static void CopyFolderRecursively(string sourceFolder, string targetFolder)
+        {
+            // 创建目标文件夹（如果不存在）
+            if (!Directory.Exists(targetFolder))
+            {
+                Directory.CreateDirectory(targetFolder);
+            }
+
+            // 复制文件夹中的所有文件
+            foreach (string filePath in Directory.GetFiles(sourceFolder))
+            {
+                CopyFile(filePath, targetFolder);
+            }
+
+            // 递归处理子文件夹
+            foreach (string subFolderPath in Directory.GetDirectories(sourceFolder))
+            {
+                string subFolderName = Path.GetFileName(subFolderPath);
+                string newTargetFolder = Path.Combine(targetFolder, subFolderName);
+                CopyFolderRecursively(subFolderPath, newTargetFolder);
+            }
+        }
+
+        // 复制文件到目标文件夹
+        private static void CopyFile(string sourceFilePath, string targetFolder)
+        {
+            string fileName = Path.GetFileName(sourceFilePath);
+            string targetFilePath = Path.Combine(targetFolder, fileName);
+
+            try
+            {
+                // 复制文件
+                File.Copy(sourceFilePath, targetFilePath, true);
+
+                // 导入到AssetDatabase
+                //string relativePath = targetFilePath.Replace(Application.dataPath, "Assets");
+                //AssetDatabase.ImportAsset(relativePath);
+                //Debug.Log($"成功导入外部文件: {relativePath}");
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"导入文件时出错: {fileName}, 错误信息: {ex.Message}");
+            }
+        }
+
+        public static string GetAssetAbsolutePath(string path)
+        {
+            return $"{ProjectRoot}/{path}";
+        }
+
+        public static void HookUpdateOnce(Action update)
+        {
+            EditorApplication.CallbackFunction _tempCallback = null;
+            _tempCallback = () =>
+            {
+                EditorApplication.update -= _tempCallback;
+                update();
+            };
+            EditorApplication.update += _tempCallback;
+        }
+
+        public static IDisposable UpdateWhile(
+            Action update,
+            Func<bool> condition,
+            Action onComplete = null,
+            Action onCancel = null
+        )
+        {
+            CancellationTokenSource cts = new CancellationTokenSource();
+            EditorApplication.CallbackFunction _tempCallback = null;
+            _tempCallback = () =>
+            {
+                if (cts.IsCancellationRequested)
+                {
+                    onCancel?.Invoke();
+                    EditorApplication.update -= _tempCallback;
+                    return;
+                }
+
+                if (condition())
+                {
+                    update();
+                }
+                else
+                {
+                    onComplete?.Invoke();
+                    EditorApplication.update -= _tempCallback;
+                }
+            };
+            EditorApplication.update += _tempCallback;
+            return cts;
+        }
+
+        public static string ValidatePath(string path)
+        {
+            // 获取非法的文件名字符
+            char[] invalidChars = Path.GetInvalidFileNameChars();
+            invalidChars = invalidChars.Where(c => c != '/' && c != '\\').ToArray();
+            // 遍历非法字符，并替换为 #
+            foreach (char invalidChar in invalidChars)
+            {
+                path = path.Replace(invalidChar, '#');
+            }
+
+            return path;
+        }
+
+        public static void FocusProjectBrowser()
+        {
+            Type projectBrowserType = Type.GetType("UnityEditor.ProjectBrowser, UnityEditor");
+            EditorWindow.GetWindow(projectBrowserType).Focus();
         }
     }
 }

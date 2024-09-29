@@ -16,6 +16,16 @@ namespace UNIArt.Editor
 {
     public class TmplBrowser : EditorWindow
     {
+        // [MenuItem("Tools/test")]
+        // public static void Test()
+        // {
+        //     Debug.LogWarning(
+        //         AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(
+        //             "Assets/ArtAssets/UI Prefabs/Windows"
+        //         )
+        //     );
+        // }
+
         const string EditorSelectTemplateIDKey = "LastSelectedTemplateID";
 
         // const string BuiltInTemplateID = "Standard";
@@ -23,18 +33,31 @@ namespace UNIArt.Editor
         [MenuItem("Window/UNIArt 工作台 &1", priority = 1399)] //1499
         public static void ShowUNIArtWindow()
         {
-            TmplBrowser wnd = GetWindow<TmplBrowser>();
-            wnd.titleContent = new GUIContent(
-                "UNIArt 工作台",
-                EditorGUIUtility.IconContent("Folder Icon").image
-            );
-            wnd.minSize = new Vector2(640, 360);
+            Instance.minSize = new Vector2(640, 360);
         }
+
+        public static TmplBrowser Instance
+        {
+            get
+            {
+                TmplBrowser wnd = GetWindow<TmplBrowser>();
+                wnd.titleContent = new GUIContent(
+                    "UNIArt 工作台",
+                    EditorGUIUtility.IconContent("Folder Icon").image
+                );
+                return wnd;
+            }
+        }
+
+        public static bool IsWindowOpen => HasOpenInstances<TmplBrowser>();
 
         public static void RefreshContentView()
         {
-            TmplBrowser wnd = GetWindow<TmplBrowser>(false, "UNIArt 共创平台", false);
-            wnd.RefreshTemplateFilters();
+            if (!IsWindowOpen)
+            {
+                return;
+            }
+            Instance.RefreshTemplateFilters();
         }
 
         public int SelectedTemplateID
@@ -393,19 +416,100 @@ namespace UNIArt.Editor
 
         private void OnDragPerform(DragPerformEvent evt)
         {
+            // 导入外部资源
+            if (DragAndDrop.paths.Any(_ => Utils.IsExternalPath(_)))
+            {
+                var _groupPaths = DragAndDrop.paths
+                    .Where(_ => Utils.IsExternalPath(_))
+                    .Select(_path => (path: _path, targetRoot: TargetRootFolder(_path)))
+                    .GroupBy(_ => _.targetRoot);
+                _groupPaths
+                    .ToList()
+                    .ForEach(_ =>
+                    {
+                        var _targetRoot = _.Key;
+                        var _paths = _.Select(_ => _.path).ToArray();
+                        Utils.ImportExternalAssets(_paths, _targetRoot);
+                    });
+
+                RefreshTemplateFilters();
+                return;
+            }
+
             var _currentTmplPath = CurrentTmplPath;
             if (string.IsNullOrEmpty(_currentTmplPath))
             {
                 return;
             }
 
-            Utils.MoveAssetsWithDependencies(
-                DragAndDrop.paths,
-                _currentTmplPath.ToForwardSlash().TrimEnd('/'),
-                true
-            );
             DragAndDrop.AcceptDrag();
-            RefreshTemplateFilters();
+
+            // 移动内部资源
+            if (DragAndDrop.paths.Any(_ => Utils.IsProjectAsset(_)))
+            {
+                var _groupPaths = DragAndDrop.paths
+                    .Where(_ => Utils.IsProjectAsset(_))
+                    .Select(_path => (path: _path, targetRoot: TargetRootFolder(_path)))
+                    .GroupBy(_ => _.targetRoot);
+                _groupPaths
+                    .ToList()
+                    .ForEach(_ =>
+                    {
+                        var _targetRoot = _.Key;
+                        var _paths = _.Select(_ => _.path).ToArray();
+                        Utils.MoveAssetsWithDependencies(DragAndDrop.paths, _targetRoot, true);
+                    });
+
+                RefreshTemplateFilters();
+            }
+        }
+
+        public string TargetRootFolder(string assetPath)
+        {
+            var _type = GetAssetType(assetPath);
+            var _rootDir = string.Empty;
+            if (_type == typeof(GameObject))
+            {
+                _rootDir = selectedTemplateButton.PrefabRootDir;
+            }
+            else
+            {
+                _rootDir = selectedTemplateButton.TextureRootDir;
+            }
+            return $"{_rootDir}/{selectedFilterButton.FilterID}".TrimEnd('/');
+        }
+
+        public Type GetAssetType(string assetPath)
+        {
+            if (Utils.IsExternalPath(assetPath))
+            {
+                if (
+                    new List<string>
+                    {
+                        ".jpg",
+                        ".png",
+                        ".jpeg",
+                        ".gif",
+                        ".psd",
+                        ".tga",
+                        ".exr",
+                        ".hdr",
+                        ".pic"
+                    }.Contains(Path.GetExtension(assetPath).ToLower())
+                )
+                {
+                    return typeof(Texture2D);
+                }
+                else if (Directory.Exists(assetPath)) // 直接拖文件夹的 默认为是图片资源
+                {
+                    return typeof(Texture2D);
+                }
+                else
+                {
+                    return typeof(GameObject);
+                }
+            }
+            return AssetDatabase.GetMainAssetTypeAtPath(assetPath);
         }
 
         public static int CalculatePreviewDir(

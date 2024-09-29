@@ -95,7 +95,7 @@ namespace UNIArt.Editor
                     Debug.LogWarning("Dragged item is not a valid asset.");
                     return;
                 }
-                if (dragAsset.assetObject is Texture2D)
+                if (dragAsset.AssetObject is Texture2D)
                 {
                     var _imageComponent = _newObj.GetComponent<Image>();
 

@@ -164,6 +164,27 @@ namespace UNIArt.Editor
             return GetTemplateNameBySubAsset(_path1) == GetTemplateNameBySubAsset(_path2);
         }
 
+        public static string PsdFileToPrefabPath(string psdPath)
+        {
+            return psdPath.Replace(".psd", "#psd.prefab");
+        }
+
+        public static string PrefabPathToPsdFile(string prefabPath)
+        {
+            return prefabPath.Replace("#psd.prefab", ".psd");
+        }
+
+        public static bool PsdEntityExists(string psdPath)
+        {
+            return AssetDatabase.LoadAssetAtPath<GameObject>(PsdFileToPrefabPath(psdPath)) != null;
+        }
+
+        public static bool PsdRawExists(string entityPath)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(PrefabPathToPsdFile(entityPath))
+                != null;
+        }
+
         private static UNIArtSettings instance;
         public static UNIArtSettings Project
         {

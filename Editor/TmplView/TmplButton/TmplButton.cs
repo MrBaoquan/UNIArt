@@ -53,6 +53,9 @@ namespace UNIArt.Editor
             return new List<string> { "Prefabs", "Textures" };
         }
 
+        public string PrefabRootDir => $"{RootFolder}/{filterDirs()[0]}";
+        public string TextureRootDir => $"{RootFolder}/{filterDirs()[1]}";
+
         public string filterArgs()
         {
             List<string> assetTypes = new List<string> { "Prefab", "Texture" };
