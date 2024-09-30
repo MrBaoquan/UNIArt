@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Sirenix.Utilities;
 using Unity.EditorCoroutines.Editor;
 
 using UnityEditor;
@@ -62,7 +63,7 @@ namespace UNIArt.Editor
 
         public int SelectedTemplateID
         {
-            get => SessionState.GetInt(EditorSelectTemplateIDKey, 1);
+            get => SessionState.GetInt(EditorSelectTemplateIDKey, 0);
             set => SessionState.SetInt(EditorSelectTemplateIDKey, value);
         }
         public TmplButton selectedTemplateButton =>
@@ -382,11 +383,21 @@ namespace UNIArt.Editor
             contentView.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
             contentView.RegisterCallback<DragPerformEvent>(OnDragPerform);
 
+            // ctrl+r 刷新视图
             root.RegisterCallback<KeyDownEvent>(evt =>
             {
                 if (evt.keyCode == KeyCode.R && evt.ctrlKey)
                 {
                     RefreshTemplateFilters();
+                }
+            });
+
+            // ctrl+a 全选资源
+            root.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                if (evt.keyCode == KeyCode.A && evt.ctrlKey)
+                {
+                    assetItems.ForEach(_ => _.Select());
                 }
             });
         }
@@ -397,15 +408,23 @@ namespace UNIArt.Editor
             {
                 return;
             }
+
             if (DragAndDrop.GetGenericData("AssetItem") != null)
             {
                 return;
             }
-            var _currentTmplPath = CurrentTmplPath;
+            if (DragAndDrop.paths.Any(_ => Utils.IsExternalPath(_)))
+            {
+                DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                return;
+            }
+
+            // 内部资源移动，限制源目录和目标目录为同一个文件夹的情况
+            var _rootPaths = selectedTemplateButton.FilterRootPaths(selectedFilterButton.FilterID);
             if (
-                DragAndDrop.paths.Any(
-                    _ => Path.GetDirectoryName(_).ToForwardSlash() == _currentTmplPath.TrimEnd('/')
-                )
+                DragAndDrop.paths
+                    .Select(_path => Path.GetDirectoryName(_path).ToForwardSlash())
+                    .Any(_dir => _rootPaths.Contains(_dir))
             )
             {
                 return;
@@ -419,11 +438,11 @@ namespace UNIArt.Editor
             // 导入外部资源
             if (DragAndDrop.paths.Any(_ => Utils.IsExternalPath(_)))
             {
-                var _groupPaths = DragAndDrop.paths
+                var _externalGroupPaths = DragAndDrop.paths
                     .Where(_ => Utils.IsExternalPath(_))
                     .Select(_path => (path: _path, targetRoot: TargetRootFolder(_path)))
                     .GroupBy(_ => _.targetRoot);
-                _groupPaths
+                _externalGroupPaths
                     .ToList()
                     .ForEach(_ =>
                     {
@@ -436,32 +455,23 @@ namespace UNIArt.Editor
                 return;
             }
 
-            var _currentTmplPath = CurrentTmplPath;
-            if (string.IsNullOrEmpty(_currentTmplPath))
-            {
-                return;
-            }
+            // 移动内部资源
+            var _internalGroupPaths = DragAndDrop.paths
+                .Where(_ => !Utils.IsExternalPath(_))
+                .Select(_path => (path: _path, targetRoot: TargetRootFolder(_path)))
+                .GroupBy(_ => _.targetRoot);
+            _internalGroupPaths
+                .ToList()
+                .ForEach(_ =>
+                {
+                    var _targetRoot = _.Key;
+                    var _paths = _.Select(_ => _.path).ToArray();
+                    Utils.MoveAssetsWithDependencies(DragAndDrop.paths, _targetRoot, true);
+                });
+
+            RefreshTemplateFilters();
 
             DragAndDrop.AcceptDrag();
-
-            // 移动内部资源
-            if (DragAndDrop.paths.Any(_ => Utils.IsProjectAsset(_)))
-            {
-                var _groupPaths = DragAndDrop.paths
-                    .Where(_ => Utils.IsProjectAsset(_))
-                    .Select(_path => (path: _path, targetRoot: TargetRootFolder(_path)))
-                    .GroupBy(_ => _.targetRoot);
-                _groupPaths
-                    .ToList()
-                    .ForEach(_ =>
-                    {
-                        var _targetRoot = _.Key;
-                        var _paths = _.Select(_ => _.path).ToArray();
-                        Utils.MoveAssetsWithDependencies(DragAndDrop.paths, _targetRoot, true);
-                    });
-
-                RefreshTemplateFilters();
-            }
         }
 
         public string TargetRootFolder(string assetPath)
@@ -773,12 +783,7 @@ namespace UNIArt.Editor
 
             rootVisualElement
                 .Q<Button>("btn_uninstall")
-                .SetEnabled(
-                    !(
-                        selectedTemplateButton.IsBuiltIn
-                        && UNIArtSettings.Project.InstallStandardDefault
-                    )
-                );
+                .SetEnabled(selectedTemplateButton.Removeable);
             syncToolbarMenuStatus();
 
             selectedTemplateButton.FilterMode.OnValueChanged.RemoveAllListeners();
@@ -799,8 +804,6 @@ namespace UNIArt.Editor
 
         // 当前选中的资源项
         public static AssetItem selectedAssetItem = null;
-
-        public string CurrentTmplPath => currentTmplPath();
 
         private string currentTmplPath()
         {
@@ -856,12 +859,51 @@ namespace UNIArt.Editor
                 buttonContainer.Add(_assetItem);
                 assetItems.Add(_assetItem);
                 yield return new EditorWaitForSeconds(0.002f);
+
+                // 资源点击事件
                 _assetItem.RegisterCallback<MouseDownEvent>(evt =>
                 {
                     evt.StopPropagation();
-                    assetItems.ForEach(_ => _.Deselect());
-                    _assetItem.Select();
+
+                    if (!evt.ctrlKey)
+                        _assetItem.Select();
+
                     selectedAssetItem = _assetItem;
+                });
+
+                _assetItem.RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    evt.StopPropagation();
+                    if (!evt.ctrlKey)
+                    {
+                        assetItems.ForEach(_ => _.Deselect());
+                        _assetItem.Select();
+                    }
+                    else
+                    {
+                        _assetItem.Toggle();
+                    }
+
+                    selectedAssetItem = _assetItem;
+                });
+
+                // 资源拖拽事件
+                _assetItem.OnStartDrag.AddListener(_ =>
+                {
+                    _.Select();
+                    var _selectedAssets = selectedAssets();
+
+                    DragAndDrop.PrepareStartDrag();
+                    DragAndDrop.objectReferences = _selectedAssets
+                        .Select(_asset => _asset.AssetObject)
+                        .ToArray();
+                    DragAndDrop.paths = _selectedAssets
+                        .Select(_asset => _asset.rawAssetPath)
+                        .ToArray();
+
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Link;
+                    DragAndDrop.StartDrag("Drag Asset");
+                    DragAndDrop.SetGenericData("AssetItem", _);
                 });
 
                 _assetItem.OnShowPreview.AddListener(
@@ -869,6 +911,11 @@ namespace UNIArt.Editor
                 );
                 _assetItem.OnHidePreview.AddListener(_ => ClearAssetPreviewTooltip());
             }
+        }
+
+        public List<AssetItem> selectedAssets()
+        {
+            return assetItems.Where(_ => _.IsSelected).ToList();
         }
 
         public void Refresh()
@@ -882,8 +929,8 @@ namespace UNIArt.Editor
 
         private void OnLostFocus()
         {
-            selectedAssetItem?.Deselect();
-            selectedAssetItem = null;
+            // selectedAssetItem?.Deselect();
+            // selectedAssetItem = null;
         }
     }
 }

@@ -56,6 +56,22 @@ namespace UNIArt.Editor
         public string PrefabRootDir => $"{RootFolder}/{filterDirs()[0]}";
         public string TextureRootDir => $"{RootFolder}/{filterDirs()[1]}";
 
+        public bool Removeable
+        {
+            get
+            {
+                if (IsLocal)
+                {
+                    return false;
+                }
+                if (IsBuiltIn && UNIArtSettings.Project.InstallStandardDefault)
+                {
+                    return false;
+                }
+                return true;
+            }
+        }
+
         public string filterArgs()
         {
             List<string> assetTypes = new List<string> { "Prefab", "Texture" };
@@ -108,8 +124,6 @@ namespace UNIArt.Editor
                 .Where(_ => AssetDatabase.IsValidFolder(_))
                 .ToArray();
         }
-
-        public bool IsSelected { get; set; } = false;
 
         public bool IsInstalled { get; protected set; } = false;
 

@@ -10,7 +10,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
-This file incorporates work covered by the following copyright and 
+This file incorporates work covered by the following copyright and
 permission notice:
 */
 /////////////////////////////////////////////////////////////////////////////////
@@ -35,7 +35,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-
 
 namespace PluginMaster
 {
@@ -97,27 +96,33 @@ namespace PluginMaster
             Layer.ResetInstanceCount();
             var reader = new PsdBinaryReader(stream, encoding);
 
-            if (CancelCheck()) return;
+            if (CancelCheck())
+                return;
             LoadHeader(reader);
             OnProgressChanged(0.01f);
 
-            if (CancelCheck()) return;
+            if (CancelCheck())
+                return;
             LoadColorModeData(reader);
             OnProgressChanged(0.02f);
 
-            if (CancelCheck()) return;
+            if (CancelCheck())
+                return;
             LoadImageResources(reader);
             OnProgressChanged(0.03f);
 
-            if (CancelCheck()) return;
+            if (CancelCheck())
+                return;
             LoadLayerAndMaskInfo(reader);
             OnProgressChanged(0.04f);
 
-            if (CancelCheck()) return;
+            if (CancelCheck())
+                return;
             LoadImage(reader);
             OnProgressChanged(0.1f);
 
-            if (CancelCheck()) return;
+            if (CancelCheck())
+                return;
             DecompressImages();
             if (RootLayers.Count == 0)
             {
@@ -139,7 +144,7 @@ namespace PluginMaster
                     Load(stream, System.Text.Encoding.Default);
                 }
             }
-            catch(PsdInvalidException e)
+            catch (PsdInvalidException e)
             {
                 OnError(e.Message);
             }
@@ -170,6 +175,7 @@ namespace PluginMaster
         public Int16 Version { get; private set; }
 
         private Int16 channelCount;
+
         /// <summary>
         /// The number of channels in the image, including any alpha channels.
         /// </summary>
@@ -198,9 +204,8 @@ namespace PluginMaster
             }
         }
 
-
         /// <summary>
-        /// The width of the image in pixels. 
+        /// The width of the image in pixels.
         /// </summary>
         public int ColumnCount
         {
@@ -214,6 +219,7 @@ namespace PluginMaster
         }
 
         private int bitDepth;
+
         /// <summary>
         /// The number of bits per channel. Supported values are 1, 8, 16, and 32.
         /// </summary>
@@ -270,10 +276,10 @@ namespace PluginMaster
         #region ColorModeData
 
         /// <summary>
-        /// If ColorMode is ColorModes.Indexed, the following 768 bytes will contain 
-        /// a 256-color palette. If the ColorMode is ColorModes.Duotone, the data 
-        /// following presumably consists of screen parameters and other related information. 
-        /// Unfortunately, it is intentionally not documented by Adobe, and non-Photoshop 
+        /// If ColorMode is ColorModes.Indexed, the following 768 bytes will contain
+        /// a 256-color palette. If the ColorMode is ColorModes.Duotone, the data
+        /// following presumably consists of screen parameters and other related information.
+        /// Unfortunately, it is intentionally not documented by Adobe, and non-Photoshop
         /// readers are advised to treat duotone images as gray-scale images.
         /// </summary>
         public byte[] ColorModeData = new byte[0];
@@ -297,6 +303,7 @@ namespace PluginMaster
         /// The Image resource blocks for the file
         /// </summary>
         public ImageResources ImageResources { get; set; }
+
         ///////////////////////////////////////////////////////////////////////////
 
         private void LoadImageResources(PsdBinaryReader reader)
@@ -309,13 +316,14 @@ namespace PluginMaster
             var endPosition = startPosition + imageResourcesLength;
             while (reader.BaseStream.Position < endPosition)
             {
-                if (CancelCheck()) return;
+                if (CancelCheck())
+                    return;
                 var imageResource = ImageResourceFactory.CreateImageResource(reader);
                 ImageResources.Add(imageResource);
             }
 
             //-----------------------------------------------------------------------
-            // make sure we are not on a wrong offset, so set the stream position 
+            // make sure we are not on a wrong offset, so set the stream position
             // manually
             reader.BaseStream.Position = startPosition + imageResourcesLength;
         }
@@ -377,7 +385,7 @@ namespace PluginMaster
             }
 
             //-----------------------------------------------------------------------
-            // make sure we are not on a wrong offset, so set the stream position 
+            // make sure we are not on a wrong offset, so set the stream position
             // manually
             reader.BaseStream.Position = startPosition + layersAndMaskLength;
         }
@@ -426,7 +434,8 @@ namespace PluginMaster
             // Load image data for all channels.
             foreach (var layer in Layers)
             {
-                if (layer is LayerGroup) continue;
+                if (layer is LayerGroup)
+                    continue;
                 foreach (var channel in layer.Channels)
                 {
                     channel.LoadPixelData(reader);
@@ -460,11 +469,19 @@ namespace PluginMaster
 
                 foreach (var info in currentLayer.AdditionalInfo)
                 {
-                    if (!(info is LayerSectionInfo)) continue;
+                    if (!(info is LayerSectionInfo))
+                        continue;
                     var sectionInfo = (LayerSectionInfo)info;
-                    if (sectionInfo.SectionType != LayerSectionType.OpenFolder && sectionInfo.SectionType != LayerSectionType.ClosedFolder) continue;
+                    if (
+                        sectionInfo.SectionType != LayerSectionType.OpenFolder
+                        && sectionInfo.SectionType != LayerSectionType.ClosedFolder
+                    )
+                        continue;
                     var previousGroup = currentGroup;
-                    currentLayer = currentGroup = new LayerGroup(currentLayer, sectionInfo.SectionType == LayerSectionType.OpenFolder);
+                    currentLayer = currentGroup = new LayerGroup(
+                        currentLayer,
+                        sectionInfo.SectionType == LayerSectionType.OpenFolder
+                    );
                     if (previousGroup == null)
                     {
                         RootLayers.Add(currentLayer);
@@ -490,12 +507,13 @@ namespace PluginMaster
             }
         }
 
-
         public Layer GetLayer(int layerId)
         {
-            if (!_layerDictionary.ContainsKey(layerId)) return null;
+            if (!_layerDictionary.ContainsKey(layerId))
+                return null;
             return _layerDictionary[layerId];
         }
+
         ///////////////////////////////////////////////////////////////////////////
 
         /// <summary>
@@ -507,11 +525,14 @@ namespace PluginMaster
             int i = 0;
             foreach (var layer in imageLayers)
             {
-                if (CancelCheck()) return;
-                if (layer is LayerGroup) continue;
+                if (CancelCheck())
+                    return;
+                if (layer is LayerGroup)
+                    continue;
                 foreach (var channel in layer.Channels)
                 {
-                    if (CancelCheck()) return;
+                    if (CancelCheck())
+                        return;
                     var dcc = new DecompressChannelContext(channel);
                     dcc.DecompressChannel(null);
                 }
@@ -521,11 +542,14 @@ namespace PluginMaster
             }
             foreach (var layer in Layers)
             {
-                if (CancelCheck()) return;
-                if (layer is LayerGroup) continue;
+                if (CancelCheck())
+                    return;
+                if (layer is LayerGroup)
+                    continue;
                 foreach (var channel in layer.Channels)
                 {
-                    if (CancelCheck()) return;
+                    if (CancelCheck())
+                        return;
                     if (channel.ID == -2)
                         layer.Masks.LayerMask.ImageData = channel.ImageData;
                     else if (channel.ID == -3)
@@ -533,7 +557,7 @@ namespace PluginMaster
                 }
             }
         }
-        
+
         ///////////////////////////////////////////////////////////////////////////
 
         byte[] GlobalLayerMaskData = new byte[0];
@@ -562,7 +586,8 @@ namespace PluginMaster
             // Create channels
             for (Int16 i = 0; i < ChannelCount; i++)
             {
-                if (CancelCheck()) return;
+                if (CancelCheck())
+                    return;
                 var channel = new Channel(i, this.BaseLayer);
                 channel.ImageCompression = ImageCompression;
                 channel.Length = this.RowCount * Util.BytesPerRow(BaseLayer.Rect, BitDepth);
@@ -580,14 +605,17 @@ namespace PluginMaster
 
             foreach (var channel in this.BaseLayer.Channels)
             {
-                if (CancelCheck()) return;
+                if (CancelCheck())
+                    return;
                 channel.ImageDataRaw = reader.ReadBytes(channel.Length);
             }
 
             // If there is exactly one more channel than we need, then it is the
             // alpha channel.
-            if ((ColorMode != PsdColorMode.Multichannel)
-              && (ChannelCount == ColorMode.MinChannelCount() + 1))
+            if (
+                (ColorMode != PsdColorMode.Multichannel)
+                && (ChannelCount == ColorMode.MinChannelCount() + 1)
+            )
             {
                 var alphaChannel = BaseLayer.Channels.Last();
                 alphaChannel.ID = -1;
@@ -614,7 +642,6 @@ namespace PluginMaster
         #endregion
     }
 
-
     /// <summary>
     /// The possible Compression methods.
     /// </summary>
@@ -624,18 +651,20 @@ namespace PluginMaster
         /// Raw data
         /// </summary>
         Raw = 0,
+
         /// <summary>
         /// RLE compressed
         /// </summary>
         Rle = 1,
+
         /// <summary>
         /// ZIP without prediction.
         /// </summary>
         Zip = 2,
+
         /// <summary>
         /// ZIP with prediction.
         /// </summary>
         ZipPrediction = 3
     }
-
 }

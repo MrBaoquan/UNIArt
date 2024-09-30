@@ -274,7 +274,6 @@ namespace PluginMaster
                 _textureLoadingPendingLayers.Clear();
                 _layerTextures.Clear();
                 CreateItemDictionary(_psdFile.RootLayers.ToArray());
-                UnityEngine.Debug.Log(_textureLoadingPendingLayers.Count);
                 LoadPendingTextures();
             }
 
@@ -307,7 +306,6 @@ namespace PluginMaster
             if (_updatePreview)
             {
                 _previewLayers.Clear();
-                UnityEngine.Debug.Log("Update Preview");
                 foreach (var item in _hierarchyItems.Values)
                 {
                     if (!(item is LayerItem))
@@ -320,7 +318,6 @@ namespace PluginMaster
                         (int)_previewRect.height
                     );
                     var layer = _psdFile.GetLayer(item.Id);
-                    UnityEngine.Debug.LogWarning($"add preview layer: {item.Id} {layer.Name}");
                     _previewLayers.Add(
                         item.Id,
                         new PreviewLayer(
@@ -1070,13 +1067,6 @@ namespace PluginMaster
         private void DestroyAllTextures()
         {
             var textures = FindObjectsOfType<Texture2D>();
-            UnityEngine.Debug.Log(textures.Count());
-            textures
-                .ToList()
-                .ForEach(_ =>
-                {
-                    UnityEngine.Debug.LogWarning(_);
-                });
             DestroyTextures(textures);
         }
 
@@ -1258,7 +1248,6 @@ namespace PluginMaster
 
         private void LoadNextLayer()
         {
-            UnityEngine.Debug.LogWarning("LoadNextLayer: " + _pixelsPending.layer.Name);
             if (_textureLoadingPendingLayers.Count == 0)
             {
                 _loadingProgress = 1f;

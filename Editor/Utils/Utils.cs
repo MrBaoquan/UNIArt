@@ -340,6 +340,7 @@ namespace UNIArt.Editor
                 .ToList()
                 .ForEach(assetPath =>
                 {
+                    // Debug.Log($"Move {assetPath} to {dropUponPath}");
                     // 依赖资源的处理
                     var _dependencies = AssetDatabase
                         .GetDependencies(assetPath, false)
@@ -399,9 +400,9 @@ namespace UNIArt.Editor
                     {
                         _depFolder = Path.GetDirectoryName(_depFolder).ToForwardSlash() + "/";
                         _newPath = $"{dropUponPath}/{_oldPath.Replace(_depFolder, string.Empty)}";
-                        CreateFolderIfNotExist(Path.GetDirectoryName(_newPath));
                     }
 
+                    CreateFolderIfNotExist(Path.GetDirectoryName(_newPath).ToForwardSlash());
                     _newPath = AssetDatabase.GenerateUniqueAssetPath(_newPath);
                     // Debug.Log($"Move {_oldPath} to {_newPath}");
 
@@ -434,9 +435,11 @@ namespace UNIArt.Editor
         // 是否是外部资源
         public static bool IsExternalPath(string assetPath)
         {
-            return Path.IsPathRooted(assetPath) && !assetPath.StartsWith(Application.dataPath);
+            return Path.IsPathRooted(assetPath) && !assetPath.StartsWith(Application.dataPath)
+                || assetPath.StartsWith(@"\\");
         }
 
+        // 是否是项目内资源
         public static bool IsProjectAsset(string assetPath)
         {
             return assetPath.StartsWith(Application.dataPath);

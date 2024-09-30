@@ -36,11 +36,12 @@ namespace UNIArt.Editor
 
         static PSDFileMgr psdFileMgr = null;
 
-        [MenuItem("Tools/PSD Create GameObject")]
+        [MenuItem("Tools/PSD Test")]
         private static void PsdCreateGameObjectTest()
         {
             // psdFileMgr = GetPSDFile("Assets/ArtAssets/Textures/Psd/待机.psd");
-            CreatePSDGameObject("Assets/ArtAssets/Textures/Psd/待机.psd");
+            // CreatePSDGameObject("Assets/ArtAssets/Textures/Psd/待机.psd");
+            EditorUtility.ClearProgressBar();
         }
 
         public static void CreatePSDGameObject(
@@ -63,7 +64,7 @@ namespace UNIArt.Editor
                     4096,
                     Path.GetDirectoryName(psdFilePath).ToForwardSlash() + "/",
                     true,
-                    false, // add pslayer
+                    true, // add pslayer
                     PsGroup.BlendingShaderType.GRAB_PASS,
                     psdFileMgr._layerTextures,
                     1

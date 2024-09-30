@@ -21,6 +21,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Assertions;
 
 namespace PluginMaster
 {
@@ -49,9 +50,7 @@ namespace PluginMaster
         }
 
         public ChannelList()
-          : base()
-        {
-        }
+            : base() { }
 
         public Channel GetId(int id)
         {
@@ -70,7 +69,7 @@ namespace PluginMaster
     public class Channel
     {
         private bool _cancel = false;
-        public bool Cancel 
+        public bool Cancel
         {
             get { return _cancel; }
             set { _cancel = value; }
@@ -104,6 +103,17 @@ namespace PluginMaster
                     case -2:
                         return Layer.Masks.LayerMask.Rect;
                     case -3:
+
+                        if (Layer.Masks.UserMask == null)
+                        {
+                            // UnityEngine.Debug.LogError(
+                            //     $"请尝试调整图层 [ {Layer.Name} ] 矢量蒙版属性 羽化:0.0像素, 密度: 100%"
+                            // );
+                            throw new Exception(
+                                "请尝试调整图层 [ " + Layer.Name + " ] 矢量蒙版属性为: 羽化->0.0像素,  密度->100%"
+                            );
+                        }
+
                         return Layer.Masks.UserMask.Rect;
                     default:
                         return Layer.Rect;
@@ -142,7 +152,6 @@ namespace PluginMaster
         /// RLE-compressed length of each row.
         /// </summary>
         public RleRowLengths RleRowLengths { get; set; }
-        
 
         //////////////////////////////////////////////////////////////////
 
@@ -158,6 +167,7 @@ namespace PluginMaster
             Length = reader.ReadInt32();
             Layer = layer;
         }
+
         //////////////////////////////////////////////////////////////////
 
         internal void LoadPixelData(PsdBinaryReader reader)
@@ -186,7 +196,6 @@ namespace PluginMaster
                     ImageDataRaw = reader.ReadBytes(dataLength);
                     break;
             }
-
         }
 
         /// <summary>
@@ -261,7 +270,9 @@ namespace PluginMaster
             }
             else if (byteDepth > 1)
             {
-                throw new NotImplementedException("Byte-swapping implemented only for 16-bit and 32-bit depths.");
+                throw new NotImplementedException(
+                    "Byte-swapping implemented only for 16-bit and 32-bit depths."
+                );
             }
         }
 
@@ -274,7 +285,6 @@ namespace PluginMaster
         {
             if (Layer.PsdFile.BitDepth == 16)
             {
-
                 // 16-bitdepth images are delta-encoded word-by-word.  The deltas
                 // are thus big-endian and must be reversed for further processing.
                 ReverseEndianness(ImageData, rect);
@@ -286,7 +296,10 @@ namespace PluginMaster
                     // Start with column index 1 on each row
                     while (idx < end)
                     {
-                        byte[] decodedBytes = BitConverter.GetBytes(BitConverter.ToInt16(ImageData, idx) + BitConverter.ToInt16(ImageData, idx - 2));
+                        byte[] decodedBytes = BitConverter.GetBytes(
+                            BitConverter.ToInt16(ImageData, idx)
+                                + BitConverter.ToInt16(ImageData, idx - 2)
+                        );
                         ImageData[idx] = decodedBytes[0];
                         ImageData[idx + 1] = decodedBytes[1];
                         idx += 2;
@@ -303,7 +316,10 @@ namespace PluginMaster
                     // Start with column index 1 on each row
                     while (idx < end)
                     {
-                        byte[] decodedBytes = BitConverter.GetBytes(BitConverter.ToInt32(ImageData, idx) + BitConverter.ToInt32(ImageData, idx - 4));
+                        byte[] decodedBytes = BitConverter.GetBytes(
+                            BitConverter.ToInt32(ImageData, idx)
+                                + BitConverter.ToInt32(ImageData, idx - 4)
+                        );
                         for (int byteIdx = 0; byteIdx < 4; ++byteIdx)
                         {
                             ImageData[idx + byteIdx] = decodedBytes[byteIdx];
@@ -335,7 +351,9 @@ namespace PluginMaster
             }
             else
             {
-                throw new PsdInvalidException("ZIP with prediction is only available for 16 and 32 bit depths.");
+                throw new PsdInvalidException(
+                    "ZIP with prediction is only available for 16 and 32 bit depths."
+                );
             }
         }
     }

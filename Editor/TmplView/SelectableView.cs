@@ -7,17 +7,44 @@ namespace UNIArt.Editor
     {
         public void Select()
         {
-            if (!this.Q<VisualElement>("root").ClassListContains("selected"))
+            if (!root.ClassListContains("selected"))
             {
-                this.Q<VisualElement>("root").AddToClassList("selected");
+                root.AddToClassList("selected");
             }
         }
 
         public void Deselect()
         {
-            if (this.Q<VisualElement>("root").ClassListContains("selected"))
+            if (root.ClassListContains("selected"))
             {
-                this.Q<VisualElement>("root").RemoveFromClassList("selected");
+                root.RemoveFromClassList("selected");
+            }
+        }
+
+        public void Toggle()
+        {
+            if (IsSelected)
+            {
+                Deselect();
+            }
+            else
+            {
+                Select();
+            }
+        }
+
+        public bool IsSelected => root.ClassListContains("selected");
+
+        VisualElement _root;
+        VisualElement root
+        {
+            get
+            {
+                if (_root == null)
+                {
+                    _root = this.Q<VisualElement>("root");
+                }
+                return _root;
             }
         }
 
