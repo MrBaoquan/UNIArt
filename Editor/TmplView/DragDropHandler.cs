@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
+using System.Linq;
+using Sirenix.Utilities;
 
 namespace UNIArt.Editor
 {
@@ -10,16 +12,25 @@ namespace UNIArt.Editor
         static DragDropHandler()
         {
             // 注册层次视图拖拽事件的回调
-            EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyDrag;
+            EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyItemGUI;
             // EditorApplication.projectWindowItemOnGUI += OnProjectWindowItemOnGUI;
             SceneView.duringSceneGui += OnSceneGUI;
             DragAndDrop.AddDropHandler(HierarchyDropHandler);
             DragAndDrop.AddDropHandler(SceneDropHandler);
             DragAndDrop.AddDropHandler(ProjectBrowserDropHandler);
+            // DragAndDrop.AddDropHandler(InspectorDropHandler);
         }
 
         static bool isDragPerform = false;
         static bool isCtrlPressed = false;
+
+        // static DragAndDropVisualMode InspectorDropHandler(
+        //     UnityEngine.Object[] targets,
+        //     bool perform
+        // )
+        // {
+        //     return DragAndDropVisualMode.None;
+        // }
 
         static DragAndDropVisualMode HierarchyDropHandler(
             int dropTargetInstanceID,
@@ -52,8 +63,35 @@ namespace UNIArt.Editor
             return DragAndDropVisualMode.None;
         }
 
-        private static void OnHierarchyDrag(int instanceID, Rect selectionRect)
+        private static void OnHierarchyItemGUI(int instanceID, Rect selectionRect)
         {
+            Event evt = Event.current;
+            if (evt.type == EventType.DragPerform && selectionRect.Contains(evt.mousePosition))
+            {
+                GameObject obj = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
+                var _imageComp = obj.GetComponent<Image>();
+                if (DragAndDrop.paths.Count() > 1 && _imageComp != null)
+                {
+                    _imageComp.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(DragAndDrop.paths[0]);
+                    _imageComp.SetNativeSize();
+
+                    var _animator = obj.GetComponent<Animator>();
+                    if (_animator == null)
+                        _animator = obj.AddComponent<Animator>();
+
+                    AssetDatabase.SaveAssets();
+                    var _controller = AnimatorEditor.CreateController(_animator);
+
+                    var _animationClip = SpriteSheetTool.CreateSequenceImageAnimation(
+                        typeof(Image),
+                        DragAndDrop.paths.ToList()
+                    );
+                    AnimatorEditor.AddClipToController(_controller, _animationClip);
+
+                    evt.Use();
+                    return;
+                }
+            }
             handleDropEvent();
         }
 
@@ -70,6 +108,7 @@ namespace UNIArt.Editor
         private static void handleDropEvent()
         {
             Event evt = Event.current;
+
             if (evt.type == EventType.DragExited && isArtAssetDrag() && isDragPerform)
             {
                 isDragPerform = false;
@@ -79,7 +118,7 @@ namespace UNIArt.Editor
 
                 if (!isCtrlPressed)
                 {
-                    if (PrefabUtility.IsPartOfAnyPrefab(_newObj))
+                    if (PrefabUtility.IsAnyPrefabInstanceRoot(_newObj))
                     {
                         PrefabUtility.UnpackPrefabInstance(
                             _newObj,

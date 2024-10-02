@@ -3,6 +3,7 @@ using UnityEditor;
 using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace UNIArt.Editor
 {
@@ -37,6 +38,8 @@ namespace UNIArt.Editor
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyWindowItemOnGUI;
         }
 
+        static GUIStyle customButtonStyle;
+
         private static bool HasAnimation(GameObject obj)
         {
             var _animator = obj.GetComponent<Animator>();
@@ -61,11 +64,126 @@ namespace UNIArt.Editor
             "Canvas (Environment)"
         };
 
+        private static void drawOptionGUI(int instanceID, Rect selectionRect)
+        {
+            if (selectionRect.Contains(Event.current.mousePosition))
+            {
+                GameObject obj = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
+                if (prefabStageRootNames.Contains(obj.name))
+                    return;
+
+                Rect _optionRect = new Rect(selectionRect.xMax - 16, selectionRect.y, 16, 16);
+                if (_optionRect.Contains(Event.current.mousePosition))
+                {
+                    EditorGUI.DrawRect(_optionRect, new Color(0.3f, 0.5f, 1.0f, 0.3f)); // 设置高亮颜色
+                }
+
+                var _optionIcon = EditorGUIUtility.IconContent("d__Menu").image as Texture2D;
+                GUI.DrawTexture(_optionRect, _optionIcon);
+
+                if (
+                    Event.current.type == EventType.MouseDown
+                    && _optionRect.Contains(Event.current.mousePosition)
+                )
+                {
+                    GenericMenu menu = new GenericMenu();
+                    var _addButtonMenu = new GUIContent(
+                        "添加按钮组件",
+                        EditorGUIUtility.IconContent("d__Menu").image
+                    );
+                    if (obj.GetComponent<Button>() != null)
+                    {
+                        menu.AddDisabledItem(_addButtonMenu);
+                    }
+                    else
+                    {
+                        menu.AddItem(
+                            _addButtonMenu,
+                            false,
+                            () =>
+                            {
+                                obj.AddOrGetComponent<Image>();
+                                obj.AddOrGetComponent<Button>();
+                                Selection.activeGameObject = obj;
+                            }
+                        );
+                    }
+                    var _addAnimMenu = new GUIContent(
+                        "添加动画组件",
+                        AssetDatabase.LoadAssetAtPath<Texture2D>(
+                            "Packages/com.parful.uniart/Assets/Icon/筛选.png"
+                        )
+                    );
+                    if (obj.GetComponent<Animator>() != null)
+                    {
+                        menu.AddDisabledItem(_addAnimMenu);
+                    }
+                    else
+                    {
+                        menu.AddItem(
+                            _addAnimMenu,
+                            false,
+                            () =>
+                            {
+                                obj.AddOrGetComponent<Animator>();
+                                Selection.activeGameObject = obj;
+                            }
+                        );
+                    }
+                    menu.AddSeparator("");
+                    if (PrefabUtility.IsPartOfAnyPrefab(obj))
+                    {
+                        menu.AddDisabledItem(new GUIContent("保存为预制体"));
+                    }
+                    else
+                    {
+                        menu.AddItem(
+                            new GUIContent("保存为预制体"),
+                            false,
+                            () =>
+                            {
+                                var _path = Utils.GetPrefabAssetPathByAnyGameObject(obj);
+                                var _saveRoot = UNIArtSettings.Project.ArtFolder;
+                                var _folder = "UI Prefabs/Widgets";
+                                if (UNIArtSettings.IsTemplateAsset(_path))
+                                {
+                                    _saveRoot = UNIArtSettings.GetExternalTemplateRootBySubAsset(
+                                        _path
+                                    );
+                                    _folder = "Prefabs/自定义组件";
+                                }
+                                var _savePath = Path.Combine(
+                                        _saveRoot,
+                                        _folder,
+                                        obj.name + ".prefab"
+                                    )
+                                    .ToForwardSlash();
+                                Utils.CreateFolderIfNotExist(Path.GetDirectoryName(_savePath));
+                                // _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
+
+                                var _newPrefab = PrefabUtility.SaveAsPrefabAssetAndConnect(
+                                    obj,
+                                    _savePath,
+                                    InteractionMode.AutomatedAction
+                                );
+                                ProjectWindowUtil.ShowCreatedAsset(_newPrefab);
+                            }
+                        );
+                    }
+
+                    menu.ShowAsContext();
+                    Event.current.Use();
+                }
+            }
+        }
+
         private static void OnHierarchyWindowItemOnGUI(int instanceID, Rect selectionRect)
         {
             GameObject obj = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
             if (obj == null)
                 return;
+
+            drawOptionGUI(instanceID, selectionRect);
 
             if (UNIArtSettings.Editor.EnableHierarchyCheckbox.Value)
             {
@@ -88,12 +206,12 @@ namespace UNIArt.Editor
                 return;
 
             // 设置初始图标位置
-            Rect iconRect = new Rect(selectionRect.xMax - 30, selectionRect.y, 16, 16);
+            Rect iconRect = new Rect(selectionRect.xMax - 46, selectionRect.y, 16, 16);
 
             var _idx = 0;
             componentTypes.ForEach(_componentType =>
             {
-                iconRect.x = selectionRect.xMax - 30 - _idx * 20;
+                iconRect.x = selectionRect.xMax - 46 - _idx * 20;
                 _idx++;
 
                 Color originalColor = GUI.color;

@@ -144,9 +144,24 @@ namespace UNIArt.Editor
             );
         }
 
+        public void Commit()
+        {
+            if (IsLocal)
+            {
+                SVNConextMenu.Commit(SVNConextMenu.GetRootAssetPath(), false);
+                return;
+            }
+            SVNConextMenu.CommitExternal(RootFolder);
+        }
+
         // 拉取最新资源
         public bool Pull()
         {
+            if (IsLocal)
+            {
+                SVNConextMenu.UpdateAll();
+                return true;
+            }
             if (!IsInstalled)
                 return false;
             if (SVNIntegration.IsWorkingCopy(RootFolder))
@@ -181,6 +196,8 @@ namespace UNIArt.Editor
 
         public bool CleanDir()
         {
+            if (IsLocal)
+                return true;
             return AssetDatabase.DeleteAsset(RootFolder);
         }
     }

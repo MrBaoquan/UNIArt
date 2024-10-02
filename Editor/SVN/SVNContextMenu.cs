@@ -339,7 +339,7 @@ namespace UNIArt.Editor
             }
         }
 
-        private static IEnumerable<string> GetRootAssetPath()
+        public static IEnumerable<string> GetRootAssetPath()
         {
             yield return "."; // The root folder of the project (not the Assets folder).
         }

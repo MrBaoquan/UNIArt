@@ -16,7 +16,7 @@ namespace UNIArt.Editor
         const string previewFolderName = "Previews";
         internal string rawAssetPath;
         private Texture2D defaultPrefabIcon;
-        private UnityEngine.Object assetObject = null;
+        public UnityEngine.Object RawAssetObject = null;
         public UnityEngine.Object AssetObject
         {
             get
@@ -25,9 +25,9 @@ namespace UNIArt.Editor
                 {
                     return AssetDatabase.LoadAssetAtPath<GameObject>(AssetPath);
                 }
-                return assetObject;
+                return RawAssetObject;
             }
-            set { assetObject = value; }
+            set { RawAssetObject = value; }
         }
         public Texture2D previewTex = null;
         public string TemplateID = string.Empty; // 所属模板ID
@@ -49,7 +49,7 @@ namespace UNIArt.Editor
                 rawAssetPath = value;
                 TemplateID = UNIArtSettings.GetTemplateNameBySubAsset(value);
                 SetAssetName(Path.GetFileNameWithoutExtension(value));
-                assetObject = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(value);
+                RawAssetObject = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(value);
                 // if (ShouldHidden)
                 // {
                 //     this.style.display = DisplayStyle.None;
@@ -75,9 +75,9 @@ namespace UNIArt.Editor
         {
             defaultPrefabIcon = EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;
 
-            if (assetObject is Texture2D)
+            if (RawAssetObject is Texture2D)
             {
-                previewTex = assetObject as Texture2D;
+                previewTex = RawAssetObject as Texture2D;
             }
 
             if (rawAssetPath.EndsWith("#psd.prefab"))
@@ -90,7 +90,9 @@ namespace UNIArt.Editor
             {
                 previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(PreviewPath);
             }
-            else if (UNIArtSettings.IsProjectUIPageAsset(rawAssetPath) && assetObject is GameObject)
+            else if (
+                UNIArtSettings.IsProjectUIPageAsset(rawAssetPath) && RawAssetObject is GameObject
+            )
             {
                 defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
                     "Packages/com.parful.uniart/Assets/Icon/UIPage.png"
@@ -117,7 +119,7 @@ namespace UNIArt.Editor
                 _assetType.style.backgroundImage = null;
                 return;
             }
-            if (assetObject is Texture2D)
+            if (RawAssetObject is Texture2D)
             {
                 if (IsPSD)
                 {
@@ -149,6 +151,8 @@ namespace UNIArt.Editor
 
         public bool ShouldHidden => IsPSDPrefab && HasPSDRaw;
 
+        public int Index = -1;
+
         public AssetItem()
         {
             var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
@@ -156,122 +160,122 @@ namespace UNIArt.Editor
             );
 
             visualTree.CloneTree(this);
-            Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfGameObject = (action) =>
-            {
-                return (HasPSDEnity || assetObject is GameObject)
-                    ? DropdownMenuAction.Status.Normal
-                    : DropdownMenuAction.Status.Disabled;
-            };
+            // Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfGameObject = (action) =>
+            // {
+            //     return (HasPSDEnity || assetObject is GameObject)
+            //         ? DropdownMenuAction.Status.Normal
+            //         : DropdownMenuAction.Status.Disabled;
+            // };
 
-            Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfThumb = (action) =>
-            {
-                return (HasPSDEnity || assetObject is GameObject) && !IsPSD && !IsPSDPrefab
-                    ? DropdownMenuAction.Status.Normal
-                    : DropdownMenuAction.Status.Disabled;
-            };
+            // Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfThumb = (action) =>
+            // {
+            //     return (HasPSDEnity || assetObject is GameObject) && !IsPSD && !IsPSDPrefab
+            //         ? DropdownMenuAction.Status.Normal
+            //         : DropdownMenuAction.Status.Disabled;
+            // };
 
-            this.AddManipulator(
-                new ContextualMenuManipulator(
-                    (evt) =>
-                    {
-                        evt.menu.AppendAction(
-                            "复制到项目 [UI页面]",
-                            (x) =>
-                            {
-                                WorkflowUtility.CopyPrefabToUIPage(AssetPath);
-                            },
-                            activeIfGameObject
-                        );
-                        evt.menu.AppendAction(
-                            "复制到项目 [UI组件]",
-                            (x) =>
-                            {
-                                WorkflowUtility.CopyPrefabToUIComponent(AssetPath);
-                            },
-                            activeIfGameObject
-                        );
-                        evt.menu.AppendSeparator();
+            // this.AddManipulator(
+            //     new ContextualMenuManipulator(
+            //         (evt) =>
+            //         {
+            //             evt.menu.AppendAction(
+            //                 "复制到项目 [UI页面]",
+            //                 (x) =>
+            //                 {
+            //                     WorkflowUtility.CopyPrefabToUIPage(AssetPath);
+            //                 },
+            //                 activeIfGameObject
+            //             );
+            //             evt.menu.AppendAction(
+            //                 "复制到项目 [UI组件]",
+            //                 (x) =>
+            //                 {
+            //                     WorkflowUtility.CopyPrefabToUIComponent(AssetPath);
+            //                 },
+            //                 activeIfGameObject
+            //             );
+            //             evt.menu.AppendSeparator();
 
-                        evt.menu.AppendAction(
-                            "打开所在文件夹",
-                            (x) =>
-                            {
-                                EditorUtility.RevealInFinder(rawAssetPath);
-                            }
-                        );
+            //             evt.menu.AppendAction(
+            //                 "打开所在文件夹",
+            //                 (x) =>
+            //                 {
+            //                     EditorUtility.RevealInFinder(rawAssetPath);
+            //                 }
+            //             );
 
-                        evt.menu.AppendAction(
-                            "在资源视图中显示",
-                            (x) =>
-                            {
-                                Utils.FocusProjectBrowser();
-                                EditorGUIUtility.PingObject(assetObject);
-                            }
-                        );
+            //             evt.menu.AppendAction(
+            //                 "在资源视图中显示",
+            //                 (x) =>
+            //                 {
+            //                     Utils.FocusProjectBrowser();
+            //                     EditorGUIUtility.PingObject(assetObject);
+            //                 }
+            //             );
 
-                        evt.menu.AppendSeparator();
-                        evt.menu.AppendAction(
-                            "重新导入",
-                            (x) =>
-                            {
-                                if (IsPSD)
-                                {
-                                    if (HasPSDEnity)
-                                    {
-                                        AssetDatabase.DeleteAsset(AssetPath);
-                                        AssetDatabase.Refresh();
-                                    }
-                                }
-                                AssetDatabase.ImportAsset(rawAssetPath);
-                            }
-                        );
-                        evt.menu.AppendSeparator();
-                        evt.menu.AppendAction(
-                            "选取缩略图",
-                            (x) =>
-                            {
-                                AssetDatabase.OpenAsset(assetObject);
-                                SceneViewCapture.OnCapture(_rect =>
-                                {
-                                    var _savedPath = PreviewPath;
-                                    var _savedFolder = Path.GetDirectoryName(_savedPath);
-                                    if (!Directory.Exists(_savedFolder))
-                                    {
-                                        Directory.CreateDirectory(_savedFolder);
-                                    }
+            //             evt.menu.AppendSeparator();
+            //             evt.menu.AppendAction(
+            //                 "重新导入",
+            //                 (x) =>
+            //                 {
+            //                     if (IsPSD)
+            //                     {
+            //                         if (HasPSDEnity)
+            //                         {
+            //                             AssetDatabase.DeleteAsset(AssetPath);
+            //                             AssetDatabase.Refresh();
+            //                         }
+            //                     }
+            //                     AssetDatabase.ImportAsset(rawAssetPath);
+            //                 }
+            //             );
+            //             evt.menu.AppendSeparator();
+            //             evt.menu.AppendAction(
+            //                 "选取缩略图",
+            //                 (x) =>
+            //                 {
+            //                     AssetDatabase.OpenAsset(assetObject);
+            //                     SceneViewCapture.OnCapture(_rect =>
+            //                     {
+            //                         var _savedPath = PreviewPath;
+            //                         var _savedFolder = Path.GetDirectoryName(_savedPath);
+            //                         if (!Directory.Exists(_savedFolder))
+            //                         {
+            //                             Directory.CreateDirectory(_savedFolder);
+            //                         }
 
-                                    SceneViewCapture.TakeScreenshot(
-                                        _rect,
-                                        PreviewPath,
-                                        () =>
-                                        {
-                                            RefreshPreview();
-                                        }
-                                    );
-                                });
-                                SceneViewCapture.ShowCapture();
-                            },
-                            activeIfThumb
-                        );
-                    }
-                )
-            );
+            //                         SceneViewCapture.TakeScreenshot(
+            //                             _rect,
+            //                             PreviewPath,
+            //                             () =>
+            //                             {
+            //                                 RefreshPreview();
+            //                             }
+            //                         );
+            //                     });
+            //                     SceneViewCapture.ShowCapture();
+            //                 },
+            //                 activeIfThumb
+            //             );
+            //         }
+            //     )
+            // );
 
             handleHoverEvent();
             PrepareStartDrag();
             handleDoubleClick(() =>
             {
                 if (
-                    !UNIArtSettings.IsTemplateAsset(rawAssetPath) && assetObject is GameObject
+                    !UNIArtSettings.IsTemplateAsset(rawAssetPath) && RawAssetObject is GameObject
                     || IsPSD
                 )
                 {
-                    AssetDatabase.OpenAsset(assetObject.GetInstanceID());
+                    AssetDatabase.OpenAsset(RawAssetObject.GetInstanceID());
                     return;
                 }
 
                 Utils.FocusProjectBrowser();
-                EditorGUIUtility.PingObject(assetObject);
+                EditorGUIUtility.PingObject(RawAssetObject);
             });
         }
 
@@ -359,13 +363,13 @@ namespace UNIArt.Editor
                 isMouseDown = true;
 
                 mouseDownPosition = evt.mousePosition;
-                evt.StopPropagation();
+                // evt.StopPropagation();
             });
 
             this.RegisterCallback<MouseUpEvent>(evt =>
             {
                 isMouseDown = false;
-                evt.StopPropagation();
+                // evt.StopPropagation();
             });
 
             this.RegisterCallback<MouseMoveEvent>(evt =>

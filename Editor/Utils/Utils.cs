@@ -601,5 +601,43 @@ namespace UNIArt.Editor
             Type projectBrowserType = Type.GetType("UnityEditor.ProjectBrowser, UnityEditor");
             EditorWindow.GetWindow(projectBrowserType).Focus();
         }
+
+        public static IEnumerable<(T item, int index)> WithIndex<T>(this IEnumerable<T> source)
+        {
+            int index = 0;
+            foreach (var item in source)
+            {
+                yield return (item, index++);
+            }
+        }
+
+        public static GameObject SaveNonPrefabObjectAsPrefab(GameObject obj, string saveDir = "")
+        {
+            if (PrefabUtility.IsAnyPrefabInstanceRoot(obj))
+            {
+                return obj;
+            }
+            if (string.IsNullOrEmpty(saveDir))
+            {
+                var _path = Utils.GetPrefabAssetPathByAnyGameObject(obj);
+                var _saveRoot = UNIArtSettings.Project.ArtFolder;
+                var _folder = "UI Prefabs/Widgets";
+                if (UNIArtSettings.IsTemplateAsset(_path))
+                {
+                    _saveRoot = UNIArtSettings.GetExternalTemplateRootBySubAsset(_path);
+                    _folder = "Prefabs/自定义组件";
+                }
+                saveDir = Path.Combine(_saveRoot, _folder);
+            }
+            var _savePath = Path.Combine(saveDir, obj.name + ".prefab");
+            // Debug.Log($"Save Non-Prefab Object as Prefab: {_savePath}");
+            Utils.CreateFolderIfNotExist(Path.GetDirectoryName(_savePath));
+            _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
+            return PrefabUtility.SaveAsPrefabAssetAndConnect(
+                obj,
+                _savePath,
+                InteractionMode.AutomatedAction
+            );
+        }
     }
 }

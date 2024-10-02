@@ -44,7 +44,9 @@ namespace UNIArt.Editor
                 TmplBrowser wnd = GetWindow<TmplBrowser>();
                 wnd.titleContent = new GUIContent(
                     "UNIArt 工作台",
-                    EditorGUIUtility.IconContent("Folder Icon").image
+                    AssetDatabase.LoadAssetAtPath<Texture2D>(
+                        "Packages/com.parful.uniart/Assets/Icon/艺术.png"
+                    )
                 );
                 return wnd;
             }
@@ -72,6 +74,8 @@ namespace UNIArt.Editor
         public int selectedFilterID = 0;
         public FilterButton selectedFilterButton =>
             selectedFilterID < filterButtons.Count ? filterButtons[selectedFilterID] : null;
+
+        public List<AssetItem> selectedAssets => assetItems.Where(item => item.IsSelected).ToList();
 
         public void CreateGUI()
         {
@@ -217,6 +221,22 @@ namespace UNIArt.Editor
             }
         }
 
+        private void refreshViewButtonStyle()
+        {
+            var _btnUpdate = rootVisualElement.Q<Button>("btn_update");
+            var _btnCommit = rootVisualElement.Q<Button>("btn_commit");
+            if (selectedTemplateButton.IsLocal)
+            {
+                _btnCommit.tooltip = "提交项目资源";
+                _btnUpdate.tooltip = "更新项目资源";
+            }
+            else
+            {
+                _btnCommit.tooltip = "提交模板资源";
+                _btnUpdate.tooltip = "更新模板资源";
+            }
+        }
+
         private IEnumerator delaySearchFilter(string filter, Action finishCallback = null)
         {
             yield return new EditorWaitForSeconds(0.5f);
@@ -304,6 +324,7 @@ namespace UNIArt.Editor
                         UNIArtSettings.Project.TemplateLocalFolder
                     );
                     templateButtons
+                        .Where(_ => !_.IsLocal)
                         .Where(_button => !_externals.Any(_ => _.Dir == _button.TemplateID))
                         .ToList()
                         .ForEach(_ => _.CleanDir());
@@ -312,8 +333,14 @@ namespace UNIArt.Editor
                         var lastTemplateID = SelectedTemplateID;
                         Refresh();
                         selectTemplate(lastTemplateID);
-                        Debug.Log("模板库更新完成.");
+                        Debug.Log("资源更新完成.");
                     }
+                });
+
+            root.Q<Button>("btn_commit")
+                .RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    selectedTemplateButton.Commit();
                 });
 
             // 更新模板资源
@@ -322,16 +349,20 @@ namespace UNIArt.Editor
                 {
                     if (selectedTemplateButton?.Pull() ?? false)
                     {
-                        SVNIntegration.AddExternal(
-                            UNIArtSettings.Project.TemplateLocalFolder,
-                            selectedTemplateButton.ExternalRepoUrl
-                        );
+                        if (!selectedTemplateButton.IsLocal)
+                        {
+                            SVNIntegration.AddExternal(
+                                UNIArtSettings.Project.TemplateLocalFolder,
+                                selectedTemplateButton.ExternalRepoUrl
+                            );
+                        }
+
                         selectTemplate(SelectedTemplateID);
-                        Debug.Log($"模板资源[{selectedTemplateButton.TemplateID}]更新完成.");
+                        Debug.Log($"资源[{selectedTemplateButton.TemplateID}]更新完成.");
                     }
                     else
                     {
-                        Debug.LogWarning($"模板资源[{selectedTemplateButton.TemplateID}]更新失败.");
+                        Debug.LogWarning($"资源[{selectedTemplateButton.TemplateID}]更新失败.");
                     }
                 });
 
@@ -367,7 +398,8 @@ namespace UNIArt.Editor
 
             root.RegisterCallback<MouseDownEvent>(evt =>
             {
-                selectedAssetItem?.Deselect();
+                selectedAsset?.Deselect();
+                selectedAsset = null;
             });
 
             rootVisualElement.RegisterCallback<WheelEvent>(evt =>
@@ -382,7 +414,126 @@ namespace UNIArt.Editor
             var contentView = rootVisualElement.Q<VisualElement>("template-content");
             contentView.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
             contentView.RegisterCallback<DragPerformEvent>(OnDragPerform);
+            // contentView.RegisterCallback<MouseDownEvent>(evt =>
+            // {
+            //     // 右键菜单
+            //     Debug.LogWarning("右键菜单");
+            // });
 
+            Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfGameObject = (action) =>
+            {
+                if (selectedAsset == null)
+                    return DropdownMenuAction.Status.Disabled;
+                return (selectedAsset.HasPSDEnity || selectedAsset.RawAssetObject is GameObject)
+                    ? DropdownMenuAction.Status.Normal
+                    : DropdownMenuAction.Status.Disabled;
+            };
+
+            Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfThumb = (action) =>
+            {
+                if (selectedAsset == null)
+                    return DropdownMenuAction.Status.Disabled;
+                return
+                    (selectedAsset.HasPSDEnity || selectedAsset.RawAssetObject is GameObject)
+                    && !selectedAsset.IsPSD
+                    && !selectedAsset.IsPSDPrefab
+                    ? DropdownMenuAction.Status.Normal
+                    : DropdownMenuAction.Status.Disabled;
+            };
+#region 右键菜单
+            contentView.AddManipulator(
+                new ContextualMenuManipulator(
+                    (evt) =>
+                    {
+                        evt.menu.AppendAction(
+                            "复制到项目 [UI页面]",
+                            (x) =>
+                            {
+                                WorkflowUtility.CopyPrefabToUIPage(selectedAsset.AssetPath);
+                            },
+                            activeIfGameObject
+                        );
+                        evt.menu.AppendAction(
+                            "复制到项目 [UI组件]",
+                            (x) =>
+                            {
+                                WorkflowUtility.CopyPrefabToUIComponent(selectedAsset.AssetPath);
+                            },
+                            activeIfGameObject
+                        );
+                        evt.menu.AppendSeparator();
+
+                        evt.menu.AppendAction(
+                            "打开所在文件夹",
+                            (x) =>
+                            {
+                                if (selectedAsset == null)
+                                {
+                                    Debug.LogWarning(CurrentRootPath);
+                                    EditorUtility.RevealInFinder(CurrentRootPath);
+                                    return;
+                                }
+                                EditorUtility.RevealInFinder(selectedAsset.rawAssetPath);
+                            }
+                        );
+
+                        evt.menu.AppendAction(
+                            "在资源视图中显示",
+                            (x) =>
+                            {
+                                Utils.FocusProjectBrowser();
+                                EditorGUIUtility.PingObject(selectedAsset.RawAssetObject);
+                            }
+                        );
+
+                        evt.menu.AppendSeparator();
+                        evt.menu.AppendAction(
+                            "重新导入",
+                            (x) =>
+                            {
+                                if (selectedAsset.IsPSD)
+                                {
+                                    if (selectedAsset.HasPSDEnity)
+                                    {
+                                        AssetDatabase.DeleteAsset(selectedAsset.AssetPath);
+                                        AssetDatabase.Refresh();
+                                    }
+                                }
+                                AssetDatabase.ImportAsset(selectedAsset.rawAssetPath);
+                            }
+                        );
+                        evt.menu.AppendSeparator();
+                        evt.menu.AppendAction(
+                            "选取缩略图",
+                            (x) =>
+                            {
+                                AssetDatabase.OpenAsset(selectedAsset.RawAssetObject);
+                                SceneViewCapture.OnCapture(_rect =>
+                                {
+                                    var _savedPath = selectedAsset.PreviewPath;
+                                    var _savedFolder = Path.GetDirectoryName(_savedPath);
+                                    if (!Directory.Exists(_savedFolder))
+                                    {
+                                        Directory.CreateDirectory(_savedFolder);
+                                    }
+
+                                    SceneViewCapture.TakeScreenshot(
+                                        _rect,
+                                        selectedAsset.PreviewPath,
+                                        () =>
+                                        {
+                                            selectedAsset.RefreshPreview();
+                                        }
+                                    );
+                                });
+                                SceneViewCapture.ShowCapture();
+                            },
+                            activeIfThumb
+                        );
+                    }
+                )
+            );
+#endregion
             // ctrl+r 刷新视图
             root.RegisterCallback<KeyDownEvent>(evt =>
             {
@@ -416,6 +567,7 @@ namespace UNIArt.Editor
             if (DragAndDrop.paths.Any(_ => Utils.IsExternalPath(_)))
             {
                 DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                Debug.Log("拖拽外部资源.");
                 return;
             }
 
@@ -435,6 +587,22 @@ namespace UNIArt.Editor
 
         private void OnDragPerform(DragPerformEvent evt)
         {
+            // 处理拖拽保存为预制体
+            if (DragAndDrop.paths.Length <= 0 && DragAndDrop.objectReferences.Length > 0)
+            {
+                DragAndDrop.objectReferences
+                    .OfType<GameObject>()
+                    .ForEach(_obj =>
+                    {
+                        Utils.SaveNonPrefabObjectAsPrefab(
+                            _obj,
+                            $"{selectedTemplateButton.PrefabRootDir}/{selectedFilterButton.FilterID}"
+                        );
+                    });
+                refreshTemplateAssets();
+                return;
+            }
+
             // 导入外部资源
             if (DragAndDrop.paths.Any(_ => Utils.IsExternalPath(_)))
             {
@@ -755,6 +923,7 @@ namespace UNIArt.Editor
         {
             validateTemplateID();
             refreshFilterDirButtonStyle();
+            refreshViewButtonStyle();
 
             var _filterTags = rootVisualElement.Q<VisualElement>("filter-tags");
             _filterTags.Clear();
@@ -803,16 +972,26 @@ namespace UNIArt.Editor
         List<AssetItem> assetItems = new List<AssetItem>();
 
         // 当前选中的资源项
-        public static AssetItem selectedAssetItem = null;
-
-        private string currentTmplPath()
-        {
-            var _tmplRoot = selectedTemplateButton.RootFolder;
-            var _filterPath = selectedFilterButton.FilterID;
-            return $"{_tmplRoot}/Prefabs/{_filterPath}".TrimEnd('/');
-        }
+        public static AssetItem selectedAsset = null;
 
         EditorCoroutine _refreshAssetsCoroutine = null;
+
+        // 当前筛选目录
+        public List<string> CurrentRootPaths
+        {
+            get
+            {
+                if (selectedTemplateButton == null)
+                {
+                    return new List<string>();
+                }
+                return selectedTemplateButton
+                    .FilterRootPaths(selectedFilterButton.FilterID)
+                    .ToList();
+            }
+        }
+
+        public string CurrentRootPath => CurrentRootPaths.FirstOrDefault();
 
         private void refreshTemplateAssets()
         {
@@ -852,10 +1031,11 @@ namespace UNIArt.Editor
                 )
                 .ToList();
 
+            var _assetID = 0;
             foreach (var _path in _assets)
             {
                 var _obj = AssetDatabase.LoadAssetAtPath<GameObject>(_path);
-                var _assetItem = new AssetItem() { AssetPath = _path };
+                var _assetItem = new AssetItem() { AssetPath = _path, Index = _assetID++ };
                 buttonContainer.Add(_assetItem);
                 assetItems.Add(_assetItem);
                 yield return new EditorWaitForSeconds(0.002f);
@@ -863,35 +1043,69 @@ namespace UNIArt.Editor
                 // 资源点击事件
                 _assetItem.RegisterCallback<MouseDownEvent>(evt =>
                 {
-                    evt.StopPropagation();
+                    if (evt.button == (int)MouseButton.LeftMouse)
+                    {
+                        evt.StopPropagation();
+                    }
 
-                    if (!evt.ctrlKey)
+                    if (!evt.ctrlKey && !evt.shiftKey)
+                    {
+                        if (selectedAssets.Count <= 1)
+                        {
+                            assetItems.ForEach(_ => _.Deselect());
+                        }
+
                         _assetItem.Select();
-
-                    selectedAssetItem = _assetItem;
+                        selectedAsset = _assetItem;
+                    }
                 });
 
                 _assetItem.RegisterCallback<MouseUpEvent>(evt =>
                 {
-                    evt.StopPropagation();
-                    if (!evt.ctrlKey)
+                    if (evt.button == (int)MouseButton.LeftMouse)
+                    {
+                        evt.StopPropagation();
+                    }
+
+                    if (evt.ctrlKey)
+                    {
+                        _assetItem.Toggle();
+                    }
+                    else if (evt.shiftKey)
+                    {
+                        int _min = _assetItem.Index,
+                            _max = _assetItem.Index;
+                        if (selectedAssets.Count > 0)
+                        {
+                            _min = selectedAssets.Min(_ => _.Index);
+                            _max = selectedAssets.Max(_ => _.Index);
+                            var _cur = _assetItem.Index;
+                            if (_cur <= _max)
+                                _min = _cur;
+                            else
+                                _max = _cur;
+                        }
+
+                        assetItems.ForEach(_ => _.Deselect());
+                        assetItems
+                            .Where(_ => _.Index >= _min && _.Index <= _max)
+                            .ToList()
+                            .ForEach(_ => _.Select());
+                    }
+                    else
                     {
                         assetItems.ForEach(_ => _.Deselect());
                         _assetItem.Select();
                     }
-                    else
-                    {
-                        _assetItem.Toggle();
-                    }
 
-                    selectedAssetItem = _assetItem;
+                    selectedAsset = _assetItem;
                 });
 
                 // 资源拖拽事件
                 _assetItem.OnStartDrag.AddListener(_ =>
                 {
                     _.Select();
-                    var _selectedAssets = selectedAssets();
+                    var _selectedAssets = selectedAssets;
 
                     DragAndDrop.PrepareStartDrag();
                     DragAndDrop.objectReferences = _selectedAssets
@@ -911,11 +1125,6 @@ namespace UNIArt.Editor
                 );
                 _assetItem.OnHidePreview.AddListener(_ => ClearAssetPreviewTooltip());
             }
-        }
-
-        public List<AssetItem> selectedAssets()
-        {
-            return assetItems.Where(_ => _.IsSelected).ToList();
         }
 
         public void Refresh()

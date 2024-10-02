@@ -42,7 +42,7 @@ namespace UNIArt.Editor
             UnityEditorInternal.InternalEditorUtility.SetIsInspectorExpanded(target, true);
         }
 
-        private AnimatorController createController(Animator animator)
+        public static AnimatorController CreateController(Animator animator)
         {
             if (animator.runtimeAnimatorController == null)
             {
@@ -262,7 +262,7 @@ namespace UNIArt.Editor
                 {
                     if (!string.IsNullOrEmpty(editTarget.content))
                     {
-                        controller = createController((Animator)target);
+                        controller = CreateController((Animator)target);
 
                         var _subAssetNames = AssetDatabase
                             .LoadAllAssetRepresentationsAtPath(
@@ -306,6 +306,14 @@ namespace UNIArt.Editor
         }
 
         private void onNewAnimationCreated(AnimatorController controller, AnimationClip clip)
+        {
+            AddClipToController(controller, clip);
+            // AssetDatabase.OpenAsset(clip);
+            // AnimationWindow animWindow = EditorWindow.GetWindow<AnimationWindow>();
+            // animWindow.animationClip = clip;
+        }
+
+        public static void AddClipToController(AnimatorController controller, AnimationClip clip)
         {
             if (controller.layers.Length <= 0)
             {
