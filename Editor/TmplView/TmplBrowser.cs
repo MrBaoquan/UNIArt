@@ -27,9 +27,6 @@ namespace UNIArt.Editor
         //     );
         // }
 
-        const string EditorSelectTemplateIDKey = "LastSelectedTemplateID";
-
-        // const string BuiltInTemplateID = "Standard";
 
         [MenuItem("Window/UNIArt 工作台 &1", priority = 1399)] //1499
         public static void ShowUNIArtWindow()
@@ -65,9 +62,28 @@ namespace UNIArt.Editor
 
         public int SelectedTemplateID
         {
-            get => SessionState.GetInt(EditorSelectTemplateIDKey, 0);
-            set => SessionState.SetInt(EditorSelectTemplateIDKey, value);
+            get
+            {
+                var _idx = templateButtons.FindIndex(
+                    _ => _.TemplateID == UNIArtSettings.Project.LastSelectedTemplateID
+                );
+                return _idx == -1 ? 0 : _idx;
+            }
+            set
+            {
+                if (value < 0 || value >= templateButtons.Count)
+                {
+                    return;
+                }
+                UNIArtSettings.Project.LastSelectedTemplateID = templateButtons[value].TemplateID;
+            }
         }
+
+        // public string SelectedTemplateIDString
+        // {
+        //     get => SelectedTemplateID.ToString();
+        //     set => SelectedTemplateID = int.Parse(value);
+        // }
         public TmplButton selectedTemplateButton =>
             SelectedTemplateID < templateButtons.Count ? templateButtons[SelectedTemplateID] : null;
 
@@ -77,13 +93,17 @@ namespace UNIArt.Editor
 
         public List<AssetItem> selectedAssets => assetItems.Where(item => item.IsSelected).ToList();
 
+#region 启动页面构造
         public void CreateGUI()
         {
+            UNIArtSettings.Project.PullExternals();
             buildUI();
             registerUIEvents();
             Refresh();
-            selectTemplate(SelectedTemplateID);
+            // selectTemplate(SelectedTemplateID);
         }
+
+        ReactiveProperty<string> templateFilter = new ReactiveProperty<string>();
 
         private void buildUI()
         {
@@ -95,21 +115,27 @@ namespace UNIArt.Editor
             VisualElement labelFromUXML = m_VisualTreeAsset.Instantiate();
             root.Add(labelFromUXML);
 
-            var _templateListRoot = labelFromUXML.Q<VisualElement>("template-list");
+            var _topListRoot = labelFromUXML.Q<VisualElement>("menu-top-list");
 
-            var _localTemplateButton = new TmplButton();
-            _localTemplateButton.TemplateID = TmplButton.LocalTemplateTitle;
+            var _localTemplateButton = new TmplButton()
+            {
+                TemplateID = TmplButton.LocalTemplateTitle
+            };
+
             _localTemplateButton.style.flexGrow = 0;
             _localTemplateButton.style.flexShrink = 0;
-            _templateListRoot.parent.Insert(0, _localTemplateButton);
+            _topListRoot.Insert(0, _localTemplateButton);
             templateButtons.Add(_localTemplateButton);
 
-            var _builtinTemplateButton = new TmplButton();
-            _builtinTemplateButton.TemplateID = TmplButton.BuiltInTemplateID;
+            var _builtinTemplateButton = new TmplButton()
+            {
+                TemplateID = TmplButton.BuiltInTemplateID
+            };
+
             _builtinTemplateButton.style.flexGrow = 0;
             _builtinTemplateButton.style.flexShrink = 0;
 
-            _templateListRoot.parent.Insert(1, _builtinTemplateButton);
+            _topListRoot.Insert(1, _builtinTemplateButton);
             templateButtons.Add(_builtinTemplateButton);
 
             if (!Directory.Exists(UNIArtSettings.Project.TemplateLocalFolder))
@@ -141,26 +167,52 @@ namespace UNIArt.Editor
             }
             previewTex = rootVisualElement.Q<VisualElement>("img_preview");
 
-            ToolbarSearchField searchField = rootVisualElement.Q<ToolbarSearchField>(
+            ToolbarSearchField templateSearch = rootVisualElement.Q<ToolbarSearchField>(
+                "template-search"
+            );
+
+            templateFilter.OnValueChanged.AddListener(_ =>
+            {
+                Debug.LogWarning(_);
+                refreshTemplateMenuList();
+            });
+
+            EditorCoroutine templateSearchCoroutine = null;
+            templateSearch.RegisterValueChangedCallback(evt =>
+            {
+                if (templateSearchCoroutine != null)
+                {
+                    EditorCoroutineUtility.StopCoroutine(templateSearchCoroutine);
+                }
+                var _filter = evt.newValue;
+                templateSearchCoroutine = EditorCoroutineUtility.StartCoroutine(
+                    delaySearchFilter(() =>
+                    {
+                        templateFilter.Value = _filter;
+                        templateSearchCoroutine = null;
+                    }),
+                    this
+                );
+            });
+
+            ToolbarSearchField assetSearch = rootVisualElement.Q<ToolbarSearchField>(
                 "asset-search"
             );
 
-            EditorCoroutine searchCoroutine = null;
-            searchField.RegisterValueChangedCallback(evt =>
+            EditorCoroutine assetSearchCoroutine = null;
+            assetSearch.RegisterValueChangedCallback(evt =>
             {
-                // selectedTemplateButton.SearchFilter.Value = evt.newValue;
-                if (searchCoroutine != null)
+                if (assetSearchCoroutine != null)
                 {
-                    EditorCoroutineUtility.StopCoroutine(searchCoroutine);
+                    EditorCoroutineUtility.StopCoroutine(assetSearchCoroutine);
                 }
-                searchCoroutine = EditorCoroutineUtility.StartCoroutine(
-                    delaySearchFilter(
-                        evt.newValue,
-                        () =>
-                        {
-                            searchCoroutine = null;
-                        }
-                    ),
+                var _filter = evt.newValue;
+                assetSearchCoroutine = EditorCoroutineUtility.StartCoroutine(
+                    delaySearchFilter(() =>
+                    {
+                        selectedTemplateButton.SearchFilter.Value = _filter;
+                        assetSearchCoroutine = null;
+                    }),
                     this
                 );
             });
@@ -204,6 +256,8 @@ namespace UNIArt.Editor
             });
         }
 
+#endregion
+
         private void refreshFilterDirButtonStyle()
         {
             var filterDirButton = rootVisualElement.Q<ToolbarButton>("btn-filter-dir");
@@ -237,10 +291,9 @@ namespace UNIArt.Editor
             }
         }
 
-        private IEnumerator delaySearchFilter(string filter, Action finishCallback = null)
+        private IEnumerator delaySearchFilter(Action finishCallback = null)
         {
             yield return new EditorWaitForSeconds(0.5f);
-            selectedTemplateButton.SearchFilter.Value = filter;
             finishCallback?.Invoke();
         }
 
@@ -290,7 +343,13 @@ namespace UNIArt.Editor
                         UNIArtSettings.Project.TemplateLocalFolder,
                         selectedTemplateButton.ExternalRepoUrl
                     );
-                    selectedTemplateButton.Refresh();
+                    // selectedTemplateButton.Refresh();
+                    UNIArtSettings.Project.PullExternals();
+                    // var _templateID = selectedTemplateButton.TemplateID;
+                    refreshTemplateMenuList();
+                    // selectTemplate(
+                    //     templateButtons.FindIndex(_button => _button.TemplateID == _templateID)
+                    // );
                     refreshTemplateView();
                 });
 
@@ -304,7 +363,12 @@ namespace UNIArt.Editor
                             selectedTemplateButton.TemplateID
                         )
                     );
-                    selectedTemplateButton.Refresh();
+                    UNIArtSettings.Project.PullExternals();
+                    // var _templateID = selectedTemplateButton.TemplateID;
+                    refreshTemplateMenuList();
+                    // selectTemplate(
+                    //     templateButtons.FindIndex(_button => _button.TemplateID == _templateID)
+                    // );
                     refreshTemplateView();
                 });
 
@@ -316,6 +380,12 @@ namespace UNIArt.Editor
                     assetItems.ForEach(_asset => _asset.SetZoom(_val));
                 });
             root.Q<Slider>("asset_zoom").SetValueWithoutNotify(50f);
+
+            root.Q<Button>("btn-version-update")
+                .RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    UniArtPackageAutoUpdater.CheckPackageVersion();
+                });
 
             root.Q<Button>("btn_updateAll")
                 .RegisterCallback<MouseUpEvent>(evt =>
@@ -419,7 +489,7 @@ namespace UNIArt.Editor
             //     // 右键菜单
             //     Debug.LogWarning("右键菜单");
             // });
-
+#region 资源右键菜单
             Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfGameObject = (action) =>
             {
                 if (selectedAsset == null)
@@ -440,7 +510,7 @@ namespace UNIArt.Editor
                     ? DropdownMenuAction.Status.Normal
                     : DropdownMenuAction.Status.Disabled;
             };
-#region 右键菜单
+
             contentView.AddManipulator(
                 new ContextualMenuManipulator(
                     (evt) =>
@@ -469,7 +539,6 @@ namespace UNIArt.Editor
                             {
                                 if (selectedAsset == null)
                                 {
-                                    Debug.LogWarning(CurrentRootPath);
                                     EditorUtility.RevealInFinder(CurrentRootPath);
                                     return;
                                 }
@@ -482,11 +551,29 @@ namespace UNIArt.Editor
                             (x) =>
                             {
                                 Utils.FocusProjectBrowser();
+                                if (selectedAsset == null)
+                                {
+                                    EditorGUIUtility.PingObject(
+                                        AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(
+                                            CurrentRootPath
+                                        )
+                                    );
+                                    return;
+                                }
                                 EditorGUIUtility.PingObject(selectedAsset.RawAssetObject);
                             }
                         );
 
                         evt.menu.AppendSeparator();
+                        evt.menu.AppendAction(
+                            "刷新",
+                            (x) =>
+                            {
+                                RefreshTemplateFilters();
+                            },
+                            DropdownMenuAction.AlwaysEnabled
+                        );
+
                         evt.menu.AppendAction(
                             "重新导入",
                             (x) =>
@@ -500,7 +587,11 @@ namespace UNIArt.Editor
                                     }
                                 }
                                 AssetDatabase.ImportAsset(selectedAsset.rawAssetPath);
-                            }
+                            },
+                            _ =>
+                                selectedAsset != null
+                                    ? DropdownMenuAction.Status.Normal
+                                    : DropdownMenuAction.Status.Disabled
                         );
                         evt.menu.AppendSeparator();
                         evt.menu.AppendAction(
@@ -553,6 +644,7 @@ namespace UNIArt.Editor
             });
         }
 
+#region 资源拖拽处理
         private void OnDragUpdated(DragUpdatedEvent evt)
         {
             if (DragAndDrop.paths.Length < 0)
@@ -641,6 +733,7 @@ namespace UNIArt.Editor
 
             DragAndDrop.AcceptDrag();
         }
+#endregion
 
         public string TargetRootFolder(string assetPath)
         {
@@ -874,6 +967,7 @@ namespace UNIArt.Editor
         // 模板筛选按钮列表
         public List<FilterButton> filterButtons = new List<FilterButton>();
 
+#region 构建模板列表
         private void refreshTemplateMenuList()
         {
             var _svnTemplateList = SVNConextMenu
@@ -881,25 +975,57 @@ namespace UNIArt.Editor
                 .Except(new string[] { TmplButton.BuiltInTemplateID })
                 .ToList();
 
-            var _templateListRoot = rootVisualElement.Q<VisualElement>("template-list");
-            _templateListRoot.Clear();
+            var _topListRoot = rootVisualElement.Q<VisualElement>("menu-top-list");
+            _topListRoot.Clear();
+
+            var _pattern = $".*{templateFilter.Value}.*";
+
+            var _normalListRoot = rootVisualElement.Q<VisualElement>("template-list");
+            _normalListRoot.Clear();
             templateButtons.RemoveRange(2, templateButtons.Count - 2);
 
-            _svnTemplateList.ForEach(_item =>
+            var _newTemplates = _svnTemplateList
+                .Where(_templName => Regex.IsMatch(_templName, _pattern, RegexOptions.IgnoreCase))
+                .Select(_item => new TmplButton() { TemplateID = _item });
+
+            templateButtons
+                .Take(2)
+                .Concat(_newTemplates.Where(_ => _.IsTop))
+                .ToList()
+                .ForEach(_templdate =>
+                {
+                    _topListRoot.Add(_templdate);
+                    templateButtons.Add(_templdate);
+                });
+            _newTemplates
+                .Where(_ => !_.IsTop)
+                .OrderByDescending(_ =>
+                {
+                    return _.OrderID;
+                })
+                .ToList()
+                .ForEach(_templdate =>
+                {
+                    _normalListRoot.Add(_templdate);
+                    templateButtons.Add(_templdate);
+                });
+
+            templateButtons.ForEach(_t =>
             {
-                var _templateButton = new TmplButton();
-                _templateButton.TemplateID = _item;
-                _templateListRoot.Add(_templateButton);
-                templateButtons.Add(_templateButton);
+                _t.RefreshStyle();
+                _t.RegisterCallback<MouseDownEvent>(
+                    evt => selectTemplate(templateButtons.IndexOf(_t))
+                );
+
+                _t.onTopChanged.AddListener(_ =>
+                {
+                    refreshTemplateMenuList();
+                });
             });
 
-            templateButtons.ForEach(
-                _t =>
-                    _t.RegisterCallback<MouseDownEvent>(
-                        evt => selectTemplate(templateButtons.IndexOf(_t))
-                    )
-            );
+            selectTemplate(SelectedTemplateID);
         }
+#endregion
 
         private int validateTemplateID()
         {

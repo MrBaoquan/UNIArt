@@ -24,6 +24,21 @@ namespace UNIArt.Editor
 
         public bool IsLocal => TemplateID == LocalTemplateTitle;
 
+        public bool IsTop
+        {
+            set
+            {
+                UNIArtSettings.Project.SetTemplateTop(templateID, value);
+                RefreshTopIcon();
+            }
+            get
+            {
+                if (IsLocal || IsBuiltIn)
+                    return true;
+                return UNIArtSettings.Project.GetTemplateTop(templateID);
+            }
+        }
+
         public ReactiveProperty<AssetFilterMode> FilterMode = new ReactiveProperty<AssetFilterMode>(
             AssetFilterMode.All
         );
@@ -125,7 +140,16 @@ namespace UNIArt.Editor
                 .ToArray();
         }
 
-        public bool IsInstalled { get; protected set; } = false;
+        private bool isInstalled = false;
+        public bool IsInstalled
+        {
+            get => isInstalled;
+            protected set
+            {
+                isInstalled = value;
+                RefreshInstallIcon();
+            }
+        }
 
         public int FilterID { get; set; } = 0;
         public ReactiveProperty<string> SearchFilter = new ReactiveProperty<string>(string.Empty);
@@ -136,12 +160,69 @@ namespace UNIArt.Editor
                 : UNIArtSettings.GetExternalTemplateFolder(TemplateID);
         public string ExternalRepoUrl => UNIArtSettings.GetExternalTemplateFolderUrl(TemplateID);
 
+        public int OrderID
+        {
+            get
+            {
+                if (IsLocal)
+                {
+                    return 100;
+                }
+                if (IsBuiltIn)
+                {
+                    return 90;
+                }
+                if (IsInstalled)
+                {
+                    return 50;
+                }
+                return 0;
+            }
+        }
+
         public void Refresh()
         {
-            IsInstalled = SVNIntegration.HasExternal(
-                UNIArtSettings.Project.TemplateLocalFolder,
-                TemplateID
-            );
+            if (IsLocal)
+            {
+                IsInstalled = true;
+                IsTop = true;
+                return;
+            }
+            IsInstalled = UNIArtSettings.Project.HasExternal(TemplateID);
+            IsTop = UNIArtSettings.Project.GetTemplateTop(TemplateID);
+            RefreshStyle();
+        }
+
+        public void RefreshStyle()
+        {
+            RefreshInstallIcon();
+            RefreshTopIcon();
+        }
+
+        public void RefreshInstallIcon()
+        {
+            if (parent == null)
+                return;
+            if (IsInstalled)
+                this.Q<VisualElement>("icon_status").RemoveFromClassList("not-installed");
+            else
+            {
+                this.Q<VisualElement>("icon_status").AddToClassList("not-installed");
+            }
+        }
+
+        public void RefreshTopIcon()
+        {
+            if (parent == null)
+                return;
+            if (IsTop && !IsLocal && !IsBuiltIn)
+            {
+                this.Q<VisualElement>("top-icon").AddToClassList("menu-keep-top");
+            }
+            else
+            {
+                this.Q<VisualElement>("top-icon").RemoveFromClassList("menu-keep-top");
+            }
         }
 
         public void Commit()
@@ -189,9 +270,46 @@ namespace UNIArt.Editor
             return true;
         }
 
+        private bool keeptopable => !IsTop && !IsBuiltIn && !IsLocal;
+        private bool unkeeptopable => IsTop && !IsBuiltIn && !IsLocal;
+
+        public UnityEvent<bool> onTopChanged = new UnityEvent<bool>();
+
         public TmplButton()
         {
             BindView(Utils.PackageAssetPath("Editor/TmplView/TmplButton/TmplButton.uxml"));
+
+            this.AddManipulator(
+                new ContextualMenuManipulator(
+                    (evt) =>
+                    {
+                        evt.menu.AppendAction(
+                            "置顶该资源库",
+                            (x) =>
+                            {
+                                IsTop = true;
+                                onTopChanged.Invoke(true);
+                            },
+                            _ =>
+                                keeptopable
+                                    ? DropdownMenuAction.Status.Normal
+                                    : DropdownMenuAction.Status.Disabled
+                        );
+                        evt.menu.AppendAction(
+                            "取消置顶",
+                            (x) =>
+                            {
+                                IsTop = false;
+                                onTopChanged.Invoke(false);
+                            },
+                            _ =>
+                                unkeeptopable
+                                    ? DropdownMenuAction.Status.Normal
+                                    : DropdownMenuAction.Status.Disabled
+                        );
+                    }
+                )
+            );
         }
 
         public bool CleanDir()

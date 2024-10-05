@@ -139,3 +139,21 @@ ToolbarButton {
     -unity-background-image-tint-color: rgb(255, 255, 255);
     transition-duration: 0.25s;
 }
+
+.not-installed {
+    background-image: url('project://database/Packages/com.parful.uniart/Assets/Icon/%E4%B8%8B%E8%BD%BD.png?fileID=2800000&guid=a0b8745f028ac0644a1a35eb1beac275&type=3#下载');
+    width: 16px;
+    height: 16px;
+    justify-content: center;
+    align-items: auto;
+    flex-shrink: 0;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.5);
+}
+
+.menu-keep-top {
+    flex-shrink: 0;
+    background-image: url('project://database/Packages/com.parful.uniart/Assets/Icon/%E7%BD%AE%E9%A1%B6.png?fileID=2800000&guid=2a9aaef233a30ea44a436b1a4e4bb0f8&type=3#置顶');
+    width: 16px;
+    height: 16px;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.4);
+}

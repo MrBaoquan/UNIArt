@@ -185,6 +185,53 @@ namespace UNIArt.Editor
                 != null;
         }
 
+        [Serializable]
+        public class TemplateCache
+        {
+            public string TemplateName;
+            public bool KeepTop = false;
+        }
+
+        [HideInInspector]
+        public List<TemplateCache> TemplateCaches = new List<TemplateCache>();
+
+        [HideInInspector]
+        public string LastSelectedTemplateID = TmplButton.LocalTemplateTitle;
+
+        public void SetTemplateTop(string templateName, bool isTop)
+        {
+            var _cache = TemplateCaches.FirstOrDefault(x => x.TemplateName == templateName);
+            if (_cache == null)
+            {
+                _cache = new TemplateCache() { TemplateName = templateName };
+                TemplateCaches.Add(_cache);
+            }
+            _cache.KeepTop = isTop;
+        }
+
+        public bool GetTemplateTop(string templateName)
+        {
+            var _cache = TemplateCaches.FirstOrDefault(x => x.TemplateName == templateName);
+            if (_cache == null)
+            {
+                return false;
+            }
+            return _cache.KeepTop;
+        }
+
+        private List<SVNIntegration.ExternalProperty> externals =
+            new List<SVNIntegration.ExternalProperty>();
+
+        public void PullExternals()
+        {
+            externals = SVNIntegration.GetExternals(UNIArtSettings.Project.TemplateLocalFolder);
+        }
+
+        public bool HasExternal(string templateName)
+        {
+            return externals.Any(x => x.Dir == templateName);
+        }
+
         private static UNIArtSettings instance;
         public static UNIArtSettings Project
         {

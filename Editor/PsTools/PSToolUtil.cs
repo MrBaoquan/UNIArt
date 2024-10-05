@@ -63,7 +63,7 @@ namespace UNIArt.Editor
                     false, // create
                     4096,
                     Path.GetDirectoryName(psdFilePath).ToForwardSlash() + "/",
-                    true,
+                    false,
                     true, // add pslayer
                     PsGroup.BlendingShaderType.GRAB_PASS,
                     psdFileMgr._layerTextures,
