@@ -136,8 +136,7 @@ namespace UNIArt.Editor
                 if (dragAsset.AssetObject is Texture2D)
                 {
                     GameObject.DestroyImmediate(_newObj.GetComponent<SpriteRenderer>());
-                    var _rectTrans = _newObj.AddComponent<RectTransform>();
-                    _rectTrans.anchoredPosition = Vector3.zero;
+                    _newObj.AddComponent<RectTransform>();
                     var _imageComponent = _newObj.AddComponent<Image>();
                     _imageComponent.color = Color.white;
                     _imageComponent.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(
