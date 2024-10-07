@@ -96,22 +96,6 @@ namespace UNIArt.Editor
 
         private static void OnSceneGUI(SceneView sceneView)
         {
-            Handles.BeginGUI();
-
-            // float buttonWidth = 30f; // 按钮宽度
-            // float buttonHeight = 20f; // 按钮高度
-            // Rect toggleRect = new Rect(
-            //     sceneView.position.width - buttonWidth - 10,
-            //     sceneView.position.height - buttonHeight - 50,
-            //     buttonWidth,
-            //     buttonHeight
-            // );
-
-            // // 绘制 Toggle 按钮
-            // GUIContent toggleContent = new GUIContent(rulerTex);
-            // isToggled = GUI.Toggle(toggleRect, isToggled, toggleContent, EditorStyles.miniButton);
-
-            // Handles.EndGUI();
             handleDropEvent();
         }
 
