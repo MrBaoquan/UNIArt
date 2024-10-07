@@ -395,7 +395,7 @@ namespace PluginMaster
                     var fileName =
                         Path.GetFileNameWithoutExtension(_psdFile.Path)
                         + "_"
-                        + childLayer.Id.ToString("D4")
+                        + childLayer.Id.ToString("D3")
                         + "_"
                         + childLayer.Name;
                     Sprite childSprite = TextureUtils.SavePngAsset(

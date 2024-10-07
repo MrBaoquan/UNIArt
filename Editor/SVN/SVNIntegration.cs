@@ -996,6 +996,7 @@ namespace UNIArt.Editor
             }
 
             Utils.DeleteProjectAsset($"{externalPath}/{_folderName}");
+
             AssetDatabase.Refresh();
         }
 

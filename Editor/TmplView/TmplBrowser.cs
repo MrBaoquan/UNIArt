@@ -17,16 +17,8 @@ namespace UNIArt.Editor
 {
     public class TmplBrowser : EditorWindow
     {
-        // [MenuItem("Tools/test")]
-        // public static void Test()
-        // {
-        //     Debug.LogWarning(
-        //         AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(
-        //             "Assets/ArtAssets/UI Prefabs/Windows"
-        //         )
-        //     );
-        // }
-
+        [MenuItem("Tools/test")]
+        public static void Test() { }
 
         [MenuItem("Window/UNIArt 工作台 &1", priority = 1399)] //1499
         public static void ShowUNIArtWindow()
@@ -173,7 +165,6 @@ namespace UNIArt.Editor
 
             templateFilter.OnValueChanged.AddListener(_ =>
             {
-                Debug.LogWarning(_);
                 refreshTemplateMenuList();
             });
 
@@ -286,8 +277,8 @@ namespace UNIArt.Editor
             }
             else
             {
-                _btnCommit.tooltip = "提交模板资源";
-                _btnUpdate.tooltip = "更新模板资源";
+                _btnCommit.tooltip = "提交当前资源库内容";
+                _btnUpdate.tooltip = "更新当前资源库内容";
             }
         }
 
@@ -381,6 +372,12 @@ namespace UNIArt.Editor
                 });
             root.Q<Slider>("asset_zoom").SetValueWithoutNotify(50f);
 
+            root.Q<Button>("btn-help")
+                .RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    Application.OpenURL("http://wiki.andcrane.com:5152/zh/UNIArt");
+                });
+
             root.Q<Button>("btn-version-update")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
@@ -468,7 +465,7 @@ namespace UNIArt.Editor
 
             root.RegisterCallback<MouseDownEvent>(evt =>
             {
-                selectedAsset?.Deselect();
+                selectedAssets.ForEach(_ => _.Deselect());
                 selectedAsset = null;
             });
 
@@ -659,7 +656,6 @@ namespace UNIArt.Editor
             if (DragAndDrop.paths.Any(_ => Utils.IsExternalPath(_)))
             {
                 DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
-                Debug.Log("拖拽外部资源.");
                 return;
             }
 

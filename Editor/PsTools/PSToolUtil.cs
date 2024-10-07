@@ -36,13 +36,13 @@ namespace UNIArt.Editor
 
         static PSDFileMgr psdFileMgr = null;
 
-        [MenuItem("Tools/PSD Test")]
-        private static void PsdCreateGameObjectTest()
-        {
-            // psdFileMgr = GetPSDFile("Assets/ArtAssets/Textures/Psd/待机.psd");
-            // CreatePSDGameObject("Assets/ArtAssets/Textures/Psd/待机.psd");
-            EditorUtility.ClearProgressBar();
-        }
+        // [MenuItem("Tools/PSD Test")]
+        // private static void PsdCreateGameObjectTest()
+        // {
+        //     // psdFileMgr = GetPSDFile("Assets/ArtAssets/Textures/Psd/待机.psd");
+        //     // CreatePSDGameObject("Assets/ArtAssets/Textures/Psd/待机.psd");
+        //     EditorUtility.ClearProgressBar();
+        // }
 
         public static void CreatePSDGameObject(
             string psdFilePath,
