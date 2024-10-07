@@ -17,8 +17,8 @@ namespace UNIArt.Editor
 {
     public class TmplBrowser : EditorWindow
     {
-        [MenuItem("Tools/test")]
-        public static void Test() { }
+        // [MenuItem("Tools/test")]
+        // public static void Test() { }
 
         [MenuItem("Window/UNIArt 工作台 &1", priority = 1399)] //1499
         public static void ShowUNIArtWindow()
