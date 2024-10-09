@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Sirenix.Utilities;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
@@ -127,17 +126,28 @@ namespace UNIArt.Editor
                 .ToList();
         }
 
-        public string[] FilterRootPaths(string filterTag)
+        public string[] ValidFilterRootPaths(string filterTag)
         {
             var _filterRoots = filterDirs().Select(_ => $"{RootFolder}/{_}");
             _filterRoots
                 .Where(_ => !AssetDatabase.IsValidFolder(_))
+                .ToList()
                 .ForEach(_ => Utils.CreateFolderIfNotExist(_));
 
             return _filterRoots
                 .Select(_rootDir => $"{_rootDir}/{filterTag}")
                 .Where(_ => AssetDatabase.IsValidFolder(_))
                 .ToArray();
+        }
+
+        public string RootPrefabFilterPath(string filterTag)
+        {
+            return $"{RootFolder}/{filterDirs()[0]}/{filterTag}";
+        }
+
+        public string RootTextureFilterPath(string filterTag)
+        {
+            return $"{RootFolder}/{filterDirs()[1]}/{filterTag}";
         }
 
         private bool isInstalled = false;

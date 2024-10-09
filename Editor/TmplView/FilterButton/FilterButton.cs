@@ -1,5 +1,8 @@
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditor.UI;
+using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UIElements;
 
 namespace UNIArt.Editor
@@ -12,8 +15,7 @@ namespace UNIArt.Editor
 
     public class FilterButton : VisualElement
     {
-        public const string AllFilterID = "全部";
-
+        public bool IsAll => FilterID == string.Empty;
         private static Dictionary<string, string> filterTextMap = new Dictionary<string, string>()
         {
             { string.Empty, "全部" },
@@ -51,6 +53,29 @@ namespace UNIArt.Editor
             }
         }
 
+        public void DoEdit()
+        {
+            var _inputField = this.Q<TextField>("input");
+            _inputField.style.display = DisplayStyle.Flex;
+
+            var _label = this.Q<Label>("title");
+            _label.style.display = DisplayStyle.None;
+
+            _inputField.value = FilterID;
+            _inputField.Focus();
+        }
+
+        public void DoText()
+        {
+            var _inputField = this.Q<TextField>("input");
+            _inputField.style.display = DisplayStyle.None;
+
+            var _label = this.Q<Label>("title");
+            _label.style.display = DisplayStyle.Flex;
+        }
+
+        public UnityEvent<string, string> OnConfirmInput = new UnityEvent<string, string>();
+
         public FilterButton()
         {
             var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
@@ -59,6 +84,25 @@ namespace UNIArt.Editor
 
             visualTree.CloneTree(this);
             this.Q<Label>("title").text = FilterID;
+
+            var _inputField = this.Q<TextField>("input");
+
+            _inputField.RegisterCallback<FocusOutEvent>(e =>
+            {
+                if (string.IsNullOrEmpty(_inputField.value))
+                    return;
+
+                DoText();
+                if (_inputField.value == filterID)
+                {
+                    return;
+                }
+
+                var _oldVal = FilterID;
+                FilterID = _inputField.value;
+                _inputField.value = string.Empty;
+                OnConfirmInput.Invoke(_oldVal, FilterID);
+            });
         }
     }
 }

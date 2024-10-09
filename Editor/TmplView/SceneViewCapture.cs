@@ -76,6 +76,7 @@ namespace UNIArt.Editor
             // 如果按了esc，则隐藏截图窗口
             if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape)
             {
+                restoreSceneViewSettings();
                 HideCapture();
                 return;
             }

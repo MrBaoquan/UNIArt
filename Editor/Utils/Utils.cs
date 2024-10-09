@@ -323,6 +323,9 @@ namespace UNIArt.Editor
                 ? UNIArtSettings.GetExternalTemplateRootBySubAsset(dropUponPath)
                 : UNIArtSettings.Project.ArtFolder;
 
+            // Debug.Log(
+            //     $"MoveAssetsWithDependencies: {assetPaths.Length} {dropUponPath} {includeSelf}"
+            // );
             var _folders = assetPaths.Where(_ => AssetDatabase.IsValidFolder(_)).ToList();
 
             if (_folders.Count > 0)
@@ -354,18 +357,18 @@ namespace UNIArt.Editor
                     // Debug.Log($"Move {assetPath} to {dropUponPath}");
                     // 依赖资源的处理
                     var _dependencies = AssetDatabase
-                        .GetDependencies(assetPath, false)
+                        .GetDependencies(assetPath)
                         .Where(_ => !_.StartsWith("Packages/")) // 排除包内资源
                         .Where(excludeCondition)
                         .Where(_ => _ != assetPath)
                         .Where(filterDependencyCondition);
 
-                    // Debug.LogError(assetPath);
+                    // Debug.LogWarning(assetPath);
                     // Debug.Log($"dependencies: {_dependencies.Count()}");
 
                     foreach (var _dependencyPath in _dependencies)
                     {
-                        var _templateFolder = ".*";
+                        var _templateFolder = "";
                         if (UNIArtSettings.IsTemplateAsset(_dependencyPath))
                         {
                             var _templateID = UNIArtSettings.GetTemplateNameBySubAsset(
@@ -387,8 +390,18 @@ namespace UNIArt.Editor
                             _templateFolder = @$"#Templates/{_templateID}";
                         }
                         var _folder = GetFolderByAssetType(_dependencyPath);
-                        var _regex = $@"^Assets/(ArtAssets/)?.*?({_templateFolder}/)?({_folder}/)?";
+                        var _regex =
+                            $@"^Assets/(ArtAssets/)?.*?({_templateFolder}/)?(.*{_folder}/)*(.+)$";
+                        var _match = Regex.Match(_dependencyPath, _regex);
+                        // if (_match.Success)
+                        // {
+                        //     Debug.LogWarning();
+                        // }
                         var _srcPath = Regex.Replace(_dependencyPath, _regex, string.Empty);
+                        if (_match.Success)
+                        {
+                            _srcPath = _match.Groups[4].Value;
+                        }
                         var _dstPath = $"{assetRoot}/{_folder}/{_srcPath}";
                         if (_srcPath == _dstPath) // 源路径和目标路径一致则忽略
                         {
@@ -404,6 +417,9 @@ namespace UNIArt.Editor
                     // 资源本身的处理
                     var _oldPath = assetPath;
                     var _newPath = $"{dropUponPath}/{Path.GetFileName(_oldPath)}";
+
+                    if (_oldPath == _newPath)
+                        return;
 
                     var _depFolder = _folders.Where(_ => assetPath.StartsWith(_)).Min();
                     // Debug.LogWarning(_depFolder);
@@ -459,6 +475,9 @@ namespace UNIArt.Editor
         // 主方法：导入外部资产
         public static void ImportExternalAssets(string[] assetPaths, string targetRoot)
         {
+            if (assetPaths.Length == 0)
+                return;
+
             var targetRootFolder = targetRoot;
             // 检查目标根文件夹是否存在，不存在则创建
             if (!Directory.Exists(targetRootFolder))
@@ -624,7 +643,10 @@ namespace UNIArt.Editor
 
         public static GameObject SaveNonPrefabObjectAsPrefab(GameObject obj, string saveDir = "")
         {
-            if (PrefabUtility.IsAnyPrefabInstanceRoot(obj))
+            if (
+                PrefabUtility.IsAnyPrefabInstanceRoot(obj)
+                || PrefabUtility.IsPartOfPrefabInstance(obj)
+            )
             {
                 return obj;
             }
@@ -644,11 +666,19 @@ namespace UNIArt.Editor
             // Debug.Log($"Save Non-Prefab Object as Prefab: {_savePath}");
             Utils.CreateFolderIfNotExist(Path.GetDirectoryName(_savePath));
             _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
-            return PrefabUtility.SaveAsPrefabAssetAndConnect(
+            var _newPrefab = PrefabUtility.SaveAsPrefabAssetAndConnect(
                 obj,
                 _savePath,
                 InteractionMode.AutomatedAction
             );
+            AssetDatabase.Refresh();
+            MoveAssetsWithDependencies(
+                new string[] { _savePath },
+                Path.GetDirectoryName(_savePath).ToForwardSlash(),
+                false
+            );
+
+            return _newPrefab;
         }
     }
 }

@@ -87,6 +87,30 @@ namespace UNIArt.Editor
                 )
                 {
                     GenericMenu menu = new GenericMenu();
+
+                    // 添加空物体菜单
+                    var _addEmptyMenu = new GUIContent(
+                        "添加空物体",
+                        EditorGUIUtility.IconContent("d__Menu").image
+                    );
+
+                    menu.AddItem(
+                        _addEmptyMenu,
+                        false,
+                        () =>
+                        {
+                            GameObject _newObj = new GameObject();
+                            _newObj.transform.SetParent(obj.transform, false);
+                            _newObj.name = "Empty Node";
+                            if (_newObj.GetComponentInParent<RectTransform>() != null)
+                            {
+                                var _rectTrans = _newObj.AddComponent<RectTransform>();
+                                _rectTrans.sizeDelta = Vector2.zero;
+                            }
+                        }
+                    );
+                    menu.AddSeparator("");
+
                     var _addButtonMenu = new GUIContent(
                         "添加按钮组件",
                         EditorGUIUtility.IconContent("d__Menu").image

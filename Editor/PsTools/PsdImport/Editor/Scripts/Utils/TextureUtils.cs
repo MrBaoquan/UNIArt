@@ -31,6 +31,7 @@ THE SOFTWARE.
 */
 
 #if UNITY_EDITOR
+#pragma warning disable 618
 
 using System;
 using System.Collections.Generic;
@@ -444,6 +445,7 @@ namespace PluginMaster
             TextureImporter textureImporter = AssetImporter.GetAtPath(pngPath) as TextureImporter;
 
             textureImporter.maxTextureSize = atlasSize;
+
             textureImporter.spritesheet = Sprites.ToArray();
             textureImporter.textureType = TextureImporterType.Sprite;
             textureImporter.spriteImportMode = SpriteImportMode.Multiple;

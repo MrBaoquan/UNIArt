@@ -6,8 +6,6 @@ using Unity.EditorCoroutines.Editor;
 using UnityEngine.Events;
 using System;
 using System.IO;
-using Sirenix.Utilities.Editor;
-using System.Diagnostics;
 
 namespace UNIArt.Editor
 {
@@ -50,6 +48,7 @@ namespace UNIArt.Editor
                 TemplateID = UNIArtSettings.GetTemplateNameBySubAsset(value);
                 SetAssetName(Path.GetFileNameWithoutExtension(value));
                 RawAssetObject = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(value);
+
                 // if (ShouldHidden)
                 // {
                 //     this.style.display = DisplayStyle.None;
@@ -141,6 +140,19 @@ namespace UNIArt.Editor
                 EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;
         }
 
+        private void ChangeName(string newName)
+        {
+            var _ret = AssetDatabase.RenameAsset(rawAssetPath, newName);
+            if (!string.IsNullOrEmpty(_ret))
+            {
+                Debug.LogWarning(_ret);
+                return;
+            }
+            rawAssetPath = AssetDatabase.GetAssetPath(AssetObject);
+            SetAssetName(newName);
+            return;
+        }
+
         public string PreviewPath => UNIArtSettings.GetPreviewPathByAsset(AssetPath);
 
         public bool IsPSD => rawAssetPath.EndsWith(".psd");
@@ -153,6 +165,8 @@ namespace UNIArt.Editor
 
         public int Index = -1;
 
+        public UnityEvent<string, string> OnConfirmInput = new UnityEvent<string, string>();
+
         public AssetItem()
         {
             var visualTree = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(
@@ -160,115 +174,12 @@ namespace UNIArt.Editor
             );
 
             visualTree.CloneTree(this);
-            // Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfGameObject = (action) =>
-            // {
-            //     return (HasPSDEnity || assetObject is GameObject)
-            //         ? DropdownMenuAction.Status.Normal
-            //         : DropdownMenuAction.Status.Disabled;
-            // };
-
-            // Func<DropdownMenuAction, DropdownMenuAction.Status> activeIfThumb = (action) =>
-            // {
-            //     return (HasPSDEnity || assetObject is GameObject) && !IsPSD && !IsPSDPrefab
-            //         ? DropdownMenuAction.Status.Normal
-            //         : DropdownMenuAction.Status.Disabled;
-            // };
-
-            // this.AddManipulator(
-            //     new ContextualMenuManipulator(
-            //         (evt) =>
-            //         {
-            //             evt.menu.AppendAction(
-            //                 "复制到项目 [UI页面]",
-            //                 (x) =>
-            //                 {
-            //                     WorkflowUtility.CopyPrefabToUIPage(AssetPath);
-            //                 },
-            //                 activeIfGameObject
-            //             );
-            //             evt.menu.AppendAction(
-            //                 "复制到项目 [UI组件]",
-            //                 (x) =>
-            //                 {
-            //                     WorkflowUtility.CopyPrefabToUIComponent(AssetPath);
-            //                 },
-            //                 activeIfGameObject
-            //             );
-            //             evt.menu.AppendSeparator();
-
-            //             evt.menu.AppendAction(
-            //                 "打开所在文件夹",
-            //                 (x) =>
-            //                 {
-            //                     EditorUtility.RevealInFinder(rawAssetPath);
-            //                 }
-            //             );
-
-            //             evt.menu.AppendAction(
-            //                 "在资源视图中显示",
-            //                 (x) =>
-            //                 {
-            //                     Utils.FocusProjectBrowser();
-            //                     EditorGUIUtility.PingObject(assetObject);
-            //                 }
-            //             );
-
-            //             evt.menu.AppendSeparator();
-            //             evt.menu.AppendAction(
-            //                 "重新导入",
-            //                 (x) =>
-            //                 {
-            //                     if (IsPSD)
-            //                     {
-            //                         if (HasPSDEnity)
-            //                         {
-            //                             AssetDatabase.DeleteAsset(AssetPath);
-            //                             AssetDatabase.Refresh();
-            //                         }
-            //                     }
-            //                     AssetDatabase.ImportAsset(rawAssetPath);
-            //                 }
-            //             );
-            //             evt.menu.AppendSeparator();
-            //             evt.menu.AppendAction(
-            //                 "选取缩略图",
-            //                 (x) =>
-            //                 {
-            //                     AssetDatabase.OpenAsset(assetObject);
-            //                     SceneViewCapture.OnCapture(_rect =>
-            //                     {
-            //                         var _savedPath = PreviewPath;
-            //                         var _savedFolder = Path.GetDirectoryName(_savedPath);
-            //                         if (!Directory.Exists(_savedFolder))
-            //                         {
-            //                             Directory.CreateDirectory(_savedFolder);
-            //                         }
-
-            //                         SceneViewCapture.TakeScreenshot(
-            //                             _rect,
-            //                             PreviewPath,
-            //                             () =>
-            //                             {
-            //                                 RefreshPreview();
-            //                             }
-            //                         );
-            //                     });
-            //                     SceneViewCapture.ShowCapture();
-            //                 },
-            //                 activeIfThumb
-            //             );
-            //         }
-            //     )
-            // );
 
             handleHoverEvent();
             PrepareStartDrag();
             handleDoubleClick(() =>
             {
-                if (
-                    !UNIArtSettings.IsTemplateAsset(rawAssetPath) && RawAssetObject is GameObject
-                    || IsPSD
-                )
+                if (RawAssetObject is GameObject || IsPSD)
                 {
                     AssetDatabase.OpenAsset(RawAssetObject.GetInstanceID());
                     return;
@@ -277,6 +188,26 @@ namespace UNIArt.Editor
                 Utils.FocusProjectBrowser();
                 EditorGUIUtility.PingObject(RawAssetObject);
             });
+
+            var _inputField = this.Q<TextField>("input");
+
+            _inputField.RegisterCallback<FocusOutEvent>(e =>
+            {
+                if (string.IsNullOrEmpty(_inputField.value))
+                    return;
+
+                DoText();
+                if (_inputField.value == Path.GetFileNameWithoutExtension(rawAssetPath))
+                {
+                    return;
+                }
+
+                var _oldVal = rawAssetPath;
+                var _newName = _inputField.value;
+                _inputField.value = string.Empty;
+                OnConfirmInput.Invoke(_oldVal, _newName);
+                ChangeName(_newName);
+            });
         }
 
         private EditorCoroutine hoverCoroutine;
@@ -284,6 +215,27 @@ namespace UNIArt.Editor
 
         public UnityEvent<Texture2D, Vector2> OnShowPreview = new UnityEvent<Texture2D, Vector2>();
         public UnityEvent<AssetItem> OnHidePreview = new UnityEvent<AssetItem>();
+
+        public void DoEdit()
+        {
+            var _inputField = this.Q<TextField>("input");
+            _inputField.style.display = DisplayStyle.Flex;
+
+            var _label = this.Q<Label>("name");
+            _label.style.display = DisplayStyle.None;
+
+            _inputField.value = Path.GetFileNameWithoutExtension(rawAssetPath);
+            _inputField.Focus();
+        }
+
+        public void DoText()
+        {
+            var _inputField = this.Q<TextField>("input");
+            _inputField.style.display = DisplayStyle.None;
+
+            var _label = this.Q<Label>("name");
+            _label.style.display = DisplayStyle.Flex;
+        }
 
         private void handleHoverEvent()
         {
@@ -440,6 +392,11 @@ namespace UNIArt.Editor
                     _lastClickTime = EditorApplication.timeSinceStartup;
                 }
             });
+        }
+
+        public void Delete()
+        {
+            AssetDatabase.DeleteAsset(rawAssetPath);
         }
     }
 }

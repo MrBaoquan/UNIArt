@@ -1,6 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Packages/com.parful.uniart/Editor/TmplView/TmplBroswer.uss?fileID=7433441132597879392&amp;guid=4f3d453b97492d24da5f3621ef25cce3&amp;type=3#TmplBroswer" />
     <ui:VisualElement name="root" class="filter-button">
-        <ui:Label tabindex="-1" text="安徽省科技馆" display-tooltip-when-elided="true" name="title" />
+        <ui:Label tabindex="-1" text="安徽省科技馆" display-tooltip-when-elided="true" name="title" style="display: flex;" />
+        <ui:TextField picking-mode="Ignore" readonly="false" name="input" style="display: none;" />
     </ui:VisualElement>
 </ui:UXML>
