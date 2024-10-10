@@ -70,6 +70,8 @@ namespace UNIArt.Editor
             _root.style.height = 80 + zoom * 30;
         }
 
+        public float Width => resolvedStyle.width;
+
         public void RefreshPreview()
         {
             defaultPrefabIcon = EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;

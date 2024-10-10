@@ -606,9 +606,11 @@ namespace UNIArt.Editor
                             {
                                 if (selectedAsset != null)
                                 {
+                                    ClearAssetPreviewTooltip();
                                     selectedAsset.DoEdit();
                                     return;
                                 }
+                                ClearAssetPreviewTooltip();
                                 selectedFilterButton.DoEdit();
                             },
                             _ =>
@@ -734,7 +736,81 @@ namespace UNIArt.Editor
                     assetItems.ForEach(_ => _.Select());
                 }
             });
+#region 资源操作快捷键
+            // 上下左右键切换资源
+            root.RegisterCallback<KeyDownEvent>(evt =>
+            {
+                bool validKey =
+                    evt.keyCode == KeyCode.UpArrow
+                    || evt.keyCode == KeyCode.DownArrow
+                    || evt.keyCode == KeyCode.LeftArrow
+                    || evt.keyCode == KeyCode.RightArrow
+                    || evt.keyCode == KeyCode.F2
+                    || evt.keyCode == KeyCode.Delete;
+                if (!validKey)
+                    return;
+                var _selectedAssets = selectedAssets;
+                var _isMultipleSelect = _selectedAssets.Count > 1;
+                ClearAssetPreviewTooltip();
+                if (evt.keyCode == KeyCode.F2)
+                {
+                    if (assetItems.Count == 0 || selectedAsset == null)
+                        return;
+                    if (selectedAssets.Count == 1)
+                    {
+                        selectedAsset.DoEdit();
+                    }
+                }
+
+                if (evt.keyCode == KeyCode.Delete)
+                {
+                    if (assetItems.Count == 0 || selectedAsset == null)
+                    {
+                        return;
+                    }
+
+                    var _assetConfirmMsg = $"确认删除选中的{_selectedAssets.Count}个资源吗?";
+                    if (EditorUtility.DisplayDialog("删除资源", _assetConfirmMsg, "确认", "取消"))
+                    {
+                        _selectedAssets.ForEach(_ => _.Delete());
+                        refreshTemplateAssets();
+                    }
+                }
+
+                if (assetItems.Count <= 0)
+                    return;
+
+                var assetView = rootVisualElement.Q<VisualElement>("asset-list");
+                var _column = Mathf.FloorToInt(
+                    (assetView.resolvedStyle.width - 20) / assetItems.First().Width
+                );
+
+                var _curID = -1000;
+                if (evt.keyCode == KeyCode.UpArrow)
+                {
+                    _curID = _selectedAssets.Min(_ => _.Index) - _column;
+                }
+                else if (evt.keyCode == KeyCode.DownArrow)
+                {
+                    _curID = _selectedAssets.Max(_ => _.Index) + _column;
+                }
+                else if (evt.keyCode == KeyCode.LeftArrow)
+                {
+                    _curID = _selectedAssets.Min(_ => _.Index) - 1;
+                }
+                else if (evt.keyCode == KeyCode.RightArrow)
+                {
+                    _curID = _selectedAssets.Max(_ => _.Index) + 1;
+                }
+                if (_curID == -1000)
+                    return;
+                _curID = Mathf.Clamp(_curID, 0, assetItems.Count - 1);
+                _selectedAssets.ForEach(_ => _.Deselect());
+                selectedAsset = assetItems[_curID];
+                selectedAsset.Select();
+            });
         }
+#endregion
 
 #region 资源拖拽处理
         private void OnDragUpdated(DragUpdatedEvent evt)
