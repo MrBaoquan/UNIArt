@@ -86,6 +86,12 @@ namespace UNIArt.Editor
                 previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(
                     UNIArtSettings.PrefabPathToPsdFile(rawAssetPath)
                 );
+                if (UNIArtSettings.PsdRawExists(rawAssetPath))
+                {
+                    defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                        "Packages/com.parful.uniart/Assets/Icon/ps-prefab.png"
+                    );
+                }
             }
             else if (previewTex == null && UNIArtSettings.IsTemplateAsset(rawAssetPath))
             {
@@ -138,8 +144,7 @@ namespace UNIArt.Editor
                 return;
             }
 
-            _assetType.style.backgroundImage =
-                EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;
+            _assetType.style.backgroundImage = defaultPrefabIcon;
         }
 
         private void ChangeName(string newName)

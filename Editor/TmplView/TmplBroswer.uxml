@@ -32,9 +32,16 @@
                     <ui:ScrollView name="tags-scrollView" style="max-height: 30%; flex-shrink: 0; border-bottom-width: 1px; border-bottom-color: rgba(255, 255, 255, 0.1);">
                         <ui:VisualElement name="filter-tags" style="flex-direction: row; flex-wrap: wrap; flex-grow: 1; flex-shrink: 0; width: 100%; padding-left: 16px; margin-top: 8px; margin-bottom: 8px;" />
                     </ui:ScrollView>
-                    <ui:ScrollView name="asset-scrollView" style="flex-grow: 1; justify-content: flex-start; align-items: stretch; flex-wrap: wrap; flex-direction: column; margin-top: 8px;">
-                        <ui:VisualElement name="asset-list" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-start; align-self: auto; padding-left: 20px;" />
-                    </ui:ScrollView>
+                    <ui:VisualElement name="content-view" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0);">
+                        <ui:ScrollView name="asset-scrollView" style="flex-grow: 1; justify-content: flex-start; align-items: stretch; flex-wrap: wrap; flex-direction: column; margin-top: 8px;">
+                            <ui:VisualElement name="asset-list" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-start; align-self: auto; padding-left: 20px;" />
+                        </ui:ScrollView>
+                        <ui:VisualElement name="drop-view" style="flex-grow: 1; background-color: rgb(51, 51, 51); position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">
+                            <ui:VisualElement style="flex-grow: 1; margin-left: 16px; margin-right: 16px; margin-top: 16px; margin-bottom: 16px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-top-left-radius: 16px; border-bottom-left-radius: 16px; border-top-right-radius: 16px; border-bottom-right-radius: 16px; border-left-color: rgba(92, 214, 60, 0.2); border-right-color: rgba(92, 214, 60, 0.2); border-top-color: rgba(92, 214, 60, 0.2); border-bottom-color: rgba(92, 214, 60, 0.2); align-items: center; justify-content: center;">
+                                <ui:VisualElement style="flex-grow: 0; background-color: rgba(0, 0, 0, 0); background-image: url(&apos;project://database/Packages/com.parful.uniart/Assets/Icon/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0.png?fileID=2800000&amp;guid=2362414da030e1e4389a8fd067ca7253&amp;type=3#文件上传&apos;); width: 78px; height: 64px; -unity-background-image-tint-color: rgba(255, 255, 255, 0.2); flex-shrink: 0;" />
+                            </ui:VisualElement>
+                        </ui:VisualElement>
+                    </ui:VisualElement>
                     <uie:Toolbar style="flex-grow: 1; width: 100%; align-items: center; justify-content: flex-start; height: 25px; max-height: 25px; min-height: 25px; flex-shrink: 1; flex-direction: row;">
                         <uie:ToolbarSpacer style="flex-direction: column; flex-grow: 0; flex-shrink: 0; width: 8px;" />
                         <uie:ToolbarButton display-tooltip-when-elided="true" name="btn_commit" tooltip="提交模板资源" style="background-image: url(&apos;project://database/Packages/com.parful.uniart/Assets/Icon/%E5%90%88%E5%B9%B6%E8%BD%AC%E5%8F%91%EF%BC%88%E5%90%88%E5%B9%B6%E8%BD%AC%E5%8F%91%EF%BC%89.png?fileID=2800000&amp;guid=003fbc422f7acae468a3196cbda4f08c&amp;type=3#合并转发（合并转发）&apos;); height: 18px; width: 18px;" />

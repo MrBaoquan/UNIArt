@@ -100,6 +100,11 @@ namespace UNIArt.Editor
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
 
+                if (UNIArtSettings.IsPsdEntity(originalPrefabPath))
+                {
+                    UNIArtSettings.AddPSDEntityInstance(originalPrefabPath, newFilePath);
+                }
+
                 Utils.Delay(
                     () =>
                     {
@@ -156,6 +161,9 @@ namespace UNIArt.Editor
         {
             if (string.IsNullOrEmpty(assetPath))
                 return;
+
+            // 移除#PSD
+            destFile = destFile.Replace("#psd", string.Empty);
 
             var _asset = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
             if (_asset == null)

@@ -313,6 +313,15 @@ namespace UNIArt.Editor
             // animWindow.animationClip = clip;
         }
 
+        public static void AddClipToController(AnimatorController controller, string animName)
+        {
+            AnimationClip clip = new AnimationClip();
+            clip.name = animName;
+            AssetDatabase.AddObjectToAsset(clip, controller);
+            AssetDatabase.SaveAssetIfDirty(controller);
+            AddClipToController(controller, clip);
+        }
+
         public static void AddClipToController(AnimatorController controller, AnimationClip clip)
         {
             if (controller.layers.Length <= 0)

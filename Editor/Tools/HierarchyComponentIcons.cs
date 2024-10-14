@@ -4,6 +4,8 @@ using UnityEngine.UI;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using UnityEditor.SceneManagement;
+using PluginMaster;
 
 namespace UNIArt.Editor
 {
@@ -18,6 +20,8 @@ namespace UNIArt.Editor
             { typeof(Button), "按钮" },
             { typeof(Canvas), "画布" },
             { typeof(Camera), "相机" },
+            { typeof(Toggle), "开关" },
+            { typeof(ToggleGroup), "开关组" }
         };
 
         static HierarchyComponentIcons()
@@ -27,6 +31,8 @@ namespace UNIArt.Editor
                 typeof(AnimationClip),
                 typeof(Animator),
                 typeof(Button),
+                typeof(Toggle),
+                typeof(ToggleGroup),
                 typeof(Canvas),
                 typeof(Camera),
                 typeof(MonoScript)
@@ -37,8 +43,6 @@ namespace UNIArt.Editor
 
             EditorApplication.hierarchyWindowItemOnGUI += OnHierarchyWindowItemOnGUI;
         }
-
-        static GUIStyle customButtonStyle;
 
         private static bool HasAnimation(GameObject obj)
         {
@@ -149,11 +153,38 @@ namespace UNIArt.Editor
                             false,
                             () =>
                             {
-                                obj.AddOrGetComponent<Animator>();
+                                var _animator = obj.AddOrGetComponent<Animator>();
+                                var _controller = AnimatorEditor.CreateController(_animator);
+                                AnimatorEditor.AddClipToController(_controller, "出现");
                                 Selection.activeGameObject = obj;
                             }
                         );
                     }
+
+                    var _prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
+
+                    if (_prefabStage != null && _prefabStage.prefabContentsRoot == obj)
+                    {
+                        menu.AddSeparator("");
+
+                        if (obj.GetComponentInChildren<PsGroup>(true) != null)
+                        {
+                            menu.AddItem(
+                                new GUIContent("移除PS组件"),
+                                false,
+                                () =>
+                                {
+                                    PSUtils.RemovePSLayer(obj);
+                                    EditorUtility.SetDirty(obj);
+                                }
+                            );
+                        }
+                        else
+                        {
+                            menu.AddDisabledItem(new GUIContent("移除PS组件"));
+                        }
+                    }
+
                     menu.AddSeparator("");
                     if (PrefabUtility.IsPartOfAnyPrefab(obj))
                     {

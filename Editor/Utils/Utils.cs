@@ -680,5 +680,24 @@ namespace UNIArt.Editor
 
             return _newPrefab;
         }
+
+        public static bool IsDragFromUNIArt()
+        {
+            return DragAndDrop.GetGenericData("OriginAsset") != null;
+        }
+
+        public static void ReimportAsset(string path)
+        {
+            if (UNIArtSettings.IsPSDFile(path))
+            {
+                if (UNIArtSettings.PsdEntityExists(path))
+                {
+                    AssetDatabase.DeleteAsset(UNIArtSettings.PsdFileToPrefabPath(path));
+                    AssetDatabase.Refresh();
+                }
+            }
+
+            AssetDatabase.ImportAsset(path);
+        }
     }
 }

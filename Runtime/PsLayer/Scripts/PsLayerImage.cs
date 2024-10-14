@@ -25,19 +25,23 @@ namespace PluginMaster
     public class PsLayerImage : PsLayer
     {
         protected override string DefaultShaderName => "UI/Default";
+
         private class ImageProxy : ImageComponentProxy
         {
             private Image _image = null;
+
             public ImageProxy(Image image)
             {
                 _image = image;
             }
+
             public override float alpha
             {
                 get { return _image.color.a; }
                 set
                 {
-                    if (_image.color.a == value) return;
+                    if (_image.color.a == value)
+                        return;
                     var color = _image.color;
                     color.a = value;
                     _image.color = color;

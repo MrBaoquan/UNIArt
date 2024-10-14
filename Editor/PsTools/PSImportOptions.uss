@@ -1,0 +1,10 @@
+.custom-label {
+    font-size: 20px;
+    -unity-font-style: bold;
+    color: rgb(68, 138, 255);
+}
+
+.unity-base-field {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}

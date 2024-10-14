@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using PluginMaster;
+using UNIArt.Runtime;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
@@ -26,31 +28,158 @@ namespace UNIArt.Editor
 
         public static PSDFileMgr GetPSDFile(string psdPath)
         {
-            if (!cachedPSDFiles.ContainsKey(psdPath))
+            // TODO 后续考虑缓存优化，暂时先每次都新建
+            if (cachedPSDFiles.ContainsKey(psdPath))
             {
-                var psdFileMgr = new PSDFileMgr();
-                cachedPSDFiles.Add(psdPath, psdFileMgr);
+                cachedPSDFiles[psdPath].Dispose();
+                cachedPSDFiles.Remove(psdPath);
             }
+            var psdFileMgr = new PSDFileMgr();
+            cachedPSDFiles.Add(psdPath, psdFileMgr);
             return cachedPSDFiles[psdPath];
         }
 
-        static PSDFileMgr psdFileMgr = null;
+        [MenuItem("Tools/PSD Test")]
+        private static void PsdCreateGameObjectTest()
+        {
+            PrefabComponentCopier.CopyComponentsAndChildren(
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/ArtAssets/UI Prefabs/Windows/二级 合并.prefab"
+                ),
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/ArtAssets/UI Prefabs/Widgets/二级 合并#psd.prefab"
+                )
+            );
+        }
 
-        // [MenuItem("Tools/PSD Test")]
-        // private static void PsdCreateGameObjectTest()
-        // {
-        //     // psdFileMgr = GetPSDFile("Assets/ArtAssets/Textures/Psd/待机.psd");
-        //     // CreatePSDGameObject("Assets/ArtAssets/Textures/Psd/待机.psd");
-        //     EditorUtility.ClearProgressBar();
-        // }
+        public static GameObject RemovePSLayer(GameObject target)
+        {
+            var _psLayers = target.GetComponentsInChildren<PsGroup>(true).ToList();
+
+            _psLayers.ForEach(_ =>
+            {
+                var _imageComp = _.GetComponent<Image>();
+                if (_imageComp != null)
+                {
+                    _imageComp.color = new Color(1, 1, 1, _.Opacity);
+                    _imageComp.material = null;
+                }
+                GameObject.DestroyImmediate(_);
+            });
+
+            return target;
+        }
+
+        public static GameObject PostProcessPSDEntity(GameObject target)
+        {
+            // 将所有PSGroup visible为false的设置为true, 并将gameobject.active设置为false
+            var _psGroups = target.GetComponentsInChildren<PsGroup>();
+            foreach (var _psGroup in _psGroups)
+            {
+                if (!_psGroup.Visible)
+                {
+                    _psGroup.Visible = true;
+                    _psGroup.gameObject.SetActive(false);
+                }
+            }
+
+            // 筛选名称符合@动画或者@按钮的物体
+            var _allChildren = target.GetComponentsInChildren<Transform>(true);
+            var _compFlagRegex = @".+@(?<type>动画|正常)$";
+            _allChildren
+                .Where(t => Regex.IsMatch(t.name, _compFlagRegex))
+                .ToList()
+                .ForEach(_child =>
+                {
+                    var _type = Regex.Match(_child.name, _compFlagRegex).Groups["type"].Value;
+                    if (_type == "动画")
+                    {
+                        _child.gameObject.AddOrGetComponent<Animator>();
+                        _child.gameObject.name = _child.gameObject.name.Replace(
+                            "@动画",
+                            string.Empty
+                        );
+                    }
+                    else if (_type == "正常")
+                    {
+                        var _curImage = _child.gameObject.GetComponent<Image>();
+
+                        var _selectedName = _child.name.Replace("@正常", "@选中");
+                        var _pressedName = _child.name.Replace("@正常", "@按下");
+
+                        if (_child.transform.parent == null)
+                            return;
+
+                        var _pressedTransform = _child.parent.Find(_pressedName);
+                        var _toggleTransfrom = _child.parent.Find(_selectedName);
+
+                        if (_pressedTransform != null) // 视为按钮
+                        {
+                            var _button = _child.gameObject.AddOrGetComponent<Button>();
+                            _button.transition = Selectable.Transition.SpriteSwap;
+                            var _spriteState = _button.spriteState;
+                            _spriteState.pressedSprite = _pressedTransform
+                                .GetComponent<Image>()
+                                ?.sprite;
+                            _spriteState.highlightedSprite = _curImage.sprite;
+                            _button.spriteState = _spriteState;
+
+                            GameObject.DestroyImmediate(_pressedTransform.gameObject);
+                            _child.gameObject.name = _child.gameObject.name.Replace("@正常", "按钮");
+                        }
+                        else if (_toggleTransfrom != null) // 视为开关
+                        {
+                            var _toggle = _child.gameObject.AddOrGetComponent<Toggle>();
+                            var _toggleGroup =
+                                _toggle.transform.parent.gameObject.AddOrGetComponent<ToggleGroup>();
+
+                            _toggle.group = _toggleGroup;
+
+                            _toggle.transition = Selectable.Transition.SpriteSwap;
+                            var _spriteState = _toggle.spriteState;
+                            _spriteState.pressedSprite = _toggleTransfrom
+                                .GetComponent<Image>()
+                                ?.sprite;
+                            _spriteState.highlightedSprite = _curImage.sprite;
+                            _toggle.spriteState = _spriteState;
+
+                            _child.gameObject.AddOrGetComponent<ToggleImage>();
+
+                            GameObject.DestroyImmediate(_toggleTransfrom.gameObject);
+                            _child.gameObject.name = _child.gameObject.name.Replace(
+                                "@正常",
+                                string.Empty
+                            );
+                        }
+                        else
+                        {
+                            _child.gameObject.AddOrGetComponent<Button>();
+                            _child.gameObject.name = _child.gameObject.name.Replace(
+                                "@正常",
+                                string.Empty
+                            );
+                        }
+                    }
+                });
+
+            return target;
+        }
 
         public static void CreatePSDGameObject(
             string psdFilePath,
             Action<GameObject> callback = null
         )
         {
+            var psdFileMgr = GetPSDFile(psdFilePath);
             Action createGameObjects = () =>
             {
+                var _loadingTitle = $"Loading PS File:  {psdFilePath}";
+                var _loadingInfo = string.Empty;
+                bool _bFinished = false;
+
+                var _psdImportArgs = UNIArtSettings.GetPSDImportArgs(psdFilePath);
+                _loadingInfo = "PSD Entity Post Processing ...";
+
                 var _layerCreator = new PsLayerCreator(
                     TextureUtils.OutputObjectType.UI_IMAGE,
                     true,
@@ -60,61 +189,132 @@ namespace UNIArt.Editor
                     new Vector2(0.5f, 0.5f),
                     psdFileMgr._psdFile,
                     psdFileMgr._previewLayers.Count,
-                    false, // create
-                    4096,
+                    _psdImportArgs.CreateAtlas,
+                    _psdImportArgs.MaxAtlasSize,
                     Path.GetDirectoryName(psdFilePath).ToForwardSlash() + "/",
-                    false,
-                    true, // add pslayer
+                    _psdImportArgs.ImportOnlyVisibleLayers,
+                    true,
                     PsGroup.BlendingShaderType.GRAB_PASS,
                     psdFileMgr._layerTextures,
-                    1
+                    _psdImportArgs.Scale
                 );
 
-                var _newObj = _layerCreator.CreateGameObjets(
+                var _psEntityObject = _layerCreator.CreateGameObjets(
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f),
                     new Vector2(0.5f, 0.5f)
                 );
 
+                Utils.UpdateWhile(
+                    () =>
+                    {
+                        EditorUtility.DisplayProgressBar(_loadingTitle, _loadingInfo, 0.95f);
+                    },
+                    () => !_bFinished,
+                    () =>
+                    {
+                        EditorUtility.ClearProgressBar();
+                    }
+                );
+
                 Utils.Delay(
                     () =>
                     {
-                        if (_newObj.GetComponent<Canvas>() != null)
+                        try
                         {
-                            GameObject.DestroyImmediate(_newObj.GetComponent<GraphicRaycaster>());
-                            GameObject.DestroyImmediate(_newObj.GetComponent<CanvasScaler>());
-                            GameObject.DestroyImmediate(_newObj.GetComponent<Canvas>());
-                            var _rectTrans = _newObj.GetComponent<RectTransform>();
-                            _rectTrans.anchorMin = Vector2.one * 0.5f;
-                            _rectTrans.anchorMax = Vector2.one * 0.5f;
-                            _rectTrans.localPosition = Vector3.zero;
-                        }
-                        _newObj.AddComponent<Animator>();
+                            if (_psEntityObject.GetComponent<Canvas>() != null)
+                            {
+                                GameObject.DestroyImmediate(
+                                    _psEntityObject.GetComponent<GraphicRaycaster>()
+                                );
+                                GameObject.DestroyImmediate(
+                                    _psEntityObject.GetComponent<CanvasScaler>()
+                                );
+                                GameObject.DestroyImmediate(_psEntityObject.GetComponent<Canvas>());
+                                var _rectTrans = _psEntityObject.GetComponent<RectTransform>();
+                                _rectTrans.anchorMin = Vector2.one * 0.5f;
+                                _rectTrans.anchorMax = Vector2.one * 0.5f;
+                                _rectTrans.localPosition = Vector3.zero;
+                            }
 
-                        var _savePath = psdFilePath.Replace(".psd", "#psd.prefab");
-                        _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
-                        var _newPrefab = PrefabUtility.SaveAsPrefabAsset(_newObj, _savePath);
-                        AssetDatabase.SaveAssets();
-                        GameObject.DestroyImmediate(_newObj);
-                        // AssetDatabase.Refresh();
-                        callback?.Invoke(_newPrefab);
-                        // AssetDatabase.OpenAsset(_newPrefab);
+                            _psEntityObject = PostProcessPSDEntity(_psEntityObject);
+
+                            if (_psdImportArgs.AddPSLayer == false)
+                            {
+                                RemovePSLayer(_psEntityObject);
+                            }
+
+                            _psEntityObject.AddOrGetComponent<Animator>();
+                            if (_psdImportArgs.RestoreEntity)
+                            {
+                                var _psdEntity = UNIArtSettings.GetPSDEntityInstance(
+                                    _psdImportArgs.PSDEntityPath
+                                );
+
+                                if (_psdEntity != null)
+                                {
+                                    PrefabComponentCopier.CopyComponentsAndChildren(
+                                        _psdEntity,
+                                        _psEntityObject
+                                    );
+                                }
+                            }
+
+                            // GameObjectUtility.RemoveMonoBehavioursWithMissingScript(
+                            //     _psEntityObject
+                            // );
+
+                            var _savePath = psdFilePath.Replace(".psd", "#psd.prefab");
+                            _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
+                            var _newPrefab = PrefabUtility.SaveAsPrefabAsset(
+                                _psEntityObject,
+                                _savePath
+                            );
+
+                            AssetDatabase.SaveAssets();
+                            GameObject.DestroyImmediate(_psEntityObject);
+                            _bFinished = true;
+                            // AssetDatabase.Refresh();
+                            callback?.Invoke(_newPrefab);
+                            // AssetDatabase.OpenAsset(_newPrefab);
+                        }
+                        catch (System.Exception e)
+                        {
+                            Debug.LogError(e.Message);
+                        }
+                        finally
+                        {
+                            _bFinished = true;
+                            EditorUtility.ClearProgressBar();
+                        }
                     },
                     1f
                 );
             };
 
-            psdFileMgr = GetPSDFile(psdFilePath);
             if (psdFileMgr.IsReady)
             {
-                Debug.LogWarning("ready");
+                // Debug.LogWarning($"PSD file is already loaded: {psdFilePath}");
                 createGameObjects();
             }
             else
             {
                 psdFileMgr.onAllLayerLoadCompleted.AddListener(() =>
                 {
-                    createGameObjects();
+                    try
+                    {
+                        createGameObjects();
+                    }
+                    catch (System.Exception e)
+                    {
+                        psdFileMgr.Dispose();
+                        Debug.LogError(e.Message);
+                        Debug.LogError(e.StackTrace);
+                    }
+                    finally
+                    {
+                        EditorUtility.ClearProgressBar();
+                    }
                 });
                 psdFileMgr.PreprePSD(psdFilePath);
             }
@@ -242,7 +442,11 @@ namespace UNIArt.Editor
             Utils.UpdateWhile(
                 () =>
                 {
-                    EditorUtility.DisplayProgressBar("Loading", _loadingInfo, _loadingProgress);
+                    EditorUtility.DisplayProgressBar(
+                        $"Loading PS File:  {_psdPath}",
+                        _loadingInfo,
+                        _loadingProgress
+                    );
                     if (!(_pixelsPending.pending && _textureLoader == null))
                         return;
                     var layer = _pixelsPending.layer;
@@ -301,13 +505,24 @@ namespace UNIArt.Editor
                     _pixelsPending.pending = false;
                     _pixelsPending.Reset();
                 },
-                () => _layerTextures.Count < _totalLayerCount,
+                () => _layerTextures.Count < _totalLayerCount && Status != PSDStatus.Disposed,
                 () =>
                 {
                     PreviewPanel();
                     Status = PSDStatus.Loaded;
-                    onAllLayerLoadCompleted?.Invoke();
-                    onAllLayerLoadCompleted.RemoveAllListeners();
+                    try
+                    {
+                        onAllLayerLoadCompleted?.Invoke();
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogWarning(e.Message);
+                    }
+                    finally
+                    {
+                        onAllLayerLoadCompleted.RemoveAllListeners();
+                        EditorUtility.ClearProgressBar();
+                    }
                 }
             );
         }
@@ -400,6 +615,7 @@ namespace UNIArt.Editor
         public void LoadFile(string path)
         {
             DestroyAllTextures();
+            _psdPath = path;
             var _loadingError = false;
             var _loaded = false;
             Action<float> _onFileLoading = _progress =>
@@ -439,10 +655,11 @@ namespace UNIArt.Editor
 
             Utils.UpdateWhile(
                 () => { },
-                () => !_loaded && !_loadingError,
+                () => !_loaded && !_loadingError && Status != PSDStatus.Disposed,
                 () =>
                 {
                     onPsdFileLoadCompleted.Invoke();
+                    EditorUtility.ClearProgressBar();
                 }
             );
 

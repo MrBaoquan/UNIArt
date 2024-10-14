@@ -109,6 +109,8 @@ namespace UNIArt.Editor
 
         ReactiveProperty<string> templateFilter = new ReactiveProperty<string>();
 
+        VisualElement dropView;
+
         private void buildUI()
         {
             VisualElement root = rootVisualElement;
@@ -118,6 +120,9 @@ namespace UNIArt.Editor
 
             VisualElement labelFromUXML = m_VisualTreeAsset.Instantiate();
             root.Add(labelFromUXML);
+
+            dropView = root.Q<VisualElement>("drop-view");
+            dropView.style.display = DisplayStyle.None;
 
             var _topListRoot = labelFromUXML.Q<VisualElement>("menu-top-list");
 
@@ -504,6 +509,8 @@ namespace UNIArt.Editor
             var contentView = rootVisualElement.Q<VisualElement>("template-content");
             contentView.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
             contentView.RegisterCallback<DragPerformEvent>(OnDragPerform);
+            contentView.RegisterCallback<DragEnterEvent>(OnDragEnter);
+            contentView.RegisterCallback<DragLeaveEvent>(OnDragLeave);
             // contentView.RegisterCallback<MouseDownEvent>(evt =>
             // {
             //     // 右键菜单
@@ -542,15 +549,16 @@ namespace UNIArt.Editor
                         var _originIsFilter = _hoverState.HoverFilter;
 
                         evt.menu.AppendAction(
-                            "复制到项目 [UI页面]",
+                            "复制到项目/UI 页面",
                             (x) =>
                             {
                                 WorkflowUtility.CopyPrefabToUIPage(selectedAsset.AssetPath);
                             },
                             activeIfGameObject
                         );
+                        evt.menu.AppendSeparator("复制到项目/");
                         evt.menu.AppendAction(
-                            "复制到项目 [UI组件]",
+                            "复制到项目/UI 组件",
                             (x) =>
                             {
                                 WorkflowUtility.CopyPrefabToUIComponent(selectedAsset.AssetPath);
@@ -591,6 +599,19 @@ namespace UNIArt.Editor
                         );
 
                         evt.menu.AppendSeparator();
+
+                        evt.menu.AppendAction(
+                            "PS 文件/导入选项",
+                            (x) =>
+                            {
+                                PSImportOptions.ShowPSOptions(selectedAsset.rawAssetPath);
+                            },
+                            _ =>
+                                selectedAsset != null && selectedAsset.IsPSD
+                                    ? DropdownMenuAction.Status.Normal
+                                    : DropdownMenuAction.Status.Disabled
+                        );
+                        evt.menu.AppendSeparator();
                         evt.menu.AppendAction(
                             "刷新",
                             (x) =>
@@ -599,6 +620,22 @@ namespace UNIArt.Editor
                             },
                             DropdownMenuAction.AlwaysEnabled
                         );
+                        evt.menu.AppendAction(
+                            "重新导入",
+                            (x) =>
+                            {
+                                selectedAssets.ForEach(_asset =>
+                                {
+                                    Utils.ReimportAsset(_asset.rawAssetPath);
+                                });
+                            },
+                            _ =>
+                                selectedAsset != null
+                                    ? DropdownMenuAction.Status.Normal
+                                    : DropdownMenuAction.Status.Disabled
+                        );
+
+                        evt.menu.AppendSeparator();
 
                         evt.menu.AppendAction(
                             "重命名",
@@ -663,30 +700,6 @@ namespace UNIArt.Editor
                                     : DropdownMenuAction.Status.Disabled
                         );
 
-                        evt.menu.AppendSeparator();
-
-                        evt.menu.AppendAction(
-                            "重新导入",
-                            (x) =>
-                            {
-                                selectedAssets.ForEach(_asset =>
-                                {
-                                    if (_asset.IsPSD)
-                                    {
-                                        if (_asset.HasPSDEnity)
-                                        {
-                                            AssetDatabase.DeleteAsset(_asset.AssetPath);
-                                            AssetDatabase.Refresh();
-                                        }
-                                    }
-                                    AssetDatabase.ImportAsset(_asset.rawAssetPath);
-                                });
-                            },
-                            _ =>
-                                selectedAsset != null
-                                    ? DropdownMenuAction.Status.Normal
-                                    : DropdownMenuAction.Status.Disabled
-                        );
                         evt.menu.AppendSeparator();
                         evt.menu.AppendAction(
                             "选取缩略图",
@@ -813,6 +826,32 @@ namespace UNIArt.Editor
 #endregion
 
 #region 资源拖拽处理
+
+        private void showDropView()
+        {
+            if (
+                DragAndDrop.visualMode != DragAndDropVisualMode.Rejected
+                && !Utils.IsDragFromUNIArt()
+                && dropView.style.display != DisplayStyle.Flex
+            )
+                dropView.style.display = DisplayStyle.Flex;
+        }
+
+        private void hideDropView()
+        {
+            dropView.style.display = DisplayStyle.None;
+        }
+
+        private void OnDragEnter(DragEnterEvent evt)
+        {
+            showDropView();
+        }
+
+        private void OnDragLeave(DragLeaveEvent evt)
+        {
+            hideDropView();
+        }
+
         private void OnDragUpdated(DragUpdatedEvent evt)
         {
             if (DragAndDrop.paths.Length <= 0)
@@ -826,17 +865,20 @@ namespace UNIArt.Editor
                     DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
                     return;
                 }
+
                 DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                showDropView();
                 return;
             }
 
-            if (DragAndDrop.GetGenericData("AssetItem") != null)
+            if (Utils.IsDragFromUNIArt())
             {
                 return;
             }
             if (DragAndDrop.paths.Any(_ => Utils.IsExternalPath(_)))
             {
                 DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                showDropView();
                 return;
             }
 
@@ -850,14 +892,17 @@ namespace UNIArt.Editor
                     .Any(_dir => _rootPaths.Contains(_dir))
             )
             {
+                DragAndDrop.visualMode = DragAndDropVisualMode.Rejected;
                 return;
             }
 
             DragAndDrop.visualMode = DragAndDropVisualMode.Copy; // 允许拖拽复制操作
+            showDropView();
         }
 
         private void OnDragPerform(DragPerformEvent evt)
         {
+            hideDropView();
             // 处理拖拽保存为预制体
             if (DragAndDrop.paths.Length <= 0 && DragAndDrop.objectReferences.Length > 0)
             {
@@ -897,13 +942,14 @@ namespace UNIArt.Editor
                             .ToList();
                         _psdFiles.ForEach(_psdFile =>
                         {
+                            var _psdRoot = _targetRoot;
                             var _psdFolder = Path.GetFileNameWithoutExtension(_psdFile);
-                            if (!_targetRoot.EndsWith(_psdFolder))
+                            if (!_psdRoot.EndsWith(_psdFolder))
                             {
-                                _targetRoot = Path.Combine(_targetRoot, _psdFolder);
+                                _psdRoot = Path.Combine(_psdRoot, _psdFolder);
                             }
 
-                            Utils.ImportExternalAssets(new[] { _psdFile }, _targetRoot);
+                            Utils.ImportExternalAssets(new[] { _psdFile }, _psdRoot);
                         });
                     });
 
@@ -1243,6 +1289,7 @@ namespace UNIArt.Editor
         // 刷新模板筛选列表
         public void RefreshTemplateFilters()
         {
+            hideDropView();
             validateTemplateID();
             refreshFilterDirButtonStyle();
             refreshViewButtonStyle();
@@ -1379,7 +1426,7 @@ namespace UNIArt.Editor
                 var _assetItem = new AssetItem() { AssetPath = _path, Index = _assetID++ };
                 buttonContainer.Add(_assetItem);
                 assetItems.Add(_assetItem);
-                yield return new EditorWaitForSeconds(0.002f);
+                yield return new EditorWaitForSeconds(0.001f);
 
                 // 资源点击事件
                 _assetItem.RegisterCallback<MouseDownEvent>(evt =>
@@ -1474,7 +1521,7 @@ namespace UNIArt.Editor
 
                     DragAndDrop.visualMode = DragAndDropVisualMode.Link;
                     DragAndDrop.StartDrag("Drag Asset");
-                    DragAndDrop.SetGenericData("AssetItem", _);
+                    DragAndDrop.SetGenericData("OriginAsset", _);
                 });
 
                 _assetItem.OnShowPreview.AddListener(

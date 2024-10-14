@@ -10,6 +10,7 @@ namespace UNIArt.Editor
 {
     public class UNIArtSettings : ScriptableObject
     {
+#region  用户偏好设置
         public class Editor
         {
             const string editorPrefsPrefix = "UNIArt_";
@@ -77,7 +78,9 @@ namespace UNIArt.Editor
                 );
             }
         }
+#endregion
 
+#region UNIArt 项目设置
         public static List<string> excludeHierarchyMethods => new List<string> { "OnItemGUI" };
 
         public string TemplateSVNRepo = "http://svn.andcrane.com/repo/UNIArtTemplates";
@@ -96,6 +99,78 @@ namespace UNIArt.Editor
         {
             "Assets/ArtAssets/Fonts/DefaultTMPFont.asset",
         };
+
+        [Serializable]
+        public class PSDImportArgs
+        {
+            [HideInInspector]
+            public string psdPath;
+
+            public string PSDEntityPath => PsdFileToPrefabPath(psdPath);
+
+            public Texture2D OriginPSFile => AssetDatabase.LoadAssetAtPath<Texture2D>(psdPath);
+            public float Scale = 1.0f;
+            public bool ImportOnlyVisibleLayers = false;
+            public bool CreateAtlas = false;
+            public int MaxAtlasSize = 4096;
+            public bool AddPSLayer = true;
+            public bool RestoreEntity = true;
+
+            public PSDImportArgs ShallowCopy(string psdFilePath)
+            {
+                var _args = (PSDImportArgs)this.MemberwiseClone();
+                _args.psdPath = psdFilePath;
+                return _args;
+            }
+        }
+
+        [HideInInspector]
+        public List<PSDImportArgs> PSDImportOptions = new List<PSDImportArgs>();
+
+        public PSDImportArgs PSImportDefaultOptions = new PSDImportArgs();
+
+        public static PSDImportArgs GetPSDImportArgs(string psdPath)
+        {
+            if (!Project.PSDImportOptions.Exists(_args => _args.psdPath == psdPath))
+            {
+                Project.PSDImportOptions.Add(Project.PSImportDefaultOptions.ShallowCopy(psdPath));
+            }
+            return Project.PSDImportOptions.Find(x => x.psdPath == psdPath);
+        }
+
+        [Serializable]
+        public class PSDEntityInstance
+        {
+            public string origin;
+            public string instancePath;
+            public GameObject instanceObject =>
+                AssetDatabase.LoadAssetAtPath<GameObject>(instancePath);
+            public bool IsMissing => instanceObject == null;
+        }
+
+        public List<PSDEntityInstance> PSDEntityInstances = new List<PSDEntityInstance>();
+
+        public static List<PSDEntityInstance> GetPSDEntityInstances(string psdPath)
+        {
+            return Project.PSDEntityInstances.FindAll(x => x.origin == psdPath);
+        }
+
+        public static GameObject GetPSDEntityInstance(string psdPath)
+        {
+            return Project.PSDEntityInstances
+                .Where(x => x.origin == psdPath)
+                .LastOrDefault()
+                ?.instanceObject;
+        }
+
+        public static void AddPSDEntityInstance(string psdPath, string instance)
+        {
+            var _instance = new PSDEntityInstance() { origin = psdPath, instancePath = instance };
+            Project.PSDEntityInstances.Add(_instance);
+            Project.PSDEntityInstances = Project.PSDEntityInstances
+                .Where(x => !x.IsMissing)
+                .ToList();
+        }
 
         public static string GetExternalTemplateFolderUrl(string templateName)
         {
@@ -174,6 +249,11 @@ namespace UNIArt.Editor
             return prefabPath.Replace("#psd.prefab", ".psd");
         }
 
+        public static bool IsPSDFile(string assetPath)
+        {
+            return assetPath.ToForwardSlash().EndsWith(".psd");
+        }
+
         public static bool PsdEntityExists(string psdPath)
         {
             return AssetDatabase.LoadAssetAtPath<GameObject>(PsdFileToPrefabPath(psdPath)) != null;
@@ -183,6 +263,11 @@ namespace UNIArt.Editor
         {
             return AssetDatabase.LoadAssetAtPath<Texture2D>(PrefabPathToPsdFile(entityPath))
                 != null;
+        }
+
+        public static bool IsPsdEntity(string assetPath)
+        {
+            return assetPath.ToForwardSlash().EndsWith("#psd.prefab");
         }
 
         [Serializable]
@@ -258,6 +343,8 @@ namespace UNIArt.Editor
                 return instance;
             }
         }
+
+#endregion
 
         // 创建一个设置提供者
         [SettingsProvider]

@@ -107,7 +107,7 @@ namespace UNIArt.Editor
         {
             Event evt = Event.current;
 
-            if (evt.type == EventType.DragExited && isArtAssetDrag() && isDragPerform)
+            if (evt.type == EventType.DragExited && Utils.IsDragFromUNIArt() && isDragPerform)
             {
                 isDragPerform = false;
                 var _newObj = Selection.activeGameObject;
@@ -126,7 +126,7 @@ namespace UNIArt.Editor
                     }
                 }
 
-                AssetItem dragAsset = DragAndDrop.GetGenericData("AssetItem") as AssetItem;
+                AssetItem dragAsset = DragAndDrop.GetGenericData("OriginAsset") as AssetItem;
                 if (dragAsset == null)
                 {
                     Debug.LogWarning("Dragged item is not a valid asset.");
@@ -148,11 +148,6 @@ namespace UNIArt.Editor
             }
         }
 
-        private static bool isArtAssetDrag()
-        {
-            return DragAndDrop.GetGenericData("AssetItem") != null;
-        }
-
         static DragAndDropVisualMode ProjectBrowserDropHandler(
             int dragInstanceId,
             string dropUponPath,
@@ -167,7 +162,7 @@ namespace UNIArt.Editor
                     (
                         Event.current.modifiers == EventModifiers.Alt
                         && dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder)
-                    ) || isArtAssetDrag()
+                    ) || Utils.IsDragFromUNIArt()
                 )
             )
             {
