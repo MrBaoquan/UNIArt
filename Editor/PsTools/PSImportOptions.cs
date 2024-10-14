@@ -36,7 +36,7 @@ namespace UNIArt.Editor
 
         UNIArtSettings.PSDImportArgs importArgs;
 
-        public string OriginPSDPath => importArgs.psdPath;
+        public string OriginPSDPath => importArgs?.psdPath;
 
         public void CreateGUI()
         {

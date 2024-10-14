@@ -148,6 +148,7 @@ namespace UNIArt.Editor
             public bool IsMissing => instanceObject == null;
         }
 
+        [HideInInspector]
         public List<PSDEntityInstance> PSDEntityInstances = new List<PSDEntityInstance>();
 
         public static List<PSDEntityInstance> GetPSDEntityInstances(string psdPath)

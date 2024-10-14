@@ -85,7 +85,7 @@ namespace UNIArt.Editor
 
             // 筛选名称符合@动画或者@按钮的物体
             var _allChildren = target.GetComponentsInChildren<Transform>(true);
-            var _compFlagRegex = @".+@(?<type>动画|正常)$";
+            var _compFlagRegex = @".+@(?<type>动画|默认)$";
             _allChildren
                 .Where(t => Regex.IsMatch(t.name, _compFlagRegex))
                 .ToList()
@@ -100,12 +100,12 @@ namespace UNIArt.Editor
                             string.Empty
                         );
                     }
-                    else if (_type == "正常")
+                    else if (_type == "默认")
                     {
                         var _curImage = _child.gameObject.GetComponent<Image>();
 
-                        var _selectedName = _child.name.Replace("@正常", "@选中");
-                        var _pressedName = _child.name.Replace("@正常", "@按下");
+                        var _selectedName = _child.name.Replace("@默认", "@选中");
+                        var _pressedName = _child.name.Replace("@默认", "@点击");
 
                         if (_child.transform.parent == null)
                             return;
@@ -125,7 +125,7 @@ namespace UNIArt.Editor
                             _button.spriteState = _spriteState;
 
                             GameObject.DestroyImmediate(_pressedTransform.gameObject);
-                            _child.gameObject.name = _child.gameObject.name.Replace("@正常", "按钮");
+                            _child.gameObject.name = _child.gameObject.name.Replace("@默认", "按钮");
                         }
                         else if (_toggleTransfrom != null) // 视为开关
                         {
@@ -147,7 +147,7 @@ namespace UNIArt.Editor
 
                             GameObject.DestroyImmediate(_toggleTransfrom.gameObject);
                             _child.gameObject.name = _child.gameObject.name.Replace(
-                                "@正常",
+                                "@默认",
                                 string.Empty
                             );
                         }
@@ -155,7 +155,7 @@ namespace UNIArt.Editor
                         {
                             _child.gameObject.AddOrGetComponent<Button>();
                             _child.gameObject.name = _child.gameObject.name.Replace(
-                                "@正常",
+                                "@默认",
                                 string.Empty
                             );
                         }
