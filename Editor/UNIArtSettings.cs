@@ -151,6 +151,8 @@ namespace UNIArt.Editor
         [HideInInspector]
         public List<PSDEntityInstance> PSDEntityInstances = new List<PSDEntityInstance>();
 
+        public bool DebugMode = false;
+
         public static List<PSDEntityInstance> GetPSDEntityInstances(string psdPath)
         {
             return Project.PSDEntityInstances.FindAll(x => x.origin == psdPath);

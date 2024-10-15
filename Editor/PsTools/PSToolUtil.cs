@@ -260,10 +260,6 @@ namespace UNIArt.Editor
                                 }
                             }
 
-                            // GameObjectUtility.RemoveMonoBehavioursWithMissingScript(
-                            //     _psEntityObject
-                            // );
-
                             var _savePath = psdFilePath.Replace(".psd", "#psd.prefab");
                             _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
                             var _newPrefab = PrefabUtility.SaveAsPrefabAsset(
@@ -272,7 +268,11 @@ namespace UNIArt.Editor
                             );
 
                             AssetDatabase.SaveAssets();
-                            GameObject.DestroyImmediate(_psEntityObject);
+                            if (!UNIArtSettings.Project.DebugMode)
+                            {
+                                GameObject.DestroyImmediate(_psEntityObject);
+                            }
+
                             _bFinished = true;
                             // AssetDatabase.Refresh();
                             callback?.Invoke(_newPrefab);

@@ -369,11 +369,24 @@ namespace UNIArt.Editor
             root.Q<Button>("btn_uninstall")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
+                    if (SVNIntegration.IsWorkingCopyDirty(selectedTemplateButton.RootFolder))
+                    {
+                        // 弹出确认框
+                        var _confirm = EditorUtility.DisplayDialog(
+                            "确认",
+                            $"[{selectedTemplateButton.TemplateID}]存在未提交资源，确定要移除吗？",
+                            "确定",
+                            "取消"
+                        );
+                        if (!_confirm)
+                            return;
+                    }
+                    var _templateRootUrl = UNIArtSettings.GetExternalTemplateFolderUrl(
+                        selectedTemplateButton.TemplateID
+                    );
                     SVNIntegration.RemoveExternal(
                         UNIArtSettings.Project.TemplateLocalFolder,
-                        UNIArtSettings.GetExternalTemplateFolderUrl(
-                            selectedTemplateButton.TemplateID
-                        )
+                        _templateRootUrl
                     );
                     UNIArtSettings.Project.PullExternals();
                     refreshTemplateMenuList();

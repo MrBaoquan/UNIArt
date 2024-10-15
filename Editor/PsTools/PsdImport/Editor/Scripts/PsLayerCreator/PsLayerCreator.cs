@@ -392,12 +392,12 @@ namespace PluginMaster
 
                 if (!_createAtlas)
                 {
-                    var fileName =
-                        Path.GetFileNameWithoutExtension(_psdFile.Path)
-                        + "_"
-                        + childLayer.Id.ToString("D3")
-                        + "_"
-                        + childLayer.Name;
+                    var _psdFileName = Path.GetFileNameWithoutExtension(_psdFile.Path);
+                    var _layerID = childLayer.Id.ToString("D3");
+                    var _layerName = childLayer.Name;
+
+                    var fileName = $"{_layerName}_{_psdFileName}_{_layerID}";
+
                     Sprite childSprite = TextureUtils.SavePngAsset(
                         texture,
                         _outputFolder + fileName + ".png",

@@ -1020,5 +1020,20 @@ namespace UNIArt.Editor
             }
             return true;
         }
+
+        public static bool IsWorkingCopyDirty(string workingDir)
+        {
+            var result = ShellUtils.ExecuteCommand(
+                "svn",
+                "status",
+                workingDir,
+                Encoding.GetEncoding(936)
+            );
+            if (result.HasErrors)
+            {
+                return true;
+            }
+            return !string.IsNullOrEmpty(result.Output);
+        }
     }
 }

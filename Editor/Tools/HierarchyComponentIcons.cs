@@ -163,26 +163,23 @@ namespace UNIArt.Editor
 
                     var _prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
 
-                    if (_prefabStage != null && _prefabStage.prefabContentsRoot == obj)
-                    {
-                        menu.AddSeparator("");
+                    menu.AddSeparator("");
 
-                        if (obj.GetComponentInChildren<PsGroup>(true) != null)
-                        {
-                            menu.AddItem(
-                                new GUIContent("移除PS组件"),
-                                false,
-                                () =>
-                                {
-                                    PSUtils.RemovePSLayer(obj);
-                                    EditorUtility.SetDirty(obj);
-                                }
-                            );
-                        }
-                        else
-                        {
-                            menu.AddDisabledItem(new GUIContent("移除PS组件"));
-                        }
+                    if (obj.GetComponentInChildren<PsGroup>(true) != null)
+                    {
+                        menu.AddItem(
+                            new GUIContent("移除PS组件"),
+                            false,
+                            () =>
+                            {
+                                PSUtils.RemovePSLayer(obj);
+                                EditorUtility.SetDirty(obj);
+                            }
+                        );
+                    }
+                    else
+                    {
+                        menu.AddDisabledItem(new GUIContent("移除PS组件"));
                     }
 
                     menu.AddSeparator("");

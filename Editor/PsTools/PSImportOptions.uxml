@@ -3,7 +3,7 @@
     <ui:VisualElement name="root" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); margin-left: 32px; margin-right: 32px; margin-top: 32px; margin-bottom: 32px; align-items: center;">
         <uie:ObjectField label="PS源文件" type="UnityEngine.Texture2D, UnityEngine.CoreModule" allow-scene-objects="false" name="originPSFile" focusable="true" style="flex-grow: 0; width: 100%;" />
         <ui:GroupBox style="width: 100%;">
-            <uie:FloatField label="缩放系数" name="input_scale" value="1" tooltip="文件导入缩放系数" />
+            <uie:FloatField label="缩放系数" name="input_scale" value="1" tooltip="PS画布尺寸缩放系数" />
             <ui:Toggle label="仅导入可见层" name="b_onlyVisibleLayer" tooltip="是否仅导入PS文件中可见的图层" />
             <ui:Toggle label="创建图集" name="b_createAtlas" tooltip="是否对切图进行合并" />
             <uie:IntegerField label="图集最大尺寸" value="42" name="input_atlasMaxSize" tooltip="创建图集的最大尺寸" />
