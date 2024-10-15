@@ -30,11 +30,11 @@
                         <uie:ToolbarButton display-tooltip-when-elided="true" name="btn-filter-dir" class="filter-dir-off" />
                         <uie:ToolbarSpacer />
                     </uie:Toolbar>
-                    <ui:VisualElement style="flex-grow: 1; border-left-color: rgba(255, 255, 255, 0.1); border-right-color: rgba(255, 255, 255, 0.1); border-top-color: rgba(255, 255, 255, 0.1); border-bottom-color: rgba(255, 255, 255, 0.1); border-left-width: 1px;">
+                    <ui:VisualElement style="border-left-color: rgba(255, 255, 255, 0.1); border-right-color: rgba(255, 255, 255, 0.1); border-top-color: rgba(255, 255, 255, 0.1); border-bottom-color: rgba(255, 255, 255, 0.1); border-left-width: 1px; flex-grow: 1; flex-shrink: 0;">
                         <ui:ScrollView name="tags-scrollView" class="filter-view" style="border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgba(255, 255, 255, 0.1); border-bottom-width: 1px; flex-grow: 0; flex-shrink: 0; max-height: 30%;" />
-                        <ui:VisualElement name="content-view" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); border-left-width: 1px; flex-direction: row; flex-wrap: wrap;">
-                            <ui:ScrollView name="asset-scrollView" class="asset-view" style="justify-content: flex-start; align-items: stretch; margin-top: 8px;">
-                                <ui:VisualElement name="asset-list" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-wrap: wrap; flex-direction: row; justify-content: flex-start; align-items: flex-start; align-self: auto; padding-left: 20px;" />
+                        <ui:VisualElement name="content-view" style="flex-grow: 1;">
+                            <ui:ScrollView name="asset-scrollView" horizontal-scroller-visibility="Hidden" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0;">
+                                <ui:VisualElement name="asset-list" style="flex-direction: row; flex-wrap: wrap; flex-shrink: 0; padding-left: 32px; padding-top: 8px; padding-bottom: 8px;" />
                             </ui:ScrollView>
                             <ui:VisualElement name="drop-view" style="flex-grow: 1; background-color: rgb(51, 51, 51); position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">
                                 <ui:VisualElement style="flex-grow: 1; margin-left: 16px; margin-right: 16px; margin-top: 16px; margin-bottom: 16px; border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-top-left-radius: 16px; border-bottom-left-radius: 16px; border-top-right-radius: 16px; border-bottom-right-radius: 16px; border-left-color: rgba(92, 214, 60, 0.2); border-right-color: rgba(92, 214, 60, 0.2); border-top-color: rgba(92, 214, 60, 0.2); border-bottom-color: rgba(92, 214, 60, 0.2); align-items: center; justify-content: center;">
@@ -57,6 +57,6 @@
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:VisualElement name="img_preview" style="border-left-color: rgba(255, 255, 255, 0.13); border-right-color: rgba(255, 255, 255, 0.13); border-top-color: rgba(255, 255, 255, 0.13); border-bottom-color: rgba(255, 255, 255, 0.13); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; position: absolute; background-color: rgb(34, 59, 84); height: 30%; min-height: 30%;" />
+        <ui:VisualElement name="img_preview" style="border-left-color: rgba(255, 255, 255, 0.13); border-right-color: rgba(255, 255, 255, 0.13); border-top-color: rgba(255, 255, 255, 0.13); border-bottom-color: rgba(255, 255, 255, 0.13); border-left-width: 1px; border-right-width: 1px; border-top-width: 1px; border-bottom-width: 1px; border-top-left-radius: 8px; border-bottom-left-radius: 8px; border-top-right-radius: 8px; border-bottom-right-radius: 8px; position: absolute; background-color: rgb(34, 59, 84);" />
     </ui:VisualElement>
 </ui:UXML>

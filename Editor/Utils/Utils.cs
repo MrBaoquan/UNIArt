@@ -601,8 +601,8 @@ namespace UNIArt.Editor
                 }
                 else
                 {
-                    onComplete?.Invoke();
                     EditorApplication.update -= _tempCallback;
+                    onComplete?.Invoke();
                 }
             };
             EditorApplication.update += _tempCallback;

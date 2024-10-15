@@ -111,6 +111,16 @@ namespace UNIArt.Editor
 
         VisualElement dropView;
         ScrollView filterScrollView;
+        ScrollView assetScrollView;
+
+        enum SelectType
+        {
+            Filter,
+            Asset,
+            None
+        }
+
+        SelectType lastSelect = SelectType.None;
 
         private void buildUI()
         {
@@ -126,6 +136,7 @@ namespace UNIArt.Editor
             dropView.style.display = DisplayStyle.None;
 
             filterScrollView = rootVisualElement.Q<ScrollView>("tags-scrollView");
+            assetScrollView = rootVisualElement.Q<ScrollView>("asset-scrollView");
 
             var _topListRoot = labelFromUXML.Q<VisualElement>("menu-top-list");
 
@@ -187,7 +198,7 @@ namespace UNIArt.Editor
             {
                 refreshTemplateMenuList();
             });
-
+#region 资源区工具栏菜单
             var toolbarAddOrCreateMenu = rootVisualElement.Q<ToolbarMenu>("toolbar-add-menu");
             toolbarAddOrCreateMenu.menu.AppendAction(
                 "新建文件夹",
@@ -202,7 +213,7 @@ namespace UNIArt.Editor
                     filterButtons.Last().DoEdit();
                 }
             );
-            toolbarAddOrCreateMenu.menu.AppendAction("新建组件/测试", action => { });
+#endregion
 
             EditorCoroutine templateSearchCoroutine = null;
             templateSearch.RegisterValueChangedCallback(evt =>
@@ -765,8 +776,6 @@ namespace UNIArt.Editor
             );
 #endregion
 
-
-
             // ctrl+r 刷新视图
             root.RegisterCallback<KeyDownEvent>(evt =>
             {
@@ -805,11 +814,13 @@ namespace UNIArt.Editor
                 ClearAssetPreviewTooltip();
                 if (evt.keyCode == KeyCode.F2)
                 {
-                    if (assetItems.Count == 0 || selectedAsset == null)
-                        return;
-                    if (selectedAssets.Count == 1)
+                    if (selectedAssets.Count == 1 && lastSelect == SelectType.Asset)
                     {
                         selectedAsset.DoEdit();
+                    }
+                    else if (lastSelect == SelectType.Filter && selectedFilterButton is not null)
+                    {
+                        selectedFilterButton.DoEdit();
                     }
                 }
 
@@ -859,6 +870,9 @@ namespace UNIArt.Editor
                 _selectedAssets.ForEach(_ => _.Deselect());
                 selectedAsset = assetItems[_curID];
                 selectedAsset.Select();
+                lastSelect = SelectType.Asset;
+
+                assetScrollView.ScrollTo(selectedAsset);
             });
         }
 #endregion
@@ -1208,7 +1222,7 @@ namespace UNIArt.Editor
             refreshTemplateView();
         }
 
-        private void setTemplateFilter(int filterID)
+        private void selectFilter(int filterID)
         {
             if (!selectedTemplateButton.IsInstalled && !selectedTemplateButton.IsLocal)
                 return;
@@ -1218,6 +1232,7 @@ namespace UNIArt.Editor
 
             filterButtons.ForEach(_f => _f.Deselect());
             selectedFilterButton?.Select();
+            lastSelect = SelectType.Filter;
             refreshTemplateAssets();
         }
 
@@ -1348,7 +1363,7 @@ namespace UNIArt.Editor
                     return;
                 }
 
-                setTemplateFilter(filterButtons.IndexOf(_filterButton));
+                selectFilter(filterButtons.IndexOf(_filterButton));
             });
 
             _filterButton.OnConfirmInput.AddListener(
@@ -1379,7 +1394,7 @@ namespace UNIArt.Editor
                         var _newFilterButton = addFilter(Path.GetFileName(_createdFolderPath));
                         orderFilters();
 
-                        setTemplateFilter(filterButtons.IndexOf(_newFilterButton));
+                        selectFilter(filterButtons.IndexOf(_newFilterButton));
                         filterScrollView.ScrollTo(_newFilterButton);
                         return;
                     }
@@ -1420,7 +1435,7 @@ namespace UNIArt.Editor
             orderFilters();
 
             validateFilterID();
-            setTemplateFilter(selectedTemplateButton.FilterID);
+            selectFilter(selectedTemplateButton.FilterID);
 
             rootVisualElement
                 .Q<Button>("btn_uninstall")
@@ -1483,7 +1498,7 @@ namespace UNIArt.Editor
             validateFilterID();
             var _filterID = selectedFilterButton.FilterID;
 
-            var buttonContainer = rootVisualElement.Q<VisualElement>("asset-scrollView");
+            var buttonContainer = rootVisualElement.Q<VisualElement>("asset-list");
             buttonContainer.Clear();
             assetItems.Clear();
 
@@ -1502,13 +1517,6 @@ namespace UNIArt.Editor
                 return 1000;
             };
 
-            selectedTemplateButton
-                .ValidFilterRootPaths(_filterID)
-                .ToList()
-                .ForEach(_ =>
-                {
-                    Debug.Log(_);
-                });
             var _assets = AssetDatabase
                 .FindAssets(
                     selectedTemplateButton.filterArgs(),
@@ -1531,7 +1539,7 @@ namespace UNIArt.Editor
                 var _assetItem = new AssetItem() { AssetPath = _path, Index = _assetID++ };
                 buttonContainer.Add(_assetItem);
                 assetItems.Add(_assetItem);
-                yield return new EditorWaitForSeconds(0.01f);
+                yield return new EditorWaitForSeconds(0.001f);
 
                 // 资源点击事件
                 _assetItem.RegisterCallback<MouseDownEvent>(evt =>
@@ -1605,6 +1613,7 @@ namespace UNIArt.Editor
                     {
                         assetItems.ForEach(_ => _.Deselect());
                         _assetItem.Select();
+                        lastSelect = SelectType.Asset;
                     }
 
                     selectedAsset = _assetItem;
