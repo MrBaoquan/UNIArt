@@ -254,14 +254,11 @@ namespace UNIArt.Editor
         public static bool DeleteProjectAsset(string path)
         {
             bool ret = AssetDatabase.DeleteAsset(path);
-            if (ret)
+
+            var metaPath = path + ".meta";
+            if (File.Exists(metaPath))
             {
-                // 删除meta文件
-                var metaPath = path + ".meta";
-                if (File.Exists(metaPath))
-                {
-                    File.Delete(metaPath);
-                }
+                File.Delete(metaPath);
             }
 
             return ret;

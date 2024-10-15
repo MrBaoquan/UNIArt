@@ -157,3 +157,30 @@ ToolbarButton {
     height: 16px;
     -unity-background-image-tint-color: rgba(255, 255, 255, 0.4);
 }
+
+.add-menu .unity-toolbar-menu__arrow {
+    background-image: none;
+    border-left-color: rgb(0, 0, 0);
+    border-right-color: rgb(0, 0, 0);
+    border-top-color: rgb(0, 0, 0);
+    border-bottom-color: rgb(0, 0, 0);
+}
+
+.filter-view .unity-scroll-view__content-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-left: 16px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.asset-view .unity-scroll-view__content-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-left: 16px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    flex-grow: 0;
+    flex-shrink: 0;
+    align-items: flex-start;
+}

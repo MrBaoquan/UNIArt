@@ -879,8 +879,18 @@ namespace UNIArt.Editor
             return _externals.Any(x => x.Dir == ExternalDir);
         }
 
-        // 添加external
-        public static void AddExternal(string externalPath, string externalUrl, int Revision = -1)
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="externalPath"></param>
+        /// <param name="externalUrl"></param>
+        /// <param name="Revision">0 指定最新版本号  -1 不指定版本</param>
+        public static void AddOrUpdateExternal(
+            string externalPath,
+            string externalUrl,
+            int Revision = 0,
+            bool update = true
+        )
         {
             var workingDir = $"{SVNConextMenu.ProjectRootUnity}/{externalPath}";
             // 如果external不是工作副本,则使用svn add将其添加到工作副本中
@@ -891,7 +901,7 @@ namespace UNIArt.Editor
             }
 
             var _externals = GetExternals(externalPath);
-            var _totalVer = _externals.Select(_ => _.Revision).Sum(); // 可能会有bug
+            // var _totalVer = _externals.Select(_ => _.Revision).Sum(); // 可能会有bug
 
             var _folderName = Path.GetFileName(externalUrl);
             if (!_externals.Exists(_ => _.Url == externalUrl))
@@ -903,24 +913,32 @@ namespace UNIArt.Editor
                     {
                         Dir = _folderName,
                         Url = externalUrl,
-                        Revision = -1
+                        Revision = 0
                     }
                 );
             }
             _externals.Where(_ => _.Dir == _folderName).First().Revision = Revision;
 
-            if (
-                _externals.Select(_ => _.Revision).Sum() == _totalVer
-                || _externals.All(_ => _.Revision != -1)
-            )
-            {
-                return;
-            }
+            // if (
+            //     _externals.Select(_ => _.Revision).Sum() == _totalVer
+            //     || _externals.All(_ => _.Revision != 0)
+            // )
+            // {
+            //     return;
+            // }
+
+            // Debug.Log(_externals.Count);
 
             _externals
-                .Where(_external => _external.Revision == -1)
+                .Where(_external => _external.Revision < 1)
                 .ToList()
-                .ForEach(_external => _external.Revision = GetLastChangedRevision(_external.Url));
+                .ForEach(
+                    _external =>
+                        _external.Revision =
+                            _external.Revision == 0
+                                ? GetLastChangedRevision(_external.Url)
+                                : _external.Revision
+                );
 
             var _externalsStr = formatExternals(_externals);
             var _args = $"propset svn:externals \"{_externalsStr}\" {externalPath}";
@@ -929,6 +947,11 @@ namespace UNIArt.Editor
             if (result.HasErrors)
             {
                 Debug.LogError($"SVN Error: {result.Error}");
+                return;
+            }
+
+            if (!update)
+            {
                 return;
             }
 

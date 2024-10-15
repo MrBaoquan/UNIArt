@@ -242,7 +242,23 @@ namespace UNIArt.Editor
                 SVNConextMenu.Commit(SVNConextMenu.GetRootAssetPath(), false);
                 return;
             }
+            // 将版本设置为最新版
+            SVNIntegration.AddOrUpdateExternal(
+                UNIArtSettings.Project.TemplateLocalFolder,
+                ExternalRepoUrl,
+                -1,
+                false
+            );
+
             SVNConextMenu.CommitExternal(RootFolder);
+
+            // 指定为最新版本号
+            SVNIntegration.AddOrUpdateExternal(
+                UNIArtSettings.Project.TemplateLocalFolder,
+                ExternalRepoUrl,
+                0,
+                false
+            );
         }
 
         // 拉取最新资源

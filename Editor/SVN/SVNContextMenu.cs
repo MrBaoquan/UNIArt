@@ -322,21 +322,21 @@ namespace UNIArt.Editor
             }
         }
 
-        public static void CommitExternal(string externalPath)
+        public static bool CommitExternal(string externalPath)
         {
-            // if (string.IsNullOrEmpty(pathsArg))
-            //     return;
-
             var result = ShellUtils.ExecuteCommand(
                 ClientCommand,
                 $"/command:commit /path:\".\"",
                 externalPath,
                 Encoding.GetEncoding(936)
             );
+
             if (result.HasErrors)
             {
                 // Debug.LogError($"SVN Error: {result.Error}");
+                return false;
             }
+            return true;
         }
 
         public static IEnumerable<string> GetRootAssetPath()
