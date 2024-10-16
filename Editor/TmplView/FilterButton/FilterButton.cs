@@ -128,6 +128,7 @@ namespace UNIArt.Editor
             inputField = this.Q<TextField>("input");
             inputField.style.display = DisplayStyle.None;
 
+            string _blurType = "";
             // esc取消事件
             inputField.RegisterCallback<KeyDownEvent>(e =>
             {
@@ -135,8 +136,27 @@ namespace UNIArt.Editor
                 {
                     if (string.IsNullOrEmpty(inputField.value))
                         return;
+                    _blurType = "confirm";
+                }
+                else if (e.keyCode == KeyCode.Escape)
+                {
+                    _blurType = "cancel";
+                    // Debug.LogWarning("cancel");
+                    // DoText();
+                }
+            });
 
+            // blur
+            inputField.RegisterCallback<BlurEvent>(e =>
+            {
+                if (_blurType != "cancel")
+                {
                     DoText();
+                    if (inputField.value == "")
+                    {
+                        return;
+                    }
+
                     var _oldVal = FilterID;
                     var _newVal = inputField.value;
                     inputField.value = string.Empty;
@@ -149,7 +169,7 @@ namespace UNIArt.Editor
 
                     OnConfirmInput.Invoke(_oldVal, _newVal);
                 }
-                else if (e.keyCode == KeyCode.Escape)
+                else
                 {
                     DoText();
                 }

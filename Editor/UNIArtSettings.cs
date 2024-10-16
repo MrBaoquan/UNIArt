@@ -282,7 +282,7 @@ namespace UNIArt.Editor
             public bool SearchTopFolderOnly = true;
         }
 
-        [HideInInspector]
+        // [HideInInspector]
         public List<TemplateCache> TemplateCaches = new List<TemplateCache>();
 
         [HideInInspector]

@@ -33,7 +33,9 @@
                         <uie:ToolbarSpacer />
                     </uie:Toolbar>
                     <ui:VisualElement style="border-left-color: rgba(255, 255, 255, 0.1); border-right-color: rgba(255, 255, 255, 0.1); border-top-color: rgba(255, 255, 255, 0.1); border-bottom-color: rgba(255, 255, 255, 0.1); border-left-width: 1px; flex-grow: 1; flex-shrink: 0;">
-                        <ui:ScrollView name="tags-scrollView" class="filter-view" style="border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgba(255, 255, 255, 0.1); border-bottom-width: 1px; flex-grow: 0; flex-shrink: 0; max-height: 30%;" />
+                        <ui:ScrollView name="tags-scrollView" style="border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgba(255, 255, 255, 0.1); border-bottom-width: 1px; flex-grow: 0; flex-shrink: 0; max-height: 30%;">
+                            <ui:VisualElement name="tag-list" style="flex-direction: row; flex-wrap: wrap; flex-shrink: 0; padding-left: 32px; padding-top: 8px; padding-bottom: 8px;" />
+                        </ui:ScrollView>
                         <ui:VisualElement name="content-view" style="flex-grow: 1;">
                             <ui:ScrollView name="asset-scrollView" horizontal-scroller-visibility="Hidden" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0;">
                                 <ui:VisualElement name="asset-list" style="flex-direction: row; flex-wrap: wrap; flex-shrink: 0; padding-left: 32px; padding-top: 8px; padding-bottom: 8px;" />
