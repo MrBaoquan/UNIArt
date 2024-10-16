@@ -7,7 +7,7 @@
             <ui:Toggle label="仅导入可见层" name="b_onlyVisibleLayer" tooltip="是否仅导入PS文件中可见的图层" />
             <ui:Toggle label="创建图集" name="b_createAtlas" tooltip="是否对切图进行合并" />
             <uie:IntegerField label="图集最大尺寸" value="42" name="input_atlasMaxSize" tooltip="创建图集的最大尺寸" />
-            <ui:Toggle label="使用PS组件" name="b_addPSComponent" tooltip="是否使用PS组件，模拟PS图层混合效果" />
+            <ui:Toggle label="添加PS组件" name="b_addPSComponent" tooltip="是否添加PS组件，实现PS图层混合效果" />
             <ui:Toggle label="恢复工作副本" name="b_restoreEntity" tooltip="是否在导入时恢复现有工作副本数据" />
             <uie:ObjectField label="工作副本" type="UnityEngine.GameObject, UnityEngine.CoreModule" allow-scene-objects="false" name="object_psdInstance" tooltip="恢复数据将从此副本中获取" />
         </ui:GroupBox>

@@ -279,6 +279,7 @@ namespace UNIArt.Editor
             public string TemplateName;
             public bool KeepTop = false;
             public int FilterID = 0;
+            public bool SearchTopFolderOnly = true;
         }
 
         [HideInInspector]
@@ -316,6 +317,16 @@ namespace UNIArt.Editor
         public void SetTemplateFilterID(string templateName, int filterID)
         {
             addOrGetTemplateCache(templateName).FilterID = filterID;
+        }
+
+        public bool GetSearchTopFolderOnly(string templateName)
+        {
+            return addOrGetTemplateCache(templateName).SearchTopFolderOnly;
+        }
+
+        public void SetSearchTopFolderOnly(string templateName, bool searchTopOnly)
+        {
+            addOrGetTemplateCache(templateName).SearchTopFolderOnly = searchTopOnly;
         }
 
         private List<SVNIntegration.ExternalProperty> externals =

@@ -1396,6 +1396,7 @@ namespace UNIArt.Editor
                                 Directory.CreateDirectory(_rootDir);
                                 AssetDatabase.Refresh();
                             }
+                            _newFolderName = Path.GetFileName(_newPath);
                         }
                         _rootDir = _rootDir.TrimEnd('/');
 

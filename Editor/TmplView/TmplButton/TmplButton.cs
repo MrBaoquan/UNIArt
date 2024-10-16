@@ -43,7 +43,11 @@ namespace UNIArt.Editor
         );
 
         // 遍历Top文件夹
-        public bool SearchTopFolderOnly { get; set; } = true;
+        public bool SearchTopFolderOnly
+        {
+            get { return UNIArtSettings.Project.GetSearchTopFolderOnly(templateID); }
+            set { UNIArtSettings.Project.SetSearchTopFolderOnly(templateID, value); }
+        }
 
         // 模板ID
         private string templateID = string.Empty;
