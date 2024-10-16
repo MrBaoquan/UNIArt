@@ -67,13 +67,15 @@ namespace UNIArt.Editor
             if (evt.type == EventType.DragPerform && selectionRect.Contains(evt.mousePosition))
             {
                 GameObject obj = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
-                var _imageComp = obj.GetComponent<Image>();
-                if (DragAndDrop.paths.Count() > 1 && _imageComp != null)
-                {
-                    if (DragAndDrop.objectReferences.Any(_ => _ is not Sprite))
-                        return;
 
-                    _imageComp.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(DragAndDrop.paths[0]);
+                var _textures = DragAndDrop.objectReferences.OfType<Texture2D>().ToList();
+                if (_textures.Count > 1)
+                {
+                    var _imageComp = obj.AddOrGetComponent<Image>();
+
+                    _imageComp.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                        AssetDatabase.GetAssetPath(_textures.First())
+                    );
                     _imageComp.SetNativeSize();
 
                     var _animator = obj.GetComponent<Animator>();
@@ -90,6 +92,8 @@ namespace UNIArt.Editor
                     AnimatorEditor.AddClipToController(_controller, _animationClip);
 
                     evt.Use();
+
+                    Selection.activeGameObject = obj;
                     return;
                 }
             }
@@ -113,6 +117,12 @@ namespace UNIArt.Editor
             if (evt.type == EventType.DragExited && Utils.IsDragFromUNIArt() && isDragPerform)
             {
                 isDragPerform = false;
+
+                if (DragAndDrop.objectReferences.Length > 1)
+                {
+                    return;
+                }
+
                 var _newObj = Selection.activeGameObject;
                 if (_newObj == null)
                     return;
@@ -135,6 +145,7 @@ namespace UNIArt.Editor
                     Debug.LogWarning("Dragged item is not a valid asset.");
                     return;
                 }
+
                 if (dragAsset.AssetObject is Texture2D)
                 {
                     GameObject.DestroyImmediate(_newObj.GetComponent<SpriteRenderer>());

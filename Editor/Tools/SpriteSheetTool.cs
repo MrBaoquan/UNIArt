@@ -75,6 +75,7 @@ namespace UNIArt.Editor
         {
             var _sprites = imagePaths
                 .Select(_ => AssetDatabase.LoadAssetAtPath<Sprite>(_))
+                .OfType<Sprite>()
                 .OrderBy(_sp => _sp.name)
                 .ToList();
 
@@ -87,7 +88,9 @@ namespace UNIArt.Editor
             }
             var regex = new Regex(@"(_)?(\d+)?$");
             var _animName = regex.Replace(Path.GetFileNameWithoutExtension(_spPath), "");
-            var _animPath = Path.Combine(_saveDir, _animName + ".anim");
+
+            var _animPath = Path.Combine(_saveDir, _animName + ".anim").ToForwardSlash();
+            Utils.CreateFolderIfNotExist(_saveDir);
             _animPath = AssetDatabase.GenerateUniqueAssetPath(_animPath);
             return createSequenceAnimation(_animPath, spriteType, _sprites);
         }
