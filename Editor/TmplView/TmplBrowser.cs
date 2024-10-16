@@ -107,11 +107,14 @@ namespace UNIArt.Editor
 
             UPMUpdater.IsPackageLatest(
                 "com.parful.uniart",
-                _isLatest =>
+                (_isLatest, current, latest) =>
                 {
                     rootVisualElement.Q<VisualElement>("update-dot").style.display = _isLatest
                         ? DisplayStyle.None
                         : DisplayStyle.Flex;
+                    rootVisualElement.Q<Button>("btn-version-update").tooltip = _isLatest
+                        ? $"检查更新, 当前版本: {current}"
+                        : $"有新版本 {latest} 可更新";
                 }
             );
             // selectTemplate(SelectedTemplateID);

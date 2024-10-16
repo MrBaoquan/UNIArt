@@ -278,6 +278,7 @@ namespace UNIArt.Editor
         {
             public string TemplateName;
             public bool KeepTop = false;
+            public int FilterID = 0;
         }
 
         [HideInInspector]
@@ -286,7 +287,7 @@ namespace UNIArt.Editor
         [HideInInspector]
         public string LastSelectedTemplateID = TmplButton.LocalTemplateTitle;
 
-        public void SetTemplateTop(string templateName, bool isTop)
+        private TemplateCache addOrGetTemplateCache(string templateName)
         {
             var _cache = TemplateCaches.FirstOrDefault(x => x.TemplateName == templateName);
             if (_cache == null)
@@ -294,17 +295,27 @@ namespace UNIArt.Editor
                 _cache = new TemplateCache() { TemplateName = templateName };
                 TemplateCaches.Add(_cache);
             }
-            _cache.KeepTop = isTop;
+            return _cache;
+        }
+
+        public void SetTemplateTop(string templateName, bool isTop)
+        {
+            addOrGetTemplateCache(templateName).KeepTop = isTop;
         }
 
         public bool GetTemplateTop(string templateName)
         {
-            var _cache = TemplateCaches.FirstOrDefault(x => x.TemplateName == templateName);
-            if (_cache == null)
-            {
-                return false;
-            }
-            return _cache.KeepTop;
+            return addOrGetTemplateCache(templateName).KeepTop;
+        }
+
+        public int GetTemplateFilterID(string templateName)
+        {
+            return addOrGetTemplateCache(templateName).FilterID;
+        }
+
+        public void SetTemplateFilterID(string templateName, int filterID)
+        {
+            addOrGetTemplateCache(templateName).FilterID = filterID;
         }
 
         private List<SVNIntegration.ExternalProperty> externals =

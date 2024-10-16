@@ -26,7 +26,9 @@ namespace UNIArt.Editor
                         || searchRequest.Result.Length <= 0
                     )
                     {
-                        // Debug.LogError($"Failed to search for packages: {searchRequest.Error.message}");
+                        Debug.LogError(
+                            $"Failed to search packages: {searchRequest.Error?.message}"
+                        );
                         callback?.Invoke(string.Empty);
                         return;
                     }
@@ -47,12 +49,14 @@ namespace UNIArt.Editor
                 {
                     if (listRequest.Status != StatusCode.Success)
                     {
+                        Debug.LogError($"Failed to list packages: {listRequest.Error.message}");
                         callback?.Invoke(string.Empty);
                         return;
                     }
                     var _uniartPkg = listRequest.Result.FirstOrDefault(p => p.name == packageName);
                     if (_uniartPkg == null)
                     {
+                        Debug.LogWarning($"{packageName} is not installed.");
                         callback?.Invoke(string.Empty);
                         return;
                     }
@@ -62,7 +66,10 @@ namespace UNIArt.Editor
             );
         }
 
-        public static void IsPackageLatest(string packageName, Action<bool> callback)
+        public static void IsPackageLatest(
+            string packageName,
+            Action<bool, string, string> callback
+        )
         {
             CurrentVersion(
                 packageName,
@@ -71,7 +78,7 @@ namespace UNIArt.Editor
                     // Debug.LogWarning($"{packageName} version: {version}");
                     if (string.IsNullOrEmpty(version))
                     {
-                        callback?.Invoke(true);
+                        callback?.Invoke(true, string.Empty, string.Empty);
                         return;
                     }
                     LatestVersion(
@@ -81,10 +88,10 @@ namespace UNIArt.Editor
                             // Debug.LogWarning($"{packageName} latest version: {latestVersion}");
                             if (string.IsNullOrEmpty(latestVersion))
                             {
-                                callback?.Invoke(true);
+                                callback?.Invoke(true, string.Empty, string.Empty);
                                 return;
                             }
-                            callback?.Invoke(latestVersion == version);
+                            callback?.Invoke(latestVersion == version, version, latestVersion);
                         }
                     );
                 }
@@ -115,16 +122,20 @@ namespace UNIArt.Editor
 
         public static void UpdatePackage(string packageName)
         {
-            LatestVersion(
+            IsPackageLatest(
                 packageName,
-                latestVersion =>
+                (isLatest, currentVersion, latestVersion) =>
                 {
-                    if (string.IsNullOrEmpty(latestVersion))
+                    if (isLatest)
                     {
-                        Debug.LogWarning($"No new version of {packageName} found.");
-                        return;
+                        Debug.Log(
+                            $"The latest version of {packageName} {currentVersion} is installed."
+                        );
                     }
-                    UpdatePackage(packageName, latestVersion);
+                    else
+                    {
+                        UpdatePackage(packageName, latestVersion);
+                    }
                 }
             );
         }

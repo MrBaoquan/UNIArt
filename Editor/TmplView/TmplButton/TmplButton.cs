@@ -161,7 +161,11 @@ namespace UNIArt.Editor
             }
         }
 
-        public int FilterID { get; set; } = 0;
+        public int FilterID
+        {
+            get { return UNIArtSettings.Project.GetTemplateFilterID(TemplateID); }
+            set { UNIArtSettings.Project.SetTemplateFilterID(TemplateID, value); }
+        }
         public ReactiveProperty<string> SearchFilter = new ReactiveProperty<string>(string.Empty);
 
         public string RootFolder =>
