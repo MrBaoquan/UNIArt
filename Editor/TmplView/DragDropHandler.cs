@@ -70,6 +70,9 @@ namespace UNIArt.Editor
                 var _imageComp = obj.GetComponent<Image>();
                 if (DragAndDrop.paths.Count() > 1 && _imageComp != null)
                 {
+                    if (DragAndDrop.objectReferences.Any(_ => _ is not Sprite))
+                        return;
+
                     _imageComp.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(DragAndDrop.paths[0]);
                     _imageComp.SetNativeSize();
 

@@ -39,18 +39,18 @@ namespace UNIArt.Editor
             return cachedPSDFiles[psdPath];
         }
 
-        [MenuItem("Tools/PSD Test")]
-        private static void PsdCreateGameObjectTest()
-        {
-            PrefabComponentCopier.CopyComponentsAndChildren(
-                AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/ArtAssets/UI Prefabs/Windows/二级 合并.prefab"
-                ),
-                AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/ArtAssets/UI Prefabs/Widgets/二级 合并#psd.prefab"
-                )
-            );
-        }
+        // [MenuItem("Tools/PSD Test")]
+        // private static void PsdCreateGameObjectTest()
+        // {
+        //     PrefabComponentCopier.CopyComponentsAndChildren(
+        //         AssetDatabase.LoadAssetAtPath<GameObject>(
+        //             "Assets/ArtAssets/UI Prefabs/Windows/二级 合并.prefab"
+        //         ),
+        //         AssetDatabase.LoadAssetAtPath<GameObject>(
+        //             "Assets/ArtAssets/UI Prefabs/Widgets/二级 合并#psd.prefab"
+        //         )
+        //     );
+        // }
 
         public static GameObject RemovePSLayer(GameObject target)
         {

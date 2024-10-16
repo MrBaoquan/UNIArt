@@ -104,6 +104,16 @@ namespace UNIArt.Editor
             buildUI();
             registerUIEvents();
             Refresh();
+
+            UPMUpdater.IsPackageLatest(
+                "com.parful.uniart",
+                _isLatest =>
+                {
+                    rootVisualElement.Q<VisualElement>("update-dot").style.display = _isLatest
+                        ? DisplayStyle.None
+                        : DisplayStyle.Flex;
+                }
+            );
             // selectTemplate(SelectedTemplateID);
         }
 
@@ -441,7 +451,7 @@ namespace UNIArt.Editor
             root.Q<Button>("btn-version-update")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
-                    UniArtPackageAutoUpdater.CheckPackageVersion();
+                    UPMUpdater.UpdatePackage("com.parful.uniart");
                 });
 
             root.Q<Button>("btn_updateAll")
@@ -614,7 +624,7 @@ namespace UNIArt.Editor
                             "打开所在文件夹",
                             (x) =>
                             {
-                                if (selectedAsset == null)
+                                if (_originIsFilter)
                                 {
                                     EditorUtility.RevealInFinder(CurrentRootPath);
                                     return;
@@ -776,6 +786,8 @@ namespace UNIArt.Editor
             );
 #endregion
 
+#region 资源操作快捷键
+
             // ctrl+r 刷新视图
             root.RegisterCallback<KeyDownEvent>(evt =>
             {
@@ -796,7 +808,6 @@ namespace UNIArt.Editor
                 // }
             });
 
-#region 资源操作快捷键
             // 上下左右键切换资源
             root.RegisterCallback<KeyDownEvent>(evt =>
             {
@@ -843,8 +854,9 @@ namespace UNIArt.Editor
                     return;
 
                 var assetView = rootVisualElement.Q<VisualElement>("asset-list");
+
                 var _column = Mathf.FloorToInt(
-                    (assetView.resolvedStyle.width - 20) / assetItems.First().Width
+                    (assetView.resolvedStyle.width - 32) / assetItems.First().Width
                 );
 
                 var _curID = -1000;
@@ -1418,7 +1430,6 @@ namespace UNIArt.Editor
         // 刷新模板筛选列表
         public void RefreshTemplateFilters()
         {
-            hideDropView();
             validateTemplateID();
             refreshFilterDirButtonStyle();
             refreshViewButtonStyle();
@@ -1482,6 +1493,7 @@ namespace UNIArt.Editor
 
         private void refreshTemplateAssets()
         {
+            hideDropView();
             if (_refreshAssetsCoroutine != null)
             {
                 EditorCoroutineUtility.StopCoroutine(_refreshAssetsCoroutine);
@@ -1504,13 +1516,13 @@ namespace UNIArt.Editor
 
             string pattern = @$".*{selectedTemplateButton.SearchFilter.Value}.*";
 
-            Func<string, int> orderAssets = (assetName) =>
+            Func<string, int> orderAssets = (assetPath) =>
             {
-                if (assetName.EndsWith(".prefab"))
+                if (assetPath.EndsWith(".prefab"))
                 {
                     return 0;
                 }
-                else if (assetName.EndsWith(".psd"))
+                else if (assetPath.EndsWith(".psd"))
                 {
                     return 5;
                 }
