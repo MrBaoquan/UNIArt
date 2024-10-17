@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UNIArt.Editor;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -397,6 +398,7 @@ namespace PluginMaster
                     var _layerName = childLayer.Name;
 
                     var fileName = $"{_layerName}_{_psdFileName}_{_layerID}";
+                    fileName = Utils.ReplaceInvalidFileNameChars(fileName);
 
                     Sprite childSprite = TextureUtils.SavePngAsset(
                         texture,

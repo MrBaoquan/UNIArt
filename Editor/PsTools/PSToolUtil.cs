@@ -87,7 +87,9 @@ namespace UNIArt.Editor
             var _allChildren = target.GetComponentsInChildren<Transform>(true);
             var _compFlagRegex = @".+@(?<type>动画|默认)$";
             _allChildren
-                .Where(t => Regex.IsMatch(t.name, _compFlagRegex))
+                .Where(
+                    t => Regex.IsMatch(t.name, _compFlagRegex) && t.GetComponent<Image>() != null
+                )
                 .ToList()
                 .ForEach(_child =>
                 {
@@ -125,7 +127,10 @@ namespace UNIArt.Editor
                             _button.spriteState = _spriteState;
 
                             GameObject.DestroyImmediate(_pressedTransform.gameObject);
-                            _child.gameObject.name = _child.gameObject.name.Replace("@默认", "按钮");
+                            _child.gameObject.name = _child.gameObject.name.Replace(
+                                "@默认",
+                                string.Empty
+                            );
                         }
                         else if (_toggleTransfrom != null) // 视为开关
                         {
@@ -220,73 +225,60 @@ namespace UNIArt.Editor
                 Utils.Delay(
                     () =>
                     {
-                        try
+                        if (_psEntityObject.GetComponent<Canvas>() != null)
                         {
-                            if (_psEntityObject.GetComponent<Canvas>() != null)
-                            {
-                                GameObject.DestroyImmediate(
-                                    _psEntityObject.GetComponent<GraphicRaycaster>()
-                                );
-                                GameObject.DestroyImmediate(
-                                    _psEntityObject.GetComponent<CanvasScaler>()
-                                );
-                                GameObject.DestroyImmediate(_psEntityObject.GetComponent<Canvas>());
-                                var _rectTrans = _psEntityObject.GetComponent<RectTransform>();
-                                _rectTrans.anchorMin = Vector2.one * 0.5f;
-                                _rectTrans.anchorMax = Vector2.one * 0.5f;
-                                _rectTrans.localPosition = Vector3.zero;
-                            }
+                            GameObject.DestroyImmediate(
+                                _psEntityObject.GetComponent<GraphicRaycaster>()
+                            );
+                            GameObject.DestroyImmediate(
+                                _psEntityObject.GetComponent<CanvasScaler>()
+                            );
+                            GameObject.DestroyImmediate(_psEntityObject.GetComponent<Canvas>());
+                            var _rectTrans = _psEntityObject.GetComponent<RectTransform>();
+                            _rectTrans.anchorMin = Vector2.one * 0.5f;
+                            _rectTrans.anchorMax = Vector2.one * 0.5f;
+                            _rectTrans.localPosition = Vector3.zero;
+                        }
 
-                            _psEntityObject = PostProcessPSDEntity(_psEntityObject);
+                        _psEntityObject = PostProcessPSDEntity(_psEntityObject);
 
-                            if (_psdImportArgs.AddPSLayer == false)
-                            {
-                                RemovePSLayer(_psEntityObject);
-                            }
+                        if (_psdImportArgs.AddPSLayer == false)
+                        {
+                            RemovePSLayer(_psEntityObject);
+                        }
 
-                            _psEntityObject.AddOrGetComponent<Animator>();
-                            if (_psdImportArgs.RestoreEntity)
-                            {
-                                var _psdEntity = UNIArtSettings.GetPSDEntityInstance(
-                                    _psdImportArgs.PSDEntityPath
-                                );
-
-                                if (_psdEntity != null)
-                                {
-                                    PrefabComponentCopier.CopyComponentsAndChildren(
-                                        _psdEntity,
-                                        _psEntityObject
-                                    );
-                                }
-                            }
-
-                            var _savePath = psdFilePath.Replace(".psd", "#psd.prefab");
-                            _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
-                            var _newPrefab = PrefabUtility.SaveAsPrefabAsset(
-                                _psEntityObject,
-                                _savePath
+                        _psEntityObject.AddOrGetComponent<Animator>();
+                        if (_psdImportArgs.RestoreEntity)
+                        {
+                            var _psdEntity = UNIArtSettings.GetPSDEntityInstance(
+                                _psdImportArgs.PSDEntityPath
                             );
 
-                            AssetDatabase.SaveAssets();
-                            if (!UNIArtSettings.Project.DebugMode)
+                            if (_psdEntity != null)
                             {
-                                GameObject.DestroyImmediate(_psEntityObject);
+                                PrefabComponentCopier.CopyComponentsAndChildren(
+                                    _psdEntity,
+                                    _psEntityObject
+                                );
                             }
+                        }
 
-                            _bFinished = true;
-                            // AssetDatabase.Refresh();
-                            callback?.Invoke(_newPrefab);
-                            // AssetDatabase.OpenAsset(_newPrefab);
-                        }
-                        catch (System.Exception e)
+                        var _savePath = psdFilePath.Replace(".psd", "#psd.prefab");
+                        _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
+                        var _newPrefab = PrefabUtility.SaveAsPrefabAsset(
+                            _psEntityObject,
+                            _savePath
+                        );
+
+                        AssetDatabase.SaveAssets();
+                        if (!UNIArtSettings.Project.DebugMode)
                         {
-                            Debug.LogError(e.Message);
+                            GameObject.DestroyImmediate(_psEntityObject);
                         }
-                        finally
-                        {
-                            _bFinished = true;
-                            EditorUtility.ClearProgressBar();
-                        }
+
+                        _bFinished = true;
+                        EditorUtility.ClearProgressBar();
+                        callback?.Invoke(_newPrefab);
                     },
                     1f
                 );
@@ -301,20 +293,21 @@ namespace UNIArt.Editor
             {
                 psdFileMgr.onAllLayerLoadCompleted.AddListener(() =>
                 {
-                    try
-                    {
-                        createGameObjects();
-                    }
-                    catch (System.Exception e)
-                    {
-                        psdFileMgr.Dispose();
-                        Debug.LogError(e.Message);
-                        Debug.LogError(e.StackTrace);
-                    }
-                    finally
-                    {
-                        EditorUtility.ClearProgressBar();
-                    }
+                    createGameObjects();
+                    // try
+                    // {
+                    //     createGameObjects();
+                    // }
+                    // catch (System.Exception e)
+                    // {
+                    //     psdFileMgr.Dispose();
+                    //     Debug.LogError(e.Message);
+                    //     Debug.LogError(e.StackTrace);
+                    // }
+                    // finally
+                    // {
+                    //     EditorUtility.ClearProgressBar();
+                    // }
                 });
                 psdFileMgr.PreprePSD(psdFilePath);
             }
@@ -510,19 +503,9 @@ namespace UNIArt.Editor
                 {
                     PreviewPanel();
                     Status = PSDStatus.Loaded;
-                    try
-                    {
-                        onAllLayerLoadCompleted?.Invoke();
-                    }
-                    catch (System.Exception e)
-                    {
-                        Debug.LogWarning(e.Message);
-                    }
-                    finally
-                    {
-                        onAllLayerLoadCompleted.RemoveAllListeners();
-                        EditorUtility.ClearProgressBar();
-                    }
+                    onAllLayerLoadCompleted?.Invoke();
+                    onAllLayerLoadCompleted.RemoveAllListeners();
+                    EditorUtility.ClearProgressBar();
                 }
             );
         }

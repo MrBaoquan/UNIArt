@@ -609,18 +609,14 @@ namespace UNIArt.Editor
             return cts;
         }
 
-        public static string ValidatePath(string path)
+        public static string ReplaceInvalidFileNameChars(string fileName, char replaceChar = '#')
         {
-            // 获取非法的文件名字符
             char[] invalidChars = Path.GetInvalidFileNameChars();
-            invalidChars = invalidChars.Where(c => c != '/' && c != '\\').ToArray();
-            // 遍历非法字符，并替换为 #
-            foreach (char invalidChar in invalidChars)
+            foreach (char c in invalidChars)
             {
-                path = path.Replace(invalidChar, '#');
+                fileName = fileName.Replace(c, replaceChar);
             }
-
-            return path;
+            return fileName;
         }
 
         public static void FocusProjectBrowser()

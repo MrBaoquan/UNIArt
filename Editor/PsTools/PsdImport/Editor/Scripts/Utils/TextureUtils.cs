@@ -378,7 +378,6 @@ namespace PluginMaster
             Vector2 customPivot
         )
         {
-            pngPath = Utils.ValidatePath(pngPath);
             byte[] buffer = texture.EncodeToPNG();
             File.WriteAllBytes(pngPath, buffer);
 
