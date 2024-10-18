@@ -345,25 +345,7 @@ namespace UNIArt.Editor
                     return;
                 isMouseDown = false;
 
-                var _dragTarget = AssetObject;
-
-                if (_dragTarget is Texture2D)
-                {
-                    _dragTarget = AssetDatabase.LoadAssetAtPath<GameObject>(
-                        "Packages/com.parful.uniart/Assets/Prefabs/图片.prefab"
-                    );
-                    _dragTarget.name = Path.GetFileNameWithoutExtension(rawAssetPath);
-                }
-
                 OnStartDrag.Invoke(this);
-                // DragAndDrop.PrepareStartDrag();
-                // DragAndDrop.objectReferences = new UnityEngine.Object[] { AssetObject };
-                // DragAndDrop.paths = new string[] { assetPath };
-
-                // DragAndDrop.visualMode = DragAndDropVisualMode.Link;
-                // DragAndDrop.StartDrag("Drag Asset");
-                // DragAndDrop.SetGenericData("AssetItem", this);
-
                 evt.StopPropagation();
             });
         }

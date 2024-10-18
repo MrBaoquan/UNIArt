@@ -260,11 +260,16 @@ namespace UNIArt.Editor
             // 设置初始图标位置
             Rect iconRect = new Rect(selectionRect.xMax - 46, selectionRect.y, 16, 16);
 
+            var _safeX = selectionRect.xMin + selectionRect.width / 2;
+
             var _idx = 0;
             componentTypes.ForEach(_componentType =>
             {
                 iconRect.x = selectionRect.xMax - 46 - _idx * 20;
                 _idx++;
+
+                if (iconRect.x < _safeX)
+                    return;
 
                 Color originalColor = GUI.color;
                 if (!obj.activeInHierarchy || prefabStageRootNames.Contains(obj.name))

@@ -423,7 +423,8 @@ namespace UNIArt.Editor
                     Utils.Delay(
                         () =>
                         {
-                            tmplScrollView.ScrollTo(selectedTemplateButton);
+                            if (selectedTemplateButton?.IsInScrollView ?? false)
+                                tmplScrollView.ScrollTo(selectedTemplateButton);
                         },
                         0.1f
                     );
@@ -459,7 +460,8 @@ namespace UNIArt.Editor
                     Utils.Delay(
                         () =>
                         {
-                            tmplScrollView.ScrollTo(selectedTemplateButton);
+                            if (selectedTemplateButton?.IsInScrollView ?? false)
+                                tmplScrollView.ScrollTo(selectedTemplateButton);
                         },
                         0.1f
                     );
@@ -698,7 +700,7 @@ namespace UNIArt.Editor
                         );
                         evt.menu.AppendSeparator();
                         evt.menu.AppendAction(
-                            "刷新",
+                            "刷新 %R",
                             (x) =>
                             {
                                 RefreshTemplateFilters();
@@ -1463,17 +1465,22 @@ namespace UNIArt.Editor
                         return;
                     }
 
-                    var _oldPath = selectedTemplateButton.RootTextureFilterPath(_old);
-                    var _newName = Path.GetFileName(_newFolderName);
-                    var _msg = AssetDatabase.RenameAsset(_oldPath, _newName);
-                    if (!string.IsNullOrEmpty(_msg))
-                    {
-                        Debug.LogWarning(_msg);
-                    }
-                    else
-                    {
-                        orderFilters();
-                    }
+                    selectedTemplateButton
+                        .ValidFilterRootPaths(_old)
+                        .ToList()
+                        .ForEach(_oldPath =>
+                        {
+                            var _newName = Path.GetFileName(_newFolderName);
+                            // Debug.LogWarning($"Rename filter {_old} to {_newName}");
+                            var _msg = AssetDatabase.RenameAsset(_oldPath, _newName);
+                            if (!string.IsNullOrEmpty(_msg))
+                            {
+                                Debug.LogWarning(_msg);
+                            }
+                        });
+
+                    orderFilters();
+                    // var _oldPath = selectedTemplateButton.RootTextureFilterPath(_old);
                 }
             );
             return _filterButton;

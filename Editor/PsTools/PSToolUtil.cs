@@ -85,7 +85,7 @@ namespace UNIArt.Editor
 
             // 筛选名称符合@动画或者@按钮的物体
             var _allChildren = target.GetComponentsInChildren<Transform>(true);
-            var _compFlagRegex = @".+@(?<type>动画|默认)$";
+            var _compFlagRegex = @".+@(?<type>动画|默认).*";
             _allChildren
                 .Where(
                     t => Regex.IsMatch(t.name, _compFlagRegex) && t.GetComponent<Image>() != null
@@ -105,15 +105,23 @@ namespace UNIArt.Editor
                     else if (_type == "默认")
                     {
                         var _curImage = _child.gameObject.GetComponent<Image>();
+                        var _buttonName = _child.gameObject.name.TrimEnd();
 
-                        var _selectedName = _child.name.Replace("@默认", "@选中");
-                        var _pressedName = _child.name.Replace("@默认", "@点击");
+                        var _selectedNameRegex = $"^{_buttonName.Replace("@默认", "@选中")}.*";
+                        var _pressedNameRegex = $"^{_buttonName.Replace("@默认", "@点击")}.*";
 
                         if (_child.transform.parent == null)
                             return;
 
-                        var _pressedTransform = _child.parent.Find(_pressedName);
-                        var _toggleTransfrom = _child.parent.Find(_selectedName);
+                        var _toggleTransfrom = _child.parent
+                            .GetComponentsInChildren<Image>()
+                            .Where(_image => Regex.IsMatch(_image.name, _selectedNameRegex))
+                            .FirstOrDefault();
+
+                        var _pressedTransform = _child.parent
+                            .GetComponentsInChildren<Image>()
+                            .Where(_image => Regex.IsMatch(_image.name, _pressedNameRegex))
+                            .FirstOrDefault();
 
                         if (_pressedTransform != null) // 视为按钮
                         {
@@ -127,10 +135,7 @@ namespace UNIArt.Editor
                             _button.spriteState = _spriteState;
 
                             GameObject.DestroyImmediate(_pressedTransform.gameObject);
-                            _child.gameObject.name = _child.gameObject.name.Replace(
-                                "@默认",
-                                string.Empty
-                            );
+                            _child.gameObject.name = _buttonName.Replace("@默认", string.Empty);
                         }
                         else if (_toggleTransfrom != null) // 视为开关
                         {
@@ -151,18 +156,12 @@ namespace UNIArt.Editor
                             _child.gameObject.AddOrGetComponent<ToggleImage>();
 
                             GameObject.DestroyImmediate(_toggleTransfrom.gameObject);
-                            _child.gameObject.name = _child.gameObject.name.Replace(
-                                "@默认",
-                                string.Empty
-                            );
+                            _child.gameObject.name = _buttonName.Replace("@默认", string.Empty);
                         }
                         else
                         {
                             _child.gameObject.AddOrGetComponent<Button>();
-                            _child.gameObject.name = _child.gameObject.name.Replace(
-                                "@默认",
-                                string.Empty
-                            );
+                            _child.gameObject.name = _buttonName.Replace("@默认", string.Empty);
                         }
                     }
                 });

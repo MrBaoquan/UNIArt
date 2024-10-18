@@ -20,8 +20,9 @@ namespace UNIArt.Editor
         public const string BuiltInTemplateID = "Standard";
         public const string LocalTemplateTitle = "本地项目";
         public bool IsBuiltIn => TemplateID == BuiltInTemplateID;
-
         public bool IsLocal => TemplateID == LocalTemplateTitle;
+
+        public bool IsInScrollView => !IsBuiltIn && !IsLocal && !IsTop;
 
         public bool IsTop
         {

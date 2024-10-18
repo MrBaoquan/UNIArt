@@ -33,7 +33,10 @@ namespace UNIArt.Editor
                 var _image = _newTempGO.AddComponent<Image>();
                 _image.color = Color.white;
 
-                _newTempGO.AddComponent<Animator>();
+                var _animator = _newTempGO.AddComponent<Animator>();
+                var _controller = AnimatorEditor.CreateController(_animator);
+
+                AnimatorEditor.AddClipToController(_controller, "显示");
 
                 var _prefabObj = PrefabUtility.SaveAsPrefabAsset(_newTempGO, pathName);
                 DestroyImmediate(_newTempGO);
