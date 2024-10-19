@@ -253,7 +253,7 @@ namespace UNIArt.Editor
             }
             // 将版本设置为最新版
             SVNIntegration.AddOrUpdateExternal(
-                UNIArtSettings.Project.TemplateLocalFolder,
+                UNIArtSettings.Project.TemplatePropTarget,
                 ExternalRepoUrl,
                 -1,
                 false
@@ -263,7 +263,7 @@ namespace UNIArt.Editor
 
             // 指定为最新版本号
             SVNIntegration.AddOrUpdateExternal(
-                UNIArtSettings.Project.TemplateLocalFolder,
+                UNIArtSettings.Project.TemplatePropTarget,
                 ExternalRepoUrl,
                 0,
                 false
@@ -296,7 +296,7 @@ namespace UNIArt.Editor
                 return false;
             }
 
-            if (!SVNIntegration.Update(UNIArtSettings.Project.TemplateLocalFolder))
+            if (!SVNIntegration.Update(UNIArtSettings.Project.TemplateRelativeRoot))
             {
                 Debug.LogWarning("Failed to checkout external template.");
                 return false;

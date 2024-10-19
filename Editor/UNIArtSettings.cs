@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
 using UnityEditor;
 using UnityEngine;
+using static UNIArt.Editor.SVNIntegration;
 
 namespace UNIArt.Editor
 {
@@ -83,8 +85,72 @@ namespace UNIArt.Editor
 #region UNIArt 项目设置
         public static List<string> excludeHierarchyMethods => new List<string> { "OnItemGUI" };
 
+        [NonSerialized]
         public string TemplateSVNRepo = "http://svn.andcrane.com/repo/UNIArtTemplates";
-        public string TemplateLocalFolder = "Assets/ArtAssets/#Templates";
+
+        // svn外部设置目标文件夹
+        [NonSerialized]
+        internal string TemplatePropTarget = "Packages";
+
+        [NonSerialized]
+        internal string TemplateSubdir = "com.parful.sharehub";
+        internal string TemplateRelativeRoot =>
+            Path.Combine(TemplatePropTarget, TemplateSubdir).ToForwardSlash();
+
+        public string GetExternalRelativeDir(string templateName)
+        {
+            return Path.Combine(TemplateSubdir, templateName).ToForwardSlash();
+        }
+
+        public void PrepareTemplateRootFolder()
+        {
+            var _rootDir = TemplateRelativeRoot;
+            if (!Directory.Exists(_rootDir))
+            {
+                Directory.CreateDirectory(_rootDir);
+            }
+
+            if (_rootDir.StartsWith("Packages/"))
+            {
+                // 创建一个package.json
+                var _packageJson = Path.Combine(TemplateRelativeRoot, "package.json");
+
+                bool _forceCompile = false;
+                if (!File.Exists(_packageJson))
+                {
+                    File.Copy(
+                        "Packages/com.parful.uniart/Assets/templates/package.json.txt",
+                        _packageJson
+                    );
+                    _forceCompile = true;
+                }
+
+                var _asmdef = Path.Combine(TemplateRelativeRoot, "ShareHub.asmdef");
+                if (!File.Exists(_asmdef))
+                {
+                    File.Copy(
+                        "Packages/com.parful.uniart/Assets/templates/ShareHub.asmdef.txt",
+                        _asmdef
+                    );
+                    _forceCompile = true;
+                }
+
+                var _scriptHolder = Path.Combine(TemplateRelativeRoot, "ShareHub.cs");
+                if (!File.Exists(_scriptHolder))
+                {
+                    File.Copy(
+                        "Packages/com.parful.uniart/Assets/templates/ShareHub.cs.txt",
+                        _scriptHolder
+                    );
+                    _forceCompile = true;
+                }
+
+                if (_forceCompile)
+                {
+                    Utils.ForceRecompile();
+                }
+            }
+        }
 
         // 默认是否安装Standard模板
         public bool InstallStandardDefault = true;
@@ -182,12 +248,12 @@ namespace UNIArt.Editor
 
         public static string GetExternalTemplateFolder(string templateName)
         {
-            return Project.TemplateLocalFolder + "/" + templateName;
+            return Project.TemplateRelativeRoot + "/" + templateName;
         }
 
         public static bool IsTemplateAsset(string assetPath)
         {
-            return assetPath.ToForwardSlash().StartsWith(Project.TemplateLocalFolder + "/");
+            return assetPath.ToForwardSlash().StartsWith(Project.TemplateRelativeRoot + "/");
         }
 
         public static bool IsProjectUIPageAsset(string assetPath)
@@ -203,7 +269,8 @@ namespace UNIArt.Editor
         public static string GetTemplateNameBySubAsset(string assetPath)
         {
             var _path = assetPath.ToForwardSlash();
-            string _pattern = @"^Assets/ArtAssets/\#Templates/(?<templateName>[^/]+)(/.*)?$";
+
+            string _pattern = @$"^{Project.TemplateRelativeRoot}/(?<templateName>[^/]+)(/.*)?$";
             var _match = Regex.Match(_path, _pattern);
             if (_match.Success)
             {
@@ -329,17 +396,22 @@ namespace UNIArt.Editor
             addOrGetTemplateCache(templateName).SearchTopFolderOnly = searchTopOnly;
         }
 
-        private List<SVNIntegration.ExternalProperty> externals =
+        [HideInInspector]
+        public List<SVNIntegration.ExternalProperty> externals =
             new List<SVNIntegration.ExternalProperty>();
 
-        public void PullExternals()
+        public List<ExternalProperty> PullExternals()
         {
-            externals = SVNIntegration.GetExternals(UNIArtSettings.Project.TemplateLocalFolder);
+            externals = SVNIntegration.GetExternals(UNIArtSettings.Project.TemplatePropTarget);
+            return externals;
         }
 
         public bool HasExternal(string templateName)
         {
-            return externals.Any(x => x.Dir == templateName);
+            var _relativeDir = GetExternalRelativeDir(templateName);
+            bool _hasExternal = externals.Any(x => x.Dir == _relativeDir);
+            // Debug.Log($"Has External {_hasExternal} {_relativeDir}");
+            return _hasExternal;
         }
 
         private static UNIArtSettings instance;
@@ -441,9 +513,9 @@ namespace UNIArt.Editor
                 }
                 if (settingsObject.hasModifiedProperties)
                 {
-                    Debug.LogWarning(
-                        "UNIArtSettings has been modified, please restart the editor to take effect."
-                    );
+                    // Debug.LogWarning(
+                    //     "UNIArtSettings has been modified, please restart the editor to take effect."
+                    // );
                 }
 
                 settingsObject.ApplyModifiedProperties();

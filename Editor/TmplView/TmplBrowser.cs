@@ -180,33 +180,14 @@ namespace UNIArt.Editor
             _topListRoot.Insert(1, _builtinTemplateButton);
             templateButtons.Add(_builtinTemplateButton);
 
-            if (!Directory.Exists(UNIArtSettings.Project.TemplateLocalFolder))
-            {
-                Directory.CreateDirectory(UNIArtSettings.Project.TemplateLocalFolder);
-                AssetDatabase.Refresh();
-            }
+            // if (!Directory.Exists(UNIArtSettings.Project.TemplateRelativeRoot))
+            // {
+            //     Directory.CreateDirectory(UNIArtSettings.Project.TemplateRelativeRoot);
+            //     AssetDatabase.Refresh();
+            // }
 
-            _builtinTemplateButton.Refresh();
-            if (
-                UNIArtSettings.Project.InstallStandardDefault && !_builtinTemplateButton.IsInstalled
-            )
-            {
-                Debug.Log($"尝试安装公用模板...");
-                SVNIntegration.AddOrUpdateExternal(
-                    UNIArtSettings.Project.TemplateLocalFolder,
-                    UNIArtSettings.GetExternalTemplateFolderUrl(TmplButton.BuiltInTemplateID)
-                );
-                SVNIntegration.Update(UNIArtSettings.Project.TemplateLocalFolder);
-                _builtinTemplateButton.Refresh();
-                if (_builtinTemplateButton.IsInstalled)
-                {
-                    Debug.Log($"公用模板安装成功.");
-                }
-                else
-                {
-                    Debug.LogWarning($"公用模板安装失败.");
-                }
-            }
+            EditorCoroutineUtility.StartCoroutine(delayInstallBuiltinTemplate(), this);
+
             previewTex = rootVisualElement.Q<VisualElement>("img_preview");
 
             ToolbarSearchField templateSearch = rootVisualElement.Q<ToolbarSearchField>(
@@ -320,6 +301,34 @@ namespace UNIArt.Editor
             });
         }
 
+        IEnumerator delayInstallBuiltinTemplate()
+        {
+            yield return new EditorWaitForSeconds(0.5f);
+
+            var _builtinTemplateButton = templateButtons.Skip(1).Take(1).FirstOrDefault();
+            if (_builtinTemplateButton == null)
+                yield break;
+            UNIArtSettings.Project.PullExternals();
+            _builtinTemplateButton.Refresh();
+
+            if (
+                UNIArtSettings.Project.InstallStandardDefault && !_builtinTemplateButton.IsInstalled
+            )
+            {
+                Debug.Log($"尝试安装基础组件库...");
+                SVNIntegration.AddOrUpdateExternal(
+                    UNIArtSettings.Project.TemplatePropTarget,
+                    UNIArtSettings.GetExternalTemplateFolderUrl(TmplButton.BuiltInTemplateID)
+                );
+                SVNIntegration.Update(UNIArtSettings.Project.TemplateRelativeRoot);
+                _builtinTemplateButton.Refresh();
+                if (_builtinTemplateButton.IsInstalled)
+                {
+                    Debug.Log($"基础组件库安装成功.");
+                }
+            }
+        }
+
 #endregion
 
         private void refreshFilterDirButtonStyle()
@@ -412,7 +421,7 @@ namespace UNIArt.Editor
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
                     SVNIntegration.AddOrUpdateExternal(
-                        UNIArtSettings.Project.TemplateLocalFolder,
+                        UNIArtSettings.Project.TemplatePropTarget,
                         selectedTemplateButton.ExternalRepoUrl
                     );
 
@@ -450,7 +459,7 @@ namespace UNIArt.Editor
                         selectedTemplateButton.TemplateID
                     );
                     SVNIntegration.RemoveExternal(
-                        UNIArtSettings.Project.TemplateLocalFolder,
+                        UNIArtSettings.Project.TemplatePropTarget,
                         _templateRootUrl
                     );
                     UNIArtSettings.Project.PullExternals();
@@ -491,15 +500,13 @@ namespace UNIArt.Editor
             root.Q<Button>("btn_updateAll")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
-                    var _externals = SVNIntegration.GetExternals(
-                        UNIArtSettings.Project.TemplateLocalFolder
-                    );
+                    UNIArtSettings.Project.PullExternals();
                     templateButtons
                         .Where(_ => !_.IsLocal)
-                        .Where(_button => !_externals.Any(_ => _.Dir == _button.TemplateID))
+                        .Where(_button => !UNIArtSettings.Project.HasExternal(_button.TemplateID))
                         .ToList()
                         .ForEach(_ => _.CleanDir());
-                    if (SVNIntegration.Update(UNIArtSettings.Project.TemplateLocalFolder))
+                    if (SVNIntegration.Update(UNIArtSettings.Project.TemplatePropTarget))
                     {
                         var lastTemplateID = SelectedTemplateID;
                         Refresh();
@@ -523,7 +530,7 @@ namespace UNIArt.Editor
                         if (!selectedTemplateButton.IsLocal)
                         {
                             SVNIntegration.AddOrUpdateExternal(
-                                UNIArtSettings.Project.TemplateLocalFolder,
+                                UNIArtSettings.Project.TemplatePropTarget,
                                 selectedTemplateButton.ExternalRepoUrl
                             );
                         }
@@ -1589,11 +1596,14 @@ namespace UNIArt.Editor
                 return 1000;
             };
 
+            var _filterRoots = selectedTemplateButton.ValidFilterRootPaths(_filterID);
+            if (_filterRoots.Length <= 0)
+            {
+                yield break;
+            }
+
             var _assets = AssetDatabase
-                .FindAssets(
-                    selectedTemplateButton.filterArgs(),
-                    selectedTemplateButton.ValidFilterRootPaths(_filterID)
-                )
+                .FindAssets(selectedTemplateButton.filterArgs(), _filterRoots)
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .Where(
                     _path =>

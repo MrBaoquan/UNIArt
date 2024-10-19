@@ -19,7 +19,10 @@ namespace UNIArt.Editor
         // 在导入纹理后调用
         void ImportPSDEntity(Texture2D texture)
         {
-            if (!assetPath.StartsWith(UNIArtSettings.Project.ArtFolder))
+            if (
+                !assetPath.StartsWith(UNIArtSettings.Project.ArtFolder)
+                && !UNIArtSettings.IsTemplateAsset(assetPath)
+            )
                 return;
             if (UNIArtSettings.PsdEntityExists(assetPath))
             {

@@ -187,7 +187,12 @@ namespace UNIArt.Editor
                 return null;
             }
 
+            // Debug.LogWarning(assetType);
             // 根据资源类型返回对应的文件夹
+            if (assetType == typeof(MonoScript))
+            {
+                return "Scripts";
+            }
             if (assetType == typeof(Texture2D) || assetType == typeof(Sprite))
             {
                 return "Textures";
@@ -310,7 +315,10 @@ namespace UNIArt.Editor
             bool includeSelf = false
         )
         {
-            if (!dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder))
+            if (
+                !dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder)
+                && !UNIArtSettings.IsTemplateAsset(dropUponPath)
+            )
             {
                 return;
             }
@@ -354,8 +362,10 @@ namespace UNIArt.Editor
                     // Debug.Log($"Move {assetPath} to {dropUponPath}");
                     // 依赖资源的处理
                     var _dependencies = AssetDatabase
-                        .GetDependencies(assetPath)
-                        .Where(_ => !_.StartsWith("Packages/")) // 排除包内资源
+                        .GetDependencies(assetPath, true)
+                        .Where(
+                            _ => !(_.StartsWith("Packages") && !UNIArtSettings.IsTemplateAsset(_))
+                        ) // 排除包内资源
                         .Where(excludeCondition)
                         .Where(_ => _ != assetPath)
                         .Where(filterDependencyCondition);
@@ -384,22 +394,22 @@ namespace UNIArt.Editor
                                 );
                                 continue;
                             }
-                            _templateFolder = @$"#Templates/{_templateID}";
+
+                            _templateFolder =
+                                @$"{UNIArtSettings.Project.TemplateSubdir}/{_templateID}";
                         }
                         var _folder = GetFolderByAssetType(_dependencyPath);
-                        var _regex =
-                            $@"^Assets/(ArtAssets/)?.*?({_templateFolder}/)?(.*{_folder}/)*(.+)$";
+                        var _regex = $@"(ArtAssets/)?.*?({_templateFolder}/)?(.*{_folder}/)*(.+)$";
                         var _match = Regex.Match(_dependencyPath, _regex);
-                        // if (_match.Success)
-                        // {
-                        //     Debug.LogWarning();
-                        // }
+
                         var _srcPath = Regex.Replace(_dependencyPath, _regex, string.Empty);
                         if (_match.Success)
                         {
                             _srcPath = _match.Groups[4].Value;
                         }
+
                         var _dstPath = $"{assetRoot}/{_folder}/{_srcPath}";
+
                         if (_srcPath == _dstPath) // 源路径和目标路径一致则忽略
                         {
                             continue;

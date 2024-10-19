@@ -712,6 +712,17 @@ namespace UNIArt.Editor
             return statusData;
         }
 
+        // 设置忽略所有文件
+        public static bool SetIgnore(string dir)
+        {
+            var result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"propset svn:ignore \"*\" \"{dir}\"",
+                COMMAND_TIMEOUT
+            );
+            return !result.HasErrors;
+        }
+
         public static bool IsWorkingCopy(string path)
         {
             var result = ShellUtils.ExecuteCommand(
@@ -765,7 +776,7 @@ namespace UNIArt.Editor
                 ? assetPaths.Select(path => path + ".meta")
                 : new List<string>();
 
-            var _targetPaths = assetPaths.Concat(metaPaths);
+            var _targetPaths = assetPaths.Concat(metaPaths).Where(_ => File.Exists(_));
             var _targetPathsStr = string.Join(" ", _targetPaths);
 
             var result = ShellUtils.ExecuteCommand(SVN_Command, $"add {_targetPathsStr}", true);
@@ -784,7 +795,8 @@ namespace UNIArt.Editor
                 ? assetPaths.Select(path => path + ".meta")
                 : new List<string>();
 
-            var _targetPaths = assetPaths.Concat(metaPaths);
+            var _targetPaths = assetPaths.Concat(metaPaths).Where(_ => File.Exists(_));
+
             var _targetPathsStr = string.Join(" ", _targetPaths);
 
             var result = ShellUtils.ExecuteCommand(
@@ -802,6 +814,7 @@ namespace UNIArt.Editor
             return true;
         }
 
+        [Serializable]
         public class ExternalProperty
         {
             public string Dir;
@@ -873,61 +886,48 @@ namespace UNIArt.Editor
             return externals;
         }
 
-        public static bool HasExternal(string externalPath, string ExternalDir)
-        {
-            var _externals = GetExternals(externalPath);
-            return _externals.Any(x => x.Dir == ExternalDir);
-        }
-
         /// <summary>
         ///
         /// </summary>
-        /// <param name="externalPath"></param>
-        /// <param name="externalUrl"></param>
+        /// <param name="propTarget"></param>
+        /// <param name="repoUrl"></param>
         /// <param name="Revision">0 指定最新版本号  -1 不指定版本</param>
         public static void AddOrUpdateExternal(
-            string externalPath,
-            string externalUrl,
+            string propTarget,
+            string repoUrl,
             int Revision = 0,
             bool update = true
         )
         {
-            var workingDir = $"{SVNConextMenu.ProjectRootUnity}/{externalPath}";
-            // 如果external不是工作副本,则使用svn add将其添加到工作副本中
-            if (!IsWorkingCopy(externalPath))
-            {
-                AddToWorkspace(new List<string> { externalPath });
-                Commit(new List<string> { externalPath });
-            }
+            UNIArtSettings.Project.PrepareTemplateRootFolder();
 
-            var _externals = GetExternals(externalPath);
-            // var _totalVer = _externals.Select(_ => _.Revision).Sum(); // 可能会有bug
+            propTarget = string.IsNullOrEmpty(propTarget) ? "." : propTarget;
+            var workingDir = $"{SVNConextMenu.ProjectRootUnity}/{propTarget}";
 
-            var _folderName = Path.GetFileName(externalUrl);
-            if (!_externals.Exists(_ => _.Url == externalUrl))
+            var _externals = GetExternals(propTarget);
+
+            var _folderName = UNIArtSettings.Project.GetExternalRelativeDir(
+                Path.GetFileName(repoUrl)
+            );
+
+            if (!_externals.Exists(_ => _.Dir == _folderName))
             {
-                Utils.DeleteProjectAsset($"{externalPath}/{_folderName}");
+                var _externalDir =
+                    propTarget == "."
+                        ? _folderName
+                        : Path.Combine(propTarget, _folderName).ToForwardSlash();
+                Utils.DeleteProjectAsset(_externalDir);
                 AssetDatabase.Refresh();
                 _externals.Add(
                     new ExternalProperty()
                     {
                         Dir = _folderName,
-                        Url = externalUrl,
+                        Url = repoUrl,
                         Revision = 0
                     }
                 );
             }
             _externals.Where(_ => _.Dir == _folderName).First().Revision = Revision;
-
-            // if (
-            //     _externals.Select(_ => _.Revision).Sum() == _totalVer
-            //     || _externals.All(_ => _.Revision != 0)
-            // )
-            // {
-            //     return;
-            // }
-
-            // Debug.Log(_externals.Count);
 
             _externals
                 .Where(_external => _external.Revision < 1)
@@ -941,7 +941,8 @@ namespace UNIArt.Editor
                 );
 
             var _externalsStr = formatExternals(_externals);
-            var _args = $"propset svn:externals \"{_externalsStr}\" {externalPath}";
+            // Debug.LogWarning(_externalsStr);
+            var _args = $"propset svn:externals \"{_externalsStr}\" {propTarget}";
 
             var result = ShellUtils.ExecuteCommand("svn", _args, Encoding.GetEncoding(936), true);
             if (result.HasErrors)
@@ -982,11 +983,16 @@ namespace UNIArt.Editor
             );
         }
 
-        public static void RemoveExternal(string externalPath, string externalUrl)
+        public static void RemoveExternal(string propTarget, string externalUrl)
         {
-            var _externals = GetExternals(externalPath);
+            propTarget = string.IsNullOrEmpty(propTarget) ? "." : propTarget;
 
-            var _folderName = Path.GetFileName(externalUrl);
+            var _externals = GetExternals(propTarget);
+
+            var _folderName = UNIArtSettings.Project.GetExternalRelativeDir(
+                Path.GetFileName(externalUrl)
+            );
+
             var _external = _externals.FirstOrDefault(x => x.Dir == _folderName);
             if (_external == default)
             {
@@ -996,7 +1002,7 @@ namespace UNIArt.Editor
             _externals.Remove(_external);
 
             var _externalsStr = formatExternals(_externals);
-            var _args = $"propset svn:externals \"{_externalsStr}\" {externalPath}";
+            var _args = $"propset svn:externals \"{_externalsStr}\" {propTarget}";
 
             var result = ShellUtils.ExecuteCommand("svn", _args, Encoding.GetEncoding(936), true);
             if (result.HasErrors)
@@ -1005,7 +1011,7 @@ namespace UNIArt.Editor
                 return;
             }
 
-            var workingDir = $"{SVNConextMenu.ProjectRootUnity}/{externalPath}";
+            var workingDir = $"{SVNConextMenu.ProjectRootUnity}/{propTarget}";
             result = ShellUtils.ExecuteCommand(
                 "svn",
                 $"update",
@@ -1017,8 +1023,11 @@ namespace UNIArt.Editor
                 Debug.LogError($"SVN Error: {result.Error}");
                 return;
             }
-
-            Utils.DeleteProjectAsset($"{externalPath}/{_folderName}");
+            var _externalDir =
+                propTarget == "."
+                    ? _folderName
+                    : Path.Combine(propTarget, _folderName).ToForwardSlash();
+            Utils.DeleteProjectAsset(_externalDir);
 
             AssetDatabase.Refresh();
         }

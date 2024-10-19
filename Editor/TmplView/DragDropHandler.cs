@@ -175,7 +175,10 @@ namespace UNIArt.Editor
                 && (
                     (
                         Event.current.modifiers == EventModifiers.Alt
-                        && dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder)
+                        && (
+                            dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder)
+                            || UNIArtSettings.IsTemplateAsset(dropUponPath)
+                        )
                     ) || Utils.IsDragFromUNIArt()
                 )
             )

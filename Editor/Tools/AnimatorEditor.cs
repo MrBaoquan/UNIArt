@@ -154,13 +154,28 @@ namespace UNIArt.Editor
                             clip,
                             typeof(AnimationClip),
                             true,
-                            GUILayout.Width(120)
+                            GUILayout.Width(100)
                         );
+
                         EditorGUI.EndDisabledGroup();
+                        // 动画循环复选框
+                        EditorGUI.BeginChangeCheck();
+
+                        GUILayout.Space(8);
+
+                        var _clipSettings = AnimationUtility.GetAnimationClipSettings(clip);
+                        bool _loop = _clipSettings.loopTime;
+                        _loop = GUILayout.Toggle(_loop, "循环");
+                        if (EditorGUI.EndChangeCheck())
+                        {
+                            _clipSettings.loopTime = _loop;
+                            AnimationUtility.SetAnimationClipSettings(clip, _clipSettings);
+                        }
                     }
 
                     GUI.backgroundColor = Color.white;
                     GUILayout.Label("");
+
                     if (GUILayout.Button("编辑", GUILayout.Width(50)))
                     {
                         AssetDatabase.OpenAsset(clip);
