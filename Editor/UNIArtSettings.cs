@@ -93,7 +93,7 @@ namespace UNIArt.Editor
         internal string TemplatePropTarget = "Packages";
 
         [NonSerialized]
-        internal string TemplateSubdir = "com.parful.sharehub";
+        internal string TemplateSubdir = "com.parful.collabhub";
         internal string TemplateRelativeRoot =>
             Path.Combine(TemplatePropTarget, TemplateSubdir).ToForwardSlash();
 
@@ -102,53 +102,81 @@ namespace UNIArt.Editor
             return Path.Combine(TemplateSubdir, templateName).ToForwardSlash();
         }
 
+        public string GetExternalTemplateRootByPropDir(string propDir)
+        {
+            return Path.Combine(TemplatePropTarget, propDir).ToForwardSlash();
+        }
+
+        [InitializeOnLoadMethod]
+        public static void PrepareTemplateEnvironment()
+        {
+            Utils.HookUpdateOnce(() =>
+            {
+                Project.PrepareTemplateRootFolder();
+            });
+        }
+
         public void PrepareTemplateRootFolder()
         {
             var _rootDir = TemplateRelativeRoot;
+
+            // 创建模板根目录
             if (!Directory.Exists(_rootDir))
             {
                 Directory.CreateDirectory(_rootDir);
+
+                var _parent = _rootDir;
+                List<string> _parents = new List<string>();
+                while (!SVNIntegration.IsWorkingCopy(_parent))
+                {
+                    _parents.Add(_parent);
+                    _parent = Path.GetDirectoryName(_parent);
+                }
+                _parents.Reverse();
+                foreach (var _parentDir in _parents)
+                {
+                    AddToWorkspace(new string[] { _parentDir }, false);
+                }
+                if (_parents.Count > 0)
+                {
+                    SetIngore(_parents.Last(), "*/\r\n*.meta");
+                }
             }
 
-            if (_rootDir.StartsWith("Packages/"))
-            {
-                // 创建一个package.json
-                var _packageJson = Path.Combine(TemplateRelativeRoot, "package.json");
+            bool _dirty = false;
 
-                bool _forceCompile = false;
+            if (_rootDir.StartsWith("Packages/")) // 配置package.json
+            {
+                var _packageJson = Path.Combine(TemplateRelativeRoot, "package.json");
                 if (!File.Exists(_packageJson))
                 {
-                    File.Copy(
+                    AssetDatabase.CopyAsset(
                         "Packages/com.parful.uniart/Assets/templates/package.json.txt",
                         _packageJson
                     );
-                    _forceCompile = true;
+                    AssetDatabase.Refresh();
+                    if (!IsFileUnderVersionControl(_packageJson))
+                    {
+                        AddToWorkspace(new string[] { _packageJson }, true);
+                    }
+                    _dirty = true;
                 }
+            }
 
-                var _asmdef = Path.Combine(TemplateRelativeRoot, "ShareHub.asmdef");
-                if (!File.Exists(_asmdef))
+            if (externals.Any(_ => !Directory.Exists(GetExternalTemplateRootByPropDir(_.Dir)))) // 同步子模块
+            {
+                if (SVNIntegration.Update(UNIArtSettings.Project.TemplatePropTarget))
                 {
-                    File.Copy(
-                        "Packages/com.parful.uniart/Assets/templates/ShareHub.asmdef.txt",
-                        _asmdef
-                    );
-                    _forceCompile = true;
+                    _dirty = true;
                 }
+            }
 
-                var _scriptHolder = Path.Combine(TemplateRelativeRoot, "ShareHub.cs");
-                if (!File.Exists(_scriptHolder))
-                {
-                    File.Copy(
-                        "Packages/com.parful.uniart/Assets/templates/ShareHub.cs.txt",
-                        _scriptHolder
-                    );
-                    _forceCompile = true;
-                }
-
-                if (_forceCompile)
+            if (_dirty)
+            {
+                Utils.HookUpdateOnce(() =>
                 {
                     Utils.ForceRecompile();
-                }
+                });
             }
         }
 

@@ -712,17 +712,6 @@ namespace UNIArt.Editor
             return statusData;
         }
 
-        // 设置忽略所有文件
-        public static bool SetIgnore(string dir)
-        {
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"propset svn:ignore \"*\" \"{dir}\"",
-                COMMAND_TIMEOUT
-            );
-            return !result.HasErrors;
-        }
-
         public static bool IsWorkingCopy(string path)
         {
             var result = ShellUtils.ExecuteCommand(
@@ -733,6 +722,16 @@ namespace UNIArt.Editor
 
             return !result.HasErrors
                 && !string.IsNullOrEmpty(ExtractLineValue("URL:", result.Output));
+        }
+
+        public static bool IsFileUnderVersionControl(string path)
+        {
+            var result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"info \"{SVNFormatPath(path)}\"",
+                COMMAND_TIMEOUT
+            );
+            return !result.HasErrors;
         }
 
         public static int GetRevision(string path)
@@ -770,15 +769,26 @@ namespace UNIArt.Editor
             return int.Parse(lastChangedRevision);
         }
 
+        public static bool SetIngore(string dir, string ignorePattern)
+        {
+            var result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"propset svn:ignore \"{ignorePattern}\" \"{dir}\"",
+                COMMAND_TIMEOUT
+            );
+            return !result.HasErrors;
+        }
+
         public static bool AddToWorkspace(IEnumerable<string> assetPaths, bool includeMeta = true)
         {
             var metaPaths = includeMeta
                 ? assetPaths.Select(path => path + ".meta")
                 : new List<string>();
 
-            var _targetPaths = assetPaths.Concat(metaPaths).Where(_ => File.Exists(_));
+            var _targetPaths = assetPaths.Concat(metaPaths);
             var _targetPathsStr = string.Join(" ", _targetPaths);
 
+            Debug.Log(_targetPathsStr);
             var result = ShellUtils.ExecuteCommand(SVN_Command, $"add {_targetPathsStr}", true);
             if (result.HasErrors)
             {

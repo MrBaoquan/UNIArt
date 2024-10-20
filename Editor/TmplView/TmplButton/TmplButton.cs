@@ -133,6 +133,11 @@ namespace UNIArt.Editor
 
         public string[] ValidFilterRootPaths(string filterTag)
         {
+            if (!IsInstalled || !AssetDatabase.IsValidFolder(RootFolder))
+            {
+                return new string[0];
+            }
+
             var _filterRoots = filterDirs().Select(_ => $"{RootFolder}/{_}");
             _filterRoots
                 .Where(_ => !AssetDatabase.IsValidFolder(_))
@@ -211,6 +216,11 @@ namespace UNIArt.Editor
             IsTop = UNIArtSettings.Project.GetTemplateTop(TemplateID);
             RefreshStyle();
         }
+
+        // 是否拥有本地资源
+        public bool HasLocalEntity => AssetDatabase.IsValidFolder(RootFolder);
+
+        public bool AssetReady => IsInstalled && HasLocalEntity;
 
         public void RefreshStyle()
         {
@@ -351,6 +361,10 @@ namespace UNIArt.Editor
         {
             if (IsLocal)
                 return true;
+            if (!AssetDatabase.IsValidFolder(RootFolder))
+            {
+                return true;
+            }
             return AssetDatabase.DeleteAsset(RootFolder);
         }
     }
