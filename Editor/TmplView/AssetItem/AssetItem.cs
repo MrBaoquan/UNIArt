@@ -93,13 +93,12 @@ namespace UNIArt.Editor
                     );
                 }
             }
-            else if (previewTex == null && UNIArtSettings.IsTemplateAsset(rawAssetPath))
+            else if (previewTex == null)
             {
                 previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(PreviewPath);
             }
-            else if (
-                UNIArtSettings.IsProjectUIPageAsset(rawAssetPath) && RawAssetObject is GameObject
-            )
+
+            if (UNIArtSettings.IsProjectUIPageAsset(rawAssetPath) && RawAssetObject is GameObject)
             {
                 defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
                     "Packages/com.parful.uniart/Assets/Icon/UIPage.png"

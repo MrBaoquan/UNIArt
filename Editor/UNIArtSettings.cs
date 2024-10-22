@@ -310,6 +310,11 @@ namespace UNIArt.Editor
         public static string GetPreviewPathByAsset(string assetPath)
         {
             var TemplateRootFolder = GetExternalTemplateRootBySubAsset(assetPath);
+            if (!IsTemplateAsset(assetPath))
+            {
+                TemplateRootFolder = Project.ArtFolder;
+            }
+
             var TemplatePreviewFolder = TemplateRootFolder + "/Previews";
             var _fileName = assetPath
                 .ToForwardSlash()

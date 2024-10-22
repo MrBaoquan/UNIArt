@@ -114,12 +114,12 @@ namespace UNIArt.Editor
                             return;
 
                         var _toggleTransfrom = _child.parent
-                            .GetComponentsInChildren<Image>()
+                            .GetComponentsInChildren<Image>(true)
                             .Where(_image => Regex.IsMatch(_image.name, _selectedNameRegex))
                             .FirstOrDefault();
 
                         var _pressedTransform = _child.parent
-                            .GetComponentsInChildren<Image>()
+                            .GetComponentsInChildren<Image>(true)
                             .Where(_image => Regex.IsMatch(_image.name, _pressedNameRegex))
                             .FirstOrDefault();
 
@@ -154,7 +154,7 @@ namespace UNIArt.Editor
                             _toggle.spriteState = _spriteState;
 
                             _child.gameObject.AddOrGetComponent<ToggleImage>();
-
+                            _toggle.isOn = _toggleTransfrom.gameObject.activeSelf;
                             GameObject.DestroyImmediate(_toggleTransfrom.gameObject);
                             _child.gameObject.name = _buttonName.Replace("@默认", string.Empty);
                         }
