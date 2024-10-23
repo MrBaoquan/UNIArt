@@ -1346,6 +1346,8 @@ namespace UNIArt.Editor
             _normalListRoot.Clear();
             templateButtons.RemoveRange(2, templateButtons.Count - 2);
 
+            templateButtons[1].Refresh();
+
             var _newTemplates = _svnTemplateList
                 .Where(_templName => Regex.IsMatch(_templName, _pattern, RegexOptions.IgnoreCase))
                 .Select(_item => new TmplButton() { TemplateID = _item });
