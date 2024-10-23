@@ -734,6 +734,34 @@ namespace UNIArt.Editor
             return !result.HasErrors;
         }
 
+        public static void Delete(List<string> paths, bool includeMeta = true, bool force = true)
+        {
+            var metaPaths = includeMeta ? paths.Select(path => path + ".meta") : new List<string>();
+
+            var _targetPaths = paths
+                .Concat(metaPaths)
+                .Where(_path => File.Exists(_path) || Directory.Exists(_path));
+
+            if (_targetPaths.Count() == 0)
+                return;
+            var _targetPathsStr = string.Join(" ", _targetPaths);
+
+            var _forceStr = force ? "--force" : "";
+            var result = ShellUtils.ExecuteCommand(
+                "svn",
+                $"delete {_targetPathsStr} {_forceStr}",
+                COMMAND_TIMEOUT
+            );
+            if (result.HasErrors)
+            {
+                Debug.LogError(result.Error);
+            }
+            else
+            {
+                AssetDatabase.Refresh();
+            }
+        }
+
         public static int GetRevision(string path)
         {
             var result = ShellUtils.ExecuteCommand(
@@ -788,7 +816,7 @@ namespace UNIArt.Editor
             var _targetPaths = assetPaths.Concat(metaPaths);
             var _targetPathsStr = string.Join(" ", _targetPaths);
 
-            Debug.Log(_targetPathsStr);
+            // Debug.Log(_targetPathsStr);
             var result = ShellUtils.ExecuteCommand(SVN_Command, $"add {_targetPathsStr}", true);
             if (result.HasErrors)
             {

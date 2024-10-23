@@ -313,14 +313,14 @@ namespace UNIArt.Editor
 
             if (UNIArtSettings.Project.InstallStandardDefault && !_builtinTemplateButton.AssetReady)
             {
-                Debug.Log($"尝试安装基础组件库...");
+                // Debug.Log($"尝试安装基础组件库...");
                 SVNIntegration.AddOrUpdateExternal(
                     UNIArtSettings.Project.TemplatePropTarget,
                     UNIArtSettings.GetExternalTemplateFolderUrl(TmplButton.BuiltInTemplateID)
                 );
                 if (_builtinTemplateButton.HasLocalEntity == false)
                 {
-                    Debug.Log("基础组件库不存在, 尝试从远程拉取...");
+                    // Debug.Log("基础组件库不存在, 尝试从远程拉取...");
                     SVNIntegration.Update(UNIArtSettings.Project.TemplatePropTarget);
                     yield return new EditorWaitForSeconds(0.1f);
                     AssetDatabase.Refresh();
@@ -331,10 +331,10 @@ namespace UNIArt.Editor
                 {
                     Debug.Log($"基础组件库安装成功.");
                 }
-                else
-                {
-                    Debug.LogWarning($"基础组件库安装失败.");
-                }
+                // else
+                // {
+                //     Debug.LogWarning($"基础组件库安装失败.");
+                // }
             }
         }
 

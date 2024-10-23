@@ -1,10 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.PackageManager;
-using UnityEditor.PackageManager.Requests;
 using UnityEngine;
 
 namespace UNIArt.Editor
@@ -12,6 +10,68 @@ namespace UNIArt.Editor
     public static class UPMUpdater
     {
         static UPMUpdater() { }
+
+        public static void CheckPackageInstalled(string packageName, Action<bool> callback)
+        {
+            var listRequest = Client.List(true); // 列出所有已安装的包，包括预览包
+            UpdateWhile(
+                () => { },
+                () => !listRequest.IsCompleted,
+                () =>
+                {
+                    if (listRequest.Status != StatusCode.Success)
+                    {
+                        Debug.LogError($"Failed to list packages: {listRequest.Error.message}");
+                        callback?.Invoke(false);
+                        return;
+                    }
+                    var _hasPkg = listRequest.Result.Any(p => p.name == packageName);
+                    callback?.Invoke(_hasPkg);
+                }
+            );
+        }
+
+        public static void InstallPackage(string packageName, Action<bool> callback = null)
+        {
+            var addRequest = Client.Add(packageName);
+            UpdateWhile(
+                () => { },
+                () => !addRequest.IsCompleted,
+                () =>
+                {
+                    if (addRequest.Status == StatusCode.Success)
+                    {
+                        Debug.Log($"Successfully installed package: {packageName}");
+                        callback?.Invoke(true);
+                        return;
+                    }
+
+                    Debug.LogError($"Failed to install package: {addRequest.Error}");
+                    callback?.Invoke(false);
+                }
+            );
+        }
+
+        public static void RemovePackage(string packageName, Action<bool> callback = null)
+        {
+            var request = UnityEditor.PackageManager.Client.Remove(packageName);
+            UpdateWhile(
+                () => { },
+                () => !request.IsCompleted,
+                () =>
+                {
+                    if (request.Status == StatusCode.Success)
+                    {
+                        Debug.Log($"Successfully removed package: {request.PackageIdOrName}");
+                        callback?.Invoke(true);
+                        return;
+                    }
+
+                    Debug.LogWarning($"Failed to remove package: {request.Error}");
+                    callback?.Invoke(false);
+                }
+            );
+        }
 
         public static void LatestVersion(string packageName, Action<string> callback)
         {

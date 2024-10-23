@@ -15,9 +15,11 @@
 
 ## 更新记录
 
-- v1.1.1 未发布
+- v1.1.1
   - 修复Standard库安装状态刷新错误
-  - 
+  - 优化调试信息显示
+  - svn 增加删除接口
+  - 协同CollabHub#Standard.Editor增加 Make Pure Project选项
 
 - v1.1.0
   - 修复 @点击 @选中， ps图层不可见时的bug
