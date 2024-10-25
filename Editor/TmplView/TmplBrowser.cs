@@ -831,6 +831,21 @@ namespace UNIArt.Editor
                             },
                             activeIfThumb
                         );
+
+                        evt.menu.AppendSeparator();
+                        // 查看属性
+                        evt.menu.AppendAction(
+                            "属性",
+                            (x) =>
+                            {
+                                WorkflowUtility.FocusInspector();
+                                Selection.activeObject = selectedAsset.RawAssetObject;
+                            },
+                            _ =>
+                                _originIsAsset
+                                    ? DropdownMenuAction.Status.Normal
+                                    : DropdownMenuAction.Status.Disabled
+                        );
                     }
                 )
             );

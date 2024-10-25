@@ -235,6 +235,13 @@ namespace UNIArt.Editor
             EditorWindow.GetWindow(projectBrowserType).Repaint();
         }
 
+        public static void FocusInspector()
+        {
+            Type inspectorType = Type.GetType("UnityEditor.InspectorWindow, UnityEditor");
+            EditorWindow.GetWindow<EditorWindow>(inspectorType).Focus();
+            EditorWindow.GetWindow<EditorWindow>("Inspector").Repaint();
+        }
+
         // create ArtAssets basic layout
         [InitializeOnLoadMethod]
         public static void InitWorkLayout()

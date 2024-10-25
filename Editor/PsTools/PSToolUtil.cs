@@ -262,7 +262,8 @@ namespace UNIArt.Editor
                             }
                         }
 
-                        var _savePath = psdFilePath.Replace(".psd", "#psd.prefab");
+                        var _savePath = Regex.Replace(psdFilePath, @"\.psd$", "#psd.prefab");
+                        // psdFilePath.Replace(".psd", "#psd.prefab");
                         _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
                         var _newPrefab = PrefabUtility.SaveAsPrefabAsset(
                             _psEntityObject,

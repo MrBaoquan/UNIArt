@@ -740,7 +740,8 @@ namespace UNIArt.Editor
 
             var _targetPaths = paths
                 .Concat(metaPaths)
-                .Where(_path => File.Exists(_path) || Directory.Exists(_path));
+                .Where(_path => File.Exists(_path) || Directory.Exists(_path))
+                .Select(_path => $"\"{_path}\"");
 
             if (_targetPaths.Count() == 0)
                 return;

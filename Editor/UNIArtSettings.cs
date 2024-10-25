@@ -344,12 +344,12 @@ namespace UNIArt.Editor
 
         public static string PsdFileToPrefabPath(string psdPath)
         {
-            return psdPath.Replace(".psd", "#psd.prefab");
+            return Regex.Replace(psdPath, @"\.psd$", "#psd.prefab");
         }
 
         public static string PrefabPathToPsdFile(string prefabPath)
         {
-            return prefabPath.Replace("#psd.prefab", ".psd");
+            return Regex.Replace(prefabPath, @"#psd.prefab$", ".psd");
         }
 
         public static bool IsPSDFile(string assetPath)
