@@ -23,6 +23,8 @@ VisualElement {
 .unity-toggle__label {
     width: 20px;
     min-width: 30px;
+    justify-content: center;
+    -unity-text-align: middle-left;
 }
 
 .unity-label {
@@ -34,6 +36,7 @@ VisualElement {
     min-width: 80px;
     -unity-text-align: upper-left;
     margin-left: 8px;
+    align-items: center;
 }
 
 .btn-icon {

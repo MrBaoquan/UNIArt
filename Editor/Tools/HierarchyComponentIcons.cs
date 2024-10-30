@@ -94,7 +94,7 @@ namespace UNIArt.Editor
 
                     // 添加空物体菜单
                     var _addEmptyMenu = new GUIContent(
-                        "添加 UI 空物体",
+                        "创建 UI 空物体",
                         EditorGUIUtility.IconContent("d__Menu").image
                     );
 
@@ -111,6 +111,7 @@ namespace UNIArt.Editor
                                 var _rectTrans = _newObj.AddComponent<RectTransform>();
                                 _rectTrans.sizeDelta = Vector2.zero;
                             }
+                            Selection.activeGameObject = _newObj;
                         }
                     );
                     menu.AddSeparator("");

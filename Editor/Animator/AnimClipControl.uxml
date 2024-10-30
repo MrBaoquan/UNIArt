@@ -7,8 +7,8 @@
                 <ui:Button text="暂停" display-tooltip-when-elided="true" name="btn_pause" style="width: 100px; height: 30px;" />
                 <ui:Button text="停止" display-tooltip-when-elided="true" name="btn_stop" style="width: 100px; height: 30px;" />
             </ui:VisualElement>
-            <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-direction: row; justify-content: space-between; margin-top: 8px; margin-bottom: 8px; align-items: center;">
-                <ui:Label tabindex="-1" text="动画帧" display-tooltip-when-elided="true" style="width: 60px; -unity-text-align: upper-right;" />
+            <ui:VisualElement style="flex-grow: 1; background-color: rgba(0, 0, 0, 0); flex-direction: row; justify-content: center; margin-top: 8px; margin-bottom: 8px; align-items: stretch;">
+                <ui:Label tabindex="-1" text="动画帧" display-tooltip-when-elided="true" style="width: 60px; -unity-text-align: upper-right; min-width: 60px; max-width: 60px;" />
                 <ui:SliderInt picking-mode="Ignore" label="100/700" value="42" high-value="100" name="slider_frame" style="flex-direction: row-reverse; flex-grow: 1; flex-shrink: 1; margin-left: 8px;" />
             </ui:VisualElement>
         </ui:VisualElement>

@@ -71,6 +71,7 @@ namespace UNIArt.Editor
 
             var _animationClips = controller.animationClips
                 .Where(_ => !builtInAnimClips.Contains(_.name))
+                .OrderBy(_ => _.name)
                 .Distinct();
 
             _clipRoot.Clear();
@@ -104,8 +105,9 @@ namespace UNIArt.Editor
                 _clipView.OnDeleted.AddListener(clipView =>
                 {
                     _clipRoot.Remove(_clipView);
+                    clipViews.Remove(_clipView);
                     clipViews.First().Select();
-                    AnimCtrlTarget.Value = clipViews.First();
+                    AnimCtrlTarget.SetValueAndForceNotify(clipViews.First());
                 });
 
                 _clipView.OnRenamed.AddListener(
@@ -276,6 +278,7 @@ namespace UNIArt.Editor
                     : DisplayStyle.Flex;
 
                 updateSlider(0);
+                StopAnimPreview();
             });
 
             AnimCtrlTarget.SetValueAndForceNotify(clipViews.FirstOrDefault());
@@ -310,6 +313,8 @@ namespace UNIArt.Editor
             var _animator = (Animator)target;
             if (_animator.runtimeAnimatorController == null)
                 return;
+            if (_animator.gameObject.activeInHierarchy == false)
+                return;
 
             var _clipView = AnimCtrlTarget.Value;
 
@@ -337,7 +342,9 @@ namespace UNIArt.Editor
                         updateSlider(_duration);
                         _animator.Update(Time.deltaTime);
                     },
-                    () => _clipLoop ? true : _duration <= _clipView.Clip.length,
+                    () =>
+                        (_clipLoop ? true : _duration <= _clipView.Clip.length)
+                        && _animator.gameObject.activeInHierarchy,
                     _finished,
                     _finished
                 );
@@ -354,6 +361,11 @@ namespace UNIArt.Editor
 
             if (_clipView == null)
                 return;
+            if (!_animator.gameObject.activeInHierarchy)
+                return;
+            if (_animator.runtimeAnimatorController == null)
+                return;
+
             _animator.Play(_clipView.Clip.name, 0, 0f);
             _animator.Update(0);
             updateSlider(0);

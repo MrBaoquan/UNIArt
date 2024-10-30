@@ -140,8 +140,6 @@ namespace UNIArt.Editor
                 if (_blurType == "cancel" || string.IsNullOrEmpty(inputField.value))
                     return;
 
-                Debug.Log("blur");
-
                 var _newName = inputField.value;
                 inputField.value = "";
                 var _oldName = Clip.name;
