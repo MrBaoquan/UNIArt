@@ -83,13 +83,13 @@ namespace UNIArt.Editor
                         _animator = obj.AddComponent<Animator>();
 
                     AssetDatabase.SaveAssets();
-                    var _controller = AnimatorEditor.CreateController(_animator);
+                    var _controller = AnimatorExt.CreateController(_animator);
 
                     var _animationClip = SpriteSheetTool.CreateSequenceImageAnimation(
                         typeof(Image),
                         DragAndDrop.paths.ToList()
                     );
-                    AnimatorEditor.AddClipToController(_controller, _animationClip);
+                    AnimatorExt.AddClipToController(_controller, _animationClip);
 
                     evt.Use();
 

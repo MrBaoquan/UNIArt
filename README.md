@@ -17,7 +17,7 @@
 - v1.1.2
   - 修复psd文件名中包含.psd时，导入失败的bug
   - 优化ToggleImage组件，切换图片时自动匹配原始图片尺寸
-  
+  - 增加Animation预览功能
 
 - v1.1.1
   - 修复Standard库安装状态刷新错误

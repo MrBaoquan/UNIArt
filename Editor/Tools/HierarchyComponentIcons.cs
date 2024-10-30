@@ -154,8 +154,8 @@ namespace UNIArt.Editor
                             () =>
                             {
                                 var _animator = obj.AddOrGetComponent<Animator>();
-                                var _controller = AnimatorEditor.CreateController(_animator);
-                                AnimatorEditor.AddClipToController(_controller, "出现");
+                                var _controller = AnimatorExt.CreateController(_animator);
+                                AnimatorExt.AddClipToController(_controller, "出现");
                                 Selection.activeGameObject = obj;
                             }
                         );

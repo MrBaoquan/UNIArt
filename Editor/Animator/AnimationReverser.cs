@@ -33,7 +33,17 @@ namespace UNIArt.Editor
                     .LoadAllAssetRepresentationsAtPath(_assetPath)
                     .Where(_ => _ is AnimationClip)
                     .OfType<AnimationClip>();
+
                 var _reversedClipName = originalClip.name + "_Reversed";
+                if (originalClip.name == "出现")
+                {
+                    _reversedClipName = "消失";
+                }
+                else if (originalClip.name == "消失")
+                {
+                    _reversedClipName = "出现";
+                }
+
                 _reversedClip = _childAnims
                     .Where(_ => _.name == _reversedClipName)
                     .FirstOrDefault();

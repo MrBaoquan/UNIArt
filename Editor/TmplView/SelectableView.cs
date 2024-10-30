@@ -36,13 +36,19 @@ namespace UNIArt.Editor
         public bool IsSelected => root.ClassListContains("selected");
 
         VisualElement _root;
+
+        public void SetSelectTarget(VisualElement target)
+        {
+            _root = target;
+        }
+
         VisualElement root
         {
             get
             {
                 if (_root == null)
                 {
-                    _root = this.Q<VisualElement>("root");
+                    SetSelectTarget(this.Q<VisualElement>("root"));
                 }
                 return _root;
             }

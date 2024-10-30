@@ -587,7 +587,29 @@ namespace UNIArt.Editor
             EditorApplication.update += _tempCallback;
         }
 
-        public static IDisposable UpdateWhile(
+        public static string GenerateUniqueSubAssetName<T>(string assetPath, string subAssetName)
+            where T : UnityEngine.Object
+        {
+            var _newAssetName = subAssetName;
+            var _subAssetNames = AssetDatabase
+                .LoadAllAssetRepresentationsAtPath(assetPath)
+                .OfType<T>()
+                .Select(_ => _.name)
+                .ToList();
+
+            if (_subAssetNames.Contains(_newAssetName))
+            {
+                int i = 1;
+                while (_subAssetNames.Contains($"{_newAssetName}_{i}"))
+                {
+                    i++;
+                }
+                _newAssetName = $"{_newAssetName}_{i}";
+            }
+            return _newAssetName;
+        }
+
+        public static CancellationTokenSource UpdateWhile(
             Action update,
             Func<bool> condition,
             Action onComplete = null,
@@ -616,6 +638,7 @@ namespace UNIArt.Editor
                 }
             };
             EditorApplication.update += _tempCallback;
+
             return cts;
         }
 

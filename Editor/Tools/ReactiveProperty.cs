@@ -30,6 +30,17 @@ namespace UNIArt.Editor
             }
         }
 
+        public void SetValueWithoutNotify(T value)
+        {
+            _value = value;
+        }
+
+        public void SetValueAndForceNotify(T value)
+        {
+            _value = value;
+            OnValueChanged?.Invoke(_value); // 通知所有订阅者
+        }
+
         // 允许简便的隐式转换
         public static implicit operator T(ReactiveProperty<T> property)
         {
