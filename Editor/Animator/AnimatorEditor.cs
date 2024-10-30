@@ -45,6 +45,11 @@ namespace UNIArt.Editor
             UnityEditorInternal.InternalEditorUtility.SetIsInspectorExpanded(target, true);
         }
 
+        private void OnDisable()
+        {
+            StopAnimPreview();
+        }
+
         List<AnimClipView> clipViews = new List<AnimClipView>();
 
         private void listAnimationClips()
