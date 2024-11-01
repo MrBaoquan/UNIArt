@@ -47,7 +47,7 @@ namespace UNIArt.Editor
 
         private void OnDisable()
         {
-            // StopAnimPreview();
+            PauseAnimPreview();
         }
 
         List<AnimClipView> clipViews = new List<AnimClipView>();
