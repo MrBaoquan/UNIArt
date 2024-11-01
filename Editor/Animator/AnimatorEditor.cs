@@ -1,35 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using UnityEditor;
 using UnityEditor.Animations;
-using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace UNIArt.Editor
 {
-    public enum EditAction
-    {
-        Create,
-        Rename,
-        SetAsDefault,
-        None
-    }
-
-    public class EditTarget
-    {
-        public AnimationClip clip = null;
-        public EditAction action = EditAction.None;
-        public string content = string.Empty;
-    }
-
     [CustomEditor(typeof(Animator))]
     public class AnimatorEditor : UnityEditor.Editor
     {
-        private EditTarget editTarget = new EditTarget();
         private static string defaultSaveDir = string.Empty;
         private static List<string> builtInAnimClips = new List<string>()
         {
@@ -55,14 +37,14 @@ namespace UNIArt.Editor
         private void listAnimationClips(bool autoSelectIfNone = true)
         {
             var _clipRoot = root.Q<VisualElement>("clips-root");
-            var _animator = target as Animator;
-            if (_animator == null)
+
+            if (animator == null)
             {
                 _clipRoot.style.display = DisplayStyle.None;
                 return;
             }
 
-            var controller = _animator.runtimeAnimatorController as AnimatorController;
+            var controller = animator.runtimeAnimatorController as AnimatorController;
             if (controller == null)
             {
                 _clipRoot.style.display = DisplayStyle.None;
@@ -183,8 +165,6 @@ namespace UNIArt.Editor
 
         public override VisualElement CreateInspectorGUI()
         {
-            var _animator = (Animator)target;
-
             root = new VisualElement();
 
             var defaultInspector = new IMGUIContainer(OnInspectorGUI);
@@ -209,9 +189,9 @@ namespace UNIArt.Editor
                 }
                 if (!CanControl())
                     return;
-                var _clipView = AnimCtrlTarget.Value;
-                var _duration = e.newValue * _clipView.Clip.length / _sliderFrame.highValue;
-                _clipView.Clip.SampleAnimation(_animator.gameObject, _duration);
+
+                var _duration = e.newValue * curClipView.Clip.length / _sliderFrame.highValue;
+                curClipView.Clip.SampleAnimation(animator.gameObject, _duration);
                 updateSlider(_duration);
             });
 
@@ -331,7 +311,6 @@ namespace UNIArt.Editor
 
         private void updateSlider(float _duration)
         {
-            var _clipView = AnimCtrlTarget.Value;
             var _curFrame = 0;
 
             if (!lastAnimationTimes.ContainsKey(target.GetInstanceID()))
@@ -339,16 +318,18 @@ namespace UNIArt.Editor
                 lastAnimationTimes.Add(target.GetInstanceID(), new AnimData());
             }
             var _animData = lastAnimationTimes[target.GetInstanceID()];
-            _animData.name = _clipView?.ClipName;
+            _animData.name = curClipView?.ClipName;
             _animData.time = _duration;
 
             var _frameCount = 0;
-            if (_clipView != null)
+            if (curClipView != null)
             {
-                _curFrame = Mathf.FloorToInt(_duration * _clipView.Clip.frameRate);
-                _frameCount = Mathf.FloorToInt(_clipView.Clip.length * _clipView.Clip.frameRate);
+                _curFrame = Mathf.FloorToInt(_duration * curClipView.Clip.frameRate);
+                _frameCount = Mathf.FloorToInt(
+                    curClipView.Clip.length * curClipView.Clip.frameRate
+                );
             }
-            _curFrame = Mathf.Clamp(_curFrame, 0, _frameCount);
+            // _curFrame = Mathf.Clamp(_curFrame, 0, _frameCount);
 
             _sliderFrame.lowValue = 0;
             _sliderFrame.highValue = _frameCount;
@@ -357,6 +338,9 @@ namespace UNIArt.Editor
             _sliderFrame.SetValueWithoutNotify(_curFrame);
         }
 
+        Animator animator => target as Animator;
+        AnimClipView curClipView => AnimCtrlTarget.Value;
+
         private void DoAnimPreview()
         {
             playDisposable?.Cancel();
@@ -364,60 +348,58 @@ namespace UNIArt.Editor
             if (!CanControl())
                 return;
 
-            var _animator = (Animator)target;
-            var _clipView = AnimCtrlTarget.Value;
-
-            _animator.Play(_clipView.Clip.name, -1, 0f);
-            _clipView.Clip.SampleAnimation(_animator.gameObject, 0);
-            _animator.Update(0);
+            animator.Play(curClipView.Clip.name, -1, 0f);
+            curClipView.Clip.SampleAnimation(animator.gameObject, 0);
+            animator.Update(0);
 
             var _duration = 0f;
             var _playButton = root.Q<Button>("btn_play");
             _playButton.AddToClassList("selected");
-            Action _finished = () =>
+            Action _finishPreview = () =>
             {
                 _playButton.RemoveFromClassList("selected");
+                curClipView.Clip.SampleAnimation(animator.gameObject, curClipView.Clip.length);
             };
-            var _clipLoop = _clipView.Loop;
+
             playDisposable = Utils.UpdateWhile(
                 () =>
                 {
-                    _clipView.Clip.SampleAnimation(_animator.gameObject, Time.deltaTime);
+                    var _clipLoop = curClipView.Loop;
                     _duration += Time.deltaTime;
                     if (_clipLoop)
-                        _duration %= _clipView.Clip.length;
+                        _duration %= curClipView.Clip.length;
+
+                    curClipView.Clip.SampleAnimation(animator.gameObject, _duration);
                     updateSlider(_duration);
-                    _animator.Update(Time.deltaTime);
+                    // _animator.Update(Time.deltaTime);
                 },
-                () => (_clipLoop ? true : _duration <= _clipView.Clip.length) && CanControl(),
-                _finished,
-                _finished
+                () =>
+                    (curClipView.Loop ? true : _duration <= curClipView.Clip.length)
+                    && CanControl(),
+                _finishPreview,
+                _finishPreview
             );
         }
 
         private bool CanControl()
         {
-            var _animator = target as Animator;
-            return _animator
-                && _animator.enabled
-                && _animator.runtimeAnimatorController
+            return animator
+                && animator.enabled
+                && animator.runtimeAnimatorController
                 && AnimCtrlTarget.Value != null
-                && _animator.gameObject.activeInHierarchy;
+                && animator.gameObject.activeInHierarchy;
         }
 
         public void StopAnimPreview()
         {
-            var _clipView = AnimCtrlTarget.Value;
-            var _animator = (Animator)target;
-
             playDisposable?.Cancel();
             playDisposable = null;
 
             if (!CanControl())
                 return;
 
-            _animator.Play(_clipView.Clip.name, -1, 0f);
-            _animator.Update(0);
+            animator.Play(curClipView.Clip.name, -1, 0f);
+            animator.Update(0);
             updateSlider(0);
         }
 
