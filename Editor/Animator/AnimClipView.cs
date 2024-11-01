@@ -34,6 +34,7 @@ namespace UNIArt.Editor
         }
 
         public Button BtnName;
+        public string ClipName => BtnName.text;
 
         public void DoNameEdit()
         {

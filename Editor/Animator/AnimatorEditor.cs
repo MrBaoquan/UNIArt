@@ -47,12 +47,12 @@ namespace UNIArt.Editor
 
         private void OnDisable()
         {
-            StopAnimPreview();
+            // StopAnimPreview();
         }
 
         List<AnimClipView> clipViews = new List<AnimClipView>();
 
-        private void listAnimationClips()
+        private void listAnimationClips(bool autoSelectIfNone = true)
         {
             var _clipRoot = root.Q<VisualElement>("clips-root");
             var _animator = target as Animator;
@@ -98,16 +98,12 @@ namespace UNIArt.Editor
 
                 _clipView.OnOpenAnimationEditor.AddListener(clipView =>
                 {
-                    // clipViews.ForEach(_ => _.Deselect());
                     StopAnimPreview();
                 });
 
                 _clipView.OnDeleted.AddListener(clipView =>
                 {
-                    _clipRoot.Remove(_clipView);
-                    clipViews.Remove(_clipView);
-                    clipViews.First().Select();
-                    AnimCtrlTarget.SetValueAndForceNotify(clipViews.First());
+                    listAnimationClips();
                 });
 
                 _clipView.OnRenamed.AddListener(
@@ -166,11 +162,22 @@ namespace UNIArt.Editor
                     });
             }
 
-            AnimCtrlTarget.Value = clipViews.FirstOrDefault();
+            if (autoSelectIfNone)
+            {
+                var _animTarget = clipViews.FirstOrDefault();
+                if (AnimCtrlTarget.Value != null)
+                {
+                    _animTarget = clipViews
+                        .Where(_ => _.Clip.name == AnimCtrlTarget.Value.ClipName)
+                        .FirstOrDefault();
+                }
+                AnimCtrlTarget.Value = _animTarget;
+            }
         }
 
         VisualElement root;
         SliderInt _sliderFrame;
+        VisualElement ctrlRoot;
 
         ReactiveProperty<AnimClipView> AnimCtrlTarget = new ReactiveProperty<AnimClipView>();
 
@@ -189,6 +196,7 @@ namespace UNIArt.Editor
 
             _animatorExtView.CloneTree(root);
             _sliderFrame = root.Q<SliderInt>("slider_frame");
+            ctrlRoot = root.Q<VisualElement>("ctrl_root");
 
             listAnimationClips();
 
@@ -199,6 +207,8 @@ namespace UNIArt.Editor
                     playDisposable.Cancel();
                     playDisposable = null;
                 }
+                if (!CanControl())
+                    return;
                 var _clipView = AnimCtrlTarget.Value;
                 var _duration = e.newValue * _clipView.Clip.length / _sliderFrame.highValue;
                 _clipView.Clip.SampleAnimation(_animator.gameObject, _duration);
@@ -273,24 +283,64 @@ namespace UNIArt.Editor
             AnimCtrlTarget.OnValueChanged.AddListener(_clipView =>
             {
                 _clipView?.Select();
-                root.Q<VisualElement>("ctrl_root").style.display = _clipView is null
-                    ? DisplayStyle.None
-                    : DisplayStyle.Flex;
-
-                updateSlider(0);
+                updateCtrlStyle();
                 StopAnimPreview();
             });
 
-            AnimCtrlTarget.SetValueAndForceNotify(clipViews.FirstOrDefault());
+            var _lastAnimClip = clipViews.FirstOrDefault();
+            if (lastAnimationTimes.TryGetValue(target.GetInstanceID(), out AnimData animData))
+            {
+                _lastAnimClip = clipViews
+                    .Where(_clipView => _clipView.ClipName == animData.name)
+                    .FirstOrDefault();
+            }
+
+            _lastAnimClip?.Select();
+            AnimCtrlTarget.SetValueWithoutNotify(_lastAnimClip);
+            updateCtrlStyle();
+            updateSlider();
             return root;
         }
 
         CancellationTokenSource playDisposable = null;
 
+        private void updateCtrlStyle()
+        {
+            ctrlRoot.style.display = CanControl() ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private void updateSlider()
+        {
+            if (lastAnimationTimes.ContainsKey(target.GetInstanceID()))
+            {
+                updateSlider(lastAnimationTimes[target.GetInstanceID()].time);
+            }
+            else
+            {
+                updateSlider(0);
+            }
+        }
+
+        class AnimData
+        {
+            public string name;
+            public float time;
+        }
+
+        static Dictionary<int, AnimData> lastAnimationTimes = new Dictionary<int, AnimData>();
+
         private void updateSlider(float _duration)
         {
             var _clipView = AnimCtrlTarget.Value;
             var _curFrame = 0;
+
+            if (!lastAnimationTimes.ContainsKey(target.GetInstanceID()))
+            {
+                lastAnimationTimes.Add(target.GetInstanceID(), new AnimData());
+            }
+            var _animData = lastAnimationTimes[target.GetInstanceID()];
+            _animData.name = _clipView?.ClipName;
+            _animData.time = _duration;
 
             var _frameCount = 0;
             if (_clipView != null)
@@ -310,45 +360,49 @@ namespace UNIArt.Editor
         private void DoAnimPreview()
         {
             playDisposable?.Cancel();
-            var _animator = (Animator)target;
-            if (_animator.runtimeAnimatorController == null)
-                return;
-            if (_animator.gameObject.activeInHierarchy == false)
+
+            if (!CanControl())
                 return;
 
+            var _animator = (Animator)target;
             var _clipView = AnimCtrlTarget.Value;
 
-            _animator.Play(_clipView.Clip.name, 0, 0f);
+            _animator.Play(_clipView.Clip.name, -1, 0f);
             _clipView.Clip.SampleAnimation(_animator.gameObject, 0);
             _animator.Update(0);
 
-            Utils.HookUpdateOnce(() =>
+            var _duration = 0f;
+            var _playButton = root.Q<Button>("btn_play");
+            _playButton.AddToClassList("selected");
+            Action _finished = () =>
             {
-                var _duration = 0f;
-                var _playButton = root.Q<Button>("btn_play");
-                _playButton.AddToClassList("selected");
-                Action _finished = () =>
+                _playButton.RemoveFromClassList("selected");
+            };
+            var _clipLoop = _clipView.Loop;
+            playDisposable = Utils.UpdateWhile(
+                () =>
                 {
-                    _playButton.RemoveFromClassList("selected");
-                };
-                var _clipLoop = _clipView.Loop;
-                playDisposable = Utils.UpdateWhile(
-                    () =>
-                    {
-                        _clipView.Clip.SampleAnimation(_animator.gameObject, Time.deltaTime);
-                        _duration += Time.deltaTime;
-                        if (_clipLoop)
-                            _duration %= _clipView.Clip.length;
-                        updateSlider(_duration);
-                        _animator.Update(Time.deltaTime);
-                    },
-                    () =>
-                        (_clipLoop ? true : _duration <= _clipView.Clip.length)
-                        && _animator.gameObject.activeInHierarchy,
-                    _finished,
-                    _finished
-                );
-            });
+                    _clipView.Clip.SampleAnimation(_animator.gameObject, Time.deltaTime);
+                    _duration += Time.deltaTime;
+                    if (_clipLoop)
+                        _duration %= _clipView.Clip.length;
+                    updateSlider(_duration);
+                    _animator.Update(Time.deltaTime);
+                },
+                () => (_clipLoop ? true : _duration <= _clipView.Clip.length) && CanControl(),
+                _finished,
+                _finished
+            );
+        }
+
+        private bool CanControl()
+        {
+            var _animator = target as Animator;
+            return _animator
+                && _animator.enabled
+                && _animator.runtimeAnimatorController
+                && AnimCtrlTarget.Value != null
+                && _animator.gameObject.activeInHierarchy;
         }
 
         public void StopAnimPreview()
@@ -359,14 +413,10 @@ namespace UNIArt.Editor
             playDisposable?.Cancel();
             playDisposable = null;
 
-            if (_clipView == null)
-                return;
-            if (!_animator.gameObject.activeInHierarchy)
-                return;
-            if (_animator.runtimeAnimatorController == null)
+            if (!CanControl())
                 return;
 
-            _animator.Play(_clipView.Clip.name, 0, 0f);
+            _animator.Play(_clipView.Clip.name, -1, 0f);
             _animator.Update(0);
             updateSlider(0);
         }
