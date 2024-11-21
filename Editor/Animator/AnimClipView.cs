@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
@@ -159,9 +160,10 @@ namespace UNIArt.Editor
                     _newName = AssetDatabase.GenerateUniqueAssetPath(
                         path.Replace(_oldName, _newName)
                     );
+                    _newName = Path.GetFileNameWithoutExtension(_newName);
                     AssetDatabase.RenameAsset(path, _newName);
                     BtnName.text = Clip.name;
-                    OnRenamed.Invoke(_oldName, Clip.name);
+                    OnRenamed.Invoke(_oldName, _newName);
                 }
             });
         }

@@ -701,7 +701,13 @@ namespace UNIArt.Editor
 
         private void DestroyAllTextures()
         {
+#if UNITY_2022_2_OR_NEWER
+            var textures = UnityEngine.Object.FindObjectsByType<Texture2D>(
+                FindObjectsSortMode.None
+            );
+#else
             var textures = UnityEngine.Object.FindObjectsOfType<Texture2D>();
+#endif
             DestroyTextures(textures);
         }
 
@@ -828,7 +834,13 @@ namespace UNIArt.Editor
 
         private void DestroyUnusedTextures()
         {
+#if UNITY_2022_2_OR_NEWER
+            var textures = UnityEngine.Object.FindObjectsByType<Texture2D>(
+                sortMode: FindObjectsSortMode.None
+            );
+#else
             var textures = UnityEngine.Object.FindObjectsOfType<Texture2D>();
+#endif
             var textureSet = new HashSet<Texture2D>(textures);
             textureSet.Remove(_resultTexture);
             foreach (var item in _hierarchyItems.Values)

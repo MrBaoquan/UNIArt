@@ -3,185 +3,187 @@
 // Copyright © 2015-2020 Pixel Fire™
 //----------------------------------------------
 
-namespace R2D 
+#pragma warning disable 0618
+
+namespace R2D
 {
-	using UnityEditor;
-	using UnityEngine;
-	using System;
-	using System.Collections.Generic;
-	
-	public class R2DD_State 
+    using UnityEditor;
+    using UnityEngine;
+    using System;
+    using System.Collections.Generic;
+
+    public class R2DD_State
     {
-		static R2DD_State instance;
+        static R2DD_State instance;
 
-		public static R2DD_State Instance 
+        public static R2DD_State Instance
         {
-			get 
+            get
             {
-				if (instance == null) 
+                if (instance == null)
                 {
-					instance = new R2DD_State(); 
-				}
+                    instance = new R2DD_State();
+                }
 
-				return instance;
-			}
-		}
+                return instance;
+            }
+        }
 
-		public Context context;
-		public bool displayCoords;
-		public bool preferColliders;
-		public bool snapEdges;
-		public bool displayGuides;
+        public Context context;
+        public bool displayCoords;
+        public bool preferColliders;
+        public bool snapEdges;
+        public bool displayGuides;
         public bool lockGuides;
-		public int toolBar;
-		public float spaceX;
-		public float spaceY;
-		public bool snapGuideToInt;
-		public List<string> hGuides = new List<string>();
-		public List<string> vGuides = new List<string>();
-		public List<string> measurements = new List<string>();
-		public float gridX;
-		public float gridY;
-		public int gridCols;
-		public int gridRows;
-		public float gridOriginX;
-		public float gridOriginY;
-		public bool snapToGrid;
-		public bool gridEnabled;
+        public int toolBar;
+        public float spaceX;
+        public float spaceY;
+        public bool snapGuideToInt;
+        public List<string> hGuides = new List<string>();
+        public List<string> vGuides = new List<string>();
+        public List<string> measurements = new List<string>();
+        public float gridX;
+        public float gridY;
+        public int gridCols;
+        public int gridRows;
+        public float gridOriginX;
+        public float gridOriginY;
+        public bool snapToGrid;
+        public bool gridEnabled;
 
-		private R2DD_State() 
+        private R2DD_State()
         {
-			LoadContext();
-			LoadDisplayCoords();
-			LoadPreferColliders();
-			LoadDisplayGuides();
+            LoadContext();
+            LoadDisplayCoords();
+            LoadPreferColliders();
+            LoadDisplayGuides();
             LoadLockGuides();
-			LoadToolBar();
-			LoadGuides();
-			LoadMeasurements();
-			LoadSnapGuideToInt();
-			LoadSpacing();
-			LoadCurrentSelection();
-			LoadGrid();
-		}
+            LoadToolBar();
+            LoadGuides();
+            LoadMeasurements();
+            LoadSnapGuideToInt();
+            LoadSpacing();
+            LoadCurrentSelection();
+            LoadGrid();
+        }
 
-		public void Save() 
+        public void Save()
         {
-			SaveContext();
-			SaveDisplayCoords();
-			SavePreferColliders();
-			SaveDisplayGuides();
+            SaveContext();
+            SaveDisplayCoords();
+            SavePreferColliders();
+            SaveDisplayGuides();
             SaveLockGuides();
-			SaveToolBar();
-			SaveGuides();
-			SaveMeasurements();
-			SaveSnapGuideToInt();
-			SaveSpacing();
-			SaveCurrentSelection();
-			SaveGrid();
-		}
+            SaveToolBar();
+            SaveGuides();
+            SaveMeasurements();
+            SaveSnapGuideToInt();
+            SaveSpacing();
+            SaveCurrentSelection();
+            SaveGrid();
+        }
 
 		#region Context
-		void SaveContext() 
+        void SaveContext()
         {
-			EditorPrefs.SetInt(prefContextInstanceId, context.instanceId);
-		}
+            EditorPrefs.SetInt(prefContextInstanceId, context.instanceId);
+        }
 
-		void LoadContext() 
+        void LoadContext()
         {
-			int instanceId = EditorPrefs.GetInt(prefContextInstanceId, 0);
+            int instanceId = EditorPrefs.GetInt(prefContextInstanceId, 0);
 
-			if (instanceId == 0) 
+            if (instanceId == 0)
             {
-				context = new Context(ContextType.EditorScene, null);
-			}
-			else 
+                context = new Context(ContextType.EditorScene, null);
+            }
+            else
             {
-				object[] objs = GameObject.FindObjectsOfType(typeof(GameObject));
-			
-                foreach (object obj in objs) 
+                object[] objs = GameObject.FindObjectsOfType(typeof(GameObject));
+
+                foreach (object obj in objs)
                 {
-					GameObject gameObj = (GameObject)obj;
-				
-                    if (gameObj.GetInstanceID() == instanceId) 
-                    {
-						if (gameObj.GetComponent<Canvas>() != null) 
-                        {
-							context = new Context(ContextType.Canvas, gameObj);
-							break;
-						}
-						else if (R2DC_NGUI.Instance.HasNGUIRoot(gameObj)) 
-                        {
-							context = new Context(ContextType.NGUI, gameObj);
-							break;
-						}
-					}
-				}
-			}
+                    GameObject gameObj = (GameObject)obj;
 
-			// catch all
-			if (context == null) 
+                    if (gameObj.GetInstanceID() == instanceId)
+                    {
+                        if (gameObj.GetComponent<Canvas>() != null)
+                        {
+                            context = new Context(ContextType.Canvas, gameObj);
+                            break;
+                        }
+                        else if (R2DC_NGUI.Instance.HasNGUIRoot(gameObj))
+                        {
+                            context = new Context(ContextType.NGUI, gameObj);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // catch all
+            if (context == null)
             {
-				context = new Context(ContextType.EditorScene, null);
-			}
-		}
+                context = new Context(ContextType.EditorScene, null);
+            }
+        }
 		#endregion
 
 		#region Display Coords
-		void SaveDisplayCoords() 
+        void SaveDisplayCoords()
         {
-			EditorPrefs.SetBool(prefDisplayCoords, displayCoords);
-		}
-		
-		void LoadDisplayCoords() 
+            EditorPrefs.SetBool(prefDisplayCoords, displayCoords);
+        }
+
+        void LoadDisplayCoords()
         {
-			displayCoords = EditorPrefs.GetBool(prefDisplayCoords, true);
-		}
+            displayCoords = EditorPrefs.GetBool(prefDisplayCoords, true);
+        }
 		#endregion
 
 		#region Prefer Colliders
-		void SavePreferColliders() 
+        void SavePreferColliders()
         {
-			EditorPrefs.SetBool(prefPreferColliders, preferColliders);
-		}
-		
-		void LoadPreferColliders() 
+            EditorPrefs.SetBool(prefPreferColliders, preferColliders);
+        }
+
+        void LoadPreferColliders()
         {
-			preferColliders = EditorPrefs.GetBool(prefPreferColliders, true);
-		}
+            preferColliders = EditorPrefs.GetBool(prefPreferColliders, true);
+        }
 		#endregion
 
 		#region Snap Edges
-		void SaveSnapEdges() 
+        void SaveSnapEdges()
         {
-			EditorPrefs.SetBool(prefSnapEdges, snapEdges);
-		}
-		
-		void LoadSnapEdges() 
+            EditorPrefs.SetBool(prefSnapEdges, snapEdges);
+        }
+
+        void LoadSnapEdges()
         {
-			snapEdges = EditorPrefs.GetBool(prefSnapEdges, true);
-		}
+            snapEdges = EditorPrefs.GetBool(prefSnapEdges, true);
+        }
 		#endregion
 
 		#region Display Guides
-		void SaveDisplayGuides() 
+        void SaveDisplayGuides()
         {
-			EditorPrefs.SetBool(prefDisplayGuides, displayGuides);
-		}
-		
-		void LoadDisplayGuides() 
+            EditorPrefs.SetBool(prefDisplayGuides, displayGuides);
+        }
+
+        void LoadDisplayGuides()
         {
-			displayGuides = EditorPrefs.GetBool(prefDisplayGuides, true);
-		}
+            displayGuides = EditorPrefs.GetBool(prefDisplayGuides, true);
+        }
 		#endregion
 
         #region Lock Guides
-        void SaveLockGuides() 
+        void SaveLockGuides()
         {
             EditorPrefs.SetBool(prefLockGuides, lockGuides);
         }
 
-        void LoadLockGuides() 
+        void LoadLockGuides()
         {
             lockGuides = EditorPrefs.GetBool(prefLockGuides, false);
         }
@@ -189,179 +191,180 @@ namespace R2D
 
 
 		#region ToolBar
-		void SaveToolBar() 
+        void SaveToolBar()
         {
-			EditorPrefs.SetInt(prefToolBar, toolBar);
-		}
-		
-		void LoadToolBar() 
+            EditorPrefs.SetInt(prefToolBar, toolBar);
+        }
+
+        void LoadToolBar()
         {
-			toolBar = EditorPrefs.GetInt(prefToolBar, 0);
-		}
+            toolBar = EditorPrefs.GetInt(prefToolBar, 0);
+        }
 		#endregion
 
 		#region Spacing
-		void SaveSpacing() 
+        void SaveSpacing()
         {
-			EditorPrefs.SetFloat(prefSpaceX, spaceX);
-			EditorPrefs.SetFloat(prefSpaceY, spaceY);
-		}
+            EditorPrefs.SetFloat(prefSpaceX, spaceX);
+            EditorPrefs.SetFloat(prefSpaceY, spaceY);
+        }
 
-		void LoadSpacing() 
+        void LoadSpacing()
         {
-			spaceX = EditorPrefs.GetFloat(prefSpaceX, 1f);
-			spaceY = EditorPrefs.GetFloat(prefSpaceY, 1f);
-		}
+            spaceX = EditorPrefs.GetFloat(prefSpaceX, 1f);
+            spaceY = EditorPrefs.GetFloat(prefSpaceY, 1f);
+        }
 		#endregion
 
 		#region Snap Guide To Int
-		void SaveSnapGuideToInt() 
+        void SaveSnapGuideToInt()
         {
-			EditorPrefs.SetBool(prefSnapGuideToInt, snapGuideToInt);
-		}
-		
-		void LoadSnapGuideToInt() 
+            EditorPrefs.SetBool(prefSnapGuideToInt, snapGuideToInt);
+        }
+
+        void LoadSnapGuideToInt()
         {
-			snapGuideToInt = EditorPrefs.GetBool(prefSnapGuideToInt, false);
-		}
+            snapGuideToInt = EditorPrefs.GetBool(prefSnapGuideToInt, false);
+        }
 		#endregion
 
 		#region Guides
-		void SaveGuides() 
+        void SaveGuides()
         {
-			EditorPrefs.SetString(prefHGuides, string.Join(",", hGuides.ToArray()));
-			EditorPrefs.SetString(prefVGuides, string.Join(",", vGuides.ToArray()));
-		}
-		
-		void LoadGuides() 
+            EditorPrefs.SetString(prefHGuides, string.Join(",", hGuides.ToArray()));
+            EditorPrefs.SetString(prefVGuides, string.Join(",", vGuides.ToArray()));
+        }
+
+        void LoadGuides()
         {
-			string hGuidesStr = EditorPrefs.GetString(prefHGuides, "");
-			string vGuidesStr = EditorPrefs.GetString(prefVGuides, "");
+            string hGuidesStr = EditorPrefs.GetString(prefHGuides, "");
+            string vGuidesStr = EditorPrefs.GetString(prefVGuides, "");
 
-			if (hGuidesStr.Length > 0) 
+            if (hGuidesStr.Length > 0)
             {
-				hGuides.AddRange(hGuidesStr.Split(','));
-			}
+                hGuides.AddRange(hGuidesStr.Split(','));
+            }
 
-			if (vGuidesStr.Length > 0) 
+            if (vGuidesStr.Length > 0)
             {
-				vGuides.AddRange((IEnumerable<string>)vGuidesStr.Split(','));
-			}
-		}
+                vGuides.AddRange((IEnumerable<string>)vGuidesStr.Split(','));
+            }
+        }
 		#endregion
 
 		#region Measurements
-		void SaveMeasurements() 
+        void SaveMeasurements()
         {
-			EditorPrefs.SetString(prefMeasurements, string.Join(",", measurements.ToArray()));
-		}
+            EditorPrefs.SetString(prefMeasurements, string.Join(",", measurements.ToArray()));
+        }
 
-		void LoadMeasurements() 
+        void LoadMeasurements()
         {
-			string measurementsStr = EditorPrefs.GetString(prefMeasurements, "");
+            string measurementsStr = EditorPrefs.GetString(prefMeasurements, "");
 
-			if (measurementsStr.Length > 0) 
+            if (measurementsStr.Length > 0)
             {
-				measurements.AddRange(measurementsStr.Split(','));
-			}
-		}
+                measurements.AddRange(measurementsStr.Split(','));
+            }
+        }
 		#endregion
 
 		#region Current Selection
-		void SaveCurrentSelection() 
+        void SaveCurrentSelection()
         {
-			List<string> instanceIds = new List<string>();
-			List<Transform> selection = R2DC_Selection.Instance.GetSelection();
-			
-            for (int i = 0; i < selection.Count; i++) 
+            List<string> instanceIds = new List<string>();
+            List<Transform> selection = R2DC_Selection.Instance.GetSelection();
+
+            for (int i = 0; i < selection.Count; i++)
             {
-				instanceIds.Add(selection[i].GetInstanceID().ToString());
-			}
+                instanceIds.Add(selection[i].GetInstanceID().ToString());
+            }
 
-			EditorPrefs.SetString(prefCurrentSelection, string.Join(",", instanceIds.ToArray()));
-		}
+            EditorPrefs.SetString(prefCurrentSelection, string.Join(",", instanceIds.ToArray()));
+        }
 
-		void LoadCurrentSelection() 
+        void LoadCurrentSelection()
         {
-			string selectionStr = EditorPrefs.GetString(prefCurrentSelection, "");
-		
-            if (selectionStr.Length > 0) 
-            {
-				List<Transform> selection = R2DC_Selection.Instance.GetSelection();
-				selection.Clear();
+            string selectionStr = EditorPrefs.GetString(prefCurrentSelection, "");
 
-				string[] instanceIds = selectionStr.Split(',');
-			
-                for (int i = 0; i < instanceIds.Length; i++) 
+            if (selectionStr.Length > 0)
+            {
+                List<Transform> selection = R2DC_Selection.Instance.GetSelection();
+                selection.Clear();
+
+                string[] instanceIds = selectionStr.Split(',');
+
+                for (int i = 0; i < instanceIds.Length; i++)
                 {
-					Transform transform = null;
-				
+                    Transform transform = null;
+
                     try
                     {
-						transform = (Transform)EditorUtility.InstanceIDToObject(int.Parse(instanceIds[i]));
-					}
-					catch(Exception e) 
+                        transform = (Transform)
+                            EditorUtility.InstanceIDToObject(int.Parse(instanceIds[i]));
+                    }
+                    catch (Exception e)
                     {
-						e.ToString();
-					}
-					
-                    if (transform != null) 
+                        e.ToString();
+                    }
+
+                    if (transform != null)
                     {
-						selection.Add(transform);
-					}
-				}
-			}
-		}
+                        selection.Add(transform);
+                    }
+                }
+            }
+        }
 		#endregion
 
 		#region Grid
-		void SaveGrid() 
+        void SaveGrid()
         {
-			EditorPrefs.SetFloat(prefGridX, gridX);
-			EditorPrefs.SetFloat(prefGridY, gridY);
-			EditorPrefs.SetInt(prefGridCols, gridCols);
-			EditorPrefs.SetInt(prefGridRows, gridRows);
-			EditorPrefs.SetFloat(prefGridOriginX, gridOriginX);
-			EditorPrefs.SetFloat(prefGridOriginY, gridOriginY);
-			EditorPrefs.SetBool(prefSnapToGrid, snapToGrid);
-			EditorPrefs.SetBool(prefGridEnabled, gridEnabled);
-		}
+            EditorPrefs.SetFloat(prefGridX, gridX);
+            EditorPrefs.SetFloat(prefGridY, gridY);
+            EditorPrefs.SetInt(prefGridCols, gridCols);
+            EditorPrefs.SetInt(prefGridRows, gridRows);
+            EditorPrefs.SetFloat(prefGridOriginX, gridOriginX);
+            EditorPrefs.SetFloat(prefGridOriginY, gridOriginY);
+            EditorPrefs.SetBool(prefSnapToGrid, snapToGrid);
+            EditorPrefs.SetBool(prefGridEnabled, gridEnabled);
+        }
 
-		void LoadGrid() 
+        void LoadGrid()
         {
-			gridX 		= EditorPrefs.GetFloat(prefGridX, 1f);
-			gridY 		= EditorPrefs.GetFloat(prefGridY, 1f);
-			gridCols 	= EditorPrefs.GetInt(prefGridCols, 2);
-			gridRows 	= EditorPrefs.GetInt(prefGridRows, 2);
-			gridOriginX = EditorPrefs.GetFloat(prefGridOriginX, 0);
-			gridOriginY = EditorPrefs.GetFloat(prefGridOriginY, 0);
-			snapToGrid 	= EditorPrefs.GetBool(prefSnapToGrid, true);
-			gridEnabled = EditorPrefs.GetBool(prefGridEnabled, false);
-		}
+            gridX = EditorPrefs.GetFloat(prefGridX, 1f);
+            gridY = EditorPrefs.GetFloat(prefGridY, 1f);
+            gridCols = EditorPrefs.GetInt(prefGridCols, 2);
+            gridRows = EditorPrefs.GetInt(prefGridRows, 2);
+            gridOriginX = EditorPrefs.GetFloat(prefGridOriginX, 0);
+            gridOriginY = EditorPrefs.GetFloat(prefGridOriginY, 0);
+            snapToGrid = EditorPrefs.GetBool(prefSnapToGrid, true);
+            gridEnabled = EditorPrefs.GetBool(prefGridEnabled, false);
+        }
 		#endregion
 
-		const string prefContextInstanceId 	= "R2DPREF_ContextInstanceId";
-		const string prefToolBar			= "R2DPREF_ToolBar";
-		const string prefSpaceX				= "R2DPREF_SpaceX";
-		const string prefSpaceY				= "R2DPREF_SpaceY";
-		const string prefDisplayCoords		= "R2DPREF_DisplayCoords";
-		const string prefPreferColliders	= "R2DPREF_PreferColliders";
-		const string prefSnapEdges			= "R2DPREF_SnapEdges";
-		const string prefDisplayGuides		= "R2DPREF_DisplayGuides";
-        const string prefLockGuides         = "R2DPREF_LockGuides";
-		const string prefDisplayGuideCoords	= "R2DPREF_DisplayGuideCoords";
-		const string prefHGuides			= "R2DPREF_HGuides";
-		const string prefVGuides			= "R2DPREF_VGuides";
-		const string prefSnapGuideToInt		= "R2DPREF_SnapGuideToInt";
-		const string prefCurrentSelection	= "R2DPREF_CurrentSelection";
-		const string prefMeasurements		= "R2DPREF_Measurements";
-		const string prefGridX				= "R2DPREF_GridX";
-		const string prefGridY				= "R2DPREF_GridY";
-		const string prefGridOriginX		= "R2DPREF_GridOriginX";
-		const string prefGridOriginY		= "R2DPREF_GridOriginY";
-		const string prefGridCols			= "R2DPREF_GridCols";
-		const string prefGridRows			= "R2DPREF_GridRows";
-		const string prefSnapToGrid			= "R2DPREF_SnapToGrid";
-		const string prefGridEnabled		= "R2DPREF_GridEnabled";
-	}
+        const string prefContextInstanceId = "R2DPREF_ContextInstanceId";
+        const string prefToolBar = "R2DPREF_ToolBar";
+        const string prefSpaceX = "R2DPREF_SpaceX";
+        const string prefSpaceY = "R2DPREF_SpaceY";
+        const string prefDisplayCoords = "R2DPREF_DisplayCoords";
+        const string prefPreferColliders = "R2DPREF_PreferColliders";
+        const string prefSnapEdges = "R2DPREF_SnapEdges";
+        const string prefDisplayGuides = "R2DPREF_DisplayGuides";
+        const string prefLockGuides = "R2DPREF_LockGuides";
+        const string prefDisplayGuideCoords = "R2DPREF_DisplayGuideCoords";
+        const string prefHGuides = "R2DPREF_HGuides";
+        const string prefVGuides = "R2DPREF_VGuides";
+        const string prefSnapGuideToInt = "R2DPREF_SnapGuideToInt";
+        const string prefCurrentSelection = "R2DPREF_CurrentSelection";
+        const string prefMeasurements = "R2DPREF_Measurements";
+        const string prefGridX = "R2DPREF_GridX";
+        const string prefGridY = "R2DPREF_GridY";
+        const string prefGridOriginX = "R2DPREF_GridOriginX";
+        const string prefGridOriginY = "R2DPREF_GridOriginY";
+        const string prefGridCols = "R2DPREF_GridCols";
+        const string prefGridRows = "R2DPREF_GridRows";
+        const string prefSnapToGrid = "R2DPREF_SnapToGrid";
+        const string prefGridEnabled = "R2DPREF_GridEnabled";
+    }
 }

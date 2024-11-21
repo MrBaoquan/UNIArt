@@ -3,6 +3,8 @@
 // Copyright © 2015-2020 Pixel Fire™
 //----------------------------------------------
 
+#pragma warning disable 0618
+
 namespace R2D
 {
     using UnityEngine;

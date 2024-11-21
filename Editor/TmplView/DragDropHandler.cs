@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace UNIArt.Editor
 {
@@ -61,6 +62,24 @@ namespace UNIArt.Editor
             return DragAndDropVisualMode.None;
         }
 
+        private static void createSequenceImageAnimation(GameObject target, List<Sprite> sprites)
+        {
+            var _imageComp = target.AddOrGetComponent<Image>();
+            _imageComp.sprite = sprites[0];
+            _imageComp.SetNativeSize();
+
+            var _animator = target.AddOrGetComponent<Animator>();
+            var _controller = AnimatorExt.CreateController(_animator);
+            var _animationClip = SpriteSheetTool.CreateSequenceImageAnimation(sprites);
+
+            AnimatorExt.AddClipToController(_controller, _animationClip);
+            Event.current.Use();
+            DragAndDrop.SetGenericData("ArtDragOrigin", null);
+            Selection.activeGameObject = target;
+
+            AnimatorEditor.RefreshAnimationList();
+        }
+
         private static void OnHierarchyItemGUI(int instanceID, Rect selectionRect)
         {
             Event evt = Event.current;
@@ -69,32 +88,28 @@ namespace UNIArt.Editor
                 GameObject obj = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
 
                 var _textures = DragAndDrop.objectReferences.OfType<Texture2D>().ToList();
+
                 if (_textures.Count > 1)
                 {
-                    var _imageComp = obj.AddOrGetComponent<Image>();
+                    var _sprites = DragAndDrop.paths
+                        .Select(_ => AssetDatabase.LoadAssetAtPath<Sprite>(_))
+                        .OfType<Sprite>()
+                        .ToList();
+                    createSequenceImageAnimation(obj, _sprites);
+                }
+                else if (_textures.Count == 1)
+                {
+                    var _assetPath = AssetDatabase.GetAssetPath(_textures.First());
+                    // 获取子资源
+                    var _subSprites = AssetDatabase
+                        .LoadAllAssetsAtPath(_assetPath)
+                        .OfType<Sprite>()
+                        .ToList();
 
-                    _imageComp.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(
-                        AssetDatabase.GetAssetPath(_textures.First())
-                    );
-                    _imageComp.SetNativeSize();
-
-                    var _animator = obj.GetComponent<Animator>();
-                    if (_animator == null)
-                        _animator = obj.AddComponent<Animator>();
-
-                    AssetDatabase.SaveAssets();
-                    var _controller = AnimatorExt.CreateController(_animator);
-
-                    var _animationClip = SpriteSheetTool.CreateSequenceImageAnimation(
-                        typeof(Image),
-                        DragAndDrop.paths.ToList()
-                    );
-                    AnimatorExt.AddClipToController(_controller, _animationClip);
-
-                    evt.Use();
-
-                    Selection.activeGameObject = obj;
-                    return;
+                    if (_subSprites.Count > 1)
+                    {
+                        createSequenceImageAnimation(obj, _subSprites);
+                    }
                 }
             }
             handleDropEvent();
@@ -139,7 +154,7 @@ namespace UNIArt.Editor
                     }
                 }
 
-                AssetItem dragAsset = DragAndDrop.GetGenericData("OriginAsset") as AssetItem;
+                AssetItem dragAsset = DragAndDrop.GetGenericData("ArtDragOrigin") as AssetItem;
                 if (dragAsset == null)
                 {
                     Debug.LogWarning("Dragged item is not a valid asset.");
@@ -159,6 +174,7 @@ namespace UNIArt.Editor
                 }
 
                 evt.Use();
+                DragAndDrop.SetGenericData("ArtDragOrigin", null);
             }
         }
 

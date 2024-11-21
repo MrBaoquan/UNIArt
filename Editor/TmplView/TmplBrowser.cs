@@ -1743,7 +1743,7 @@ namespace UNIArt.Editor
 
                     DragAndDrop.visualMode = DragAndDropVisualMode.Link;
                     DragAndDrop.StartDrag("Drag Asset");
-                    DragAndDrop.SetGenericData("OriginAsset", _);
+                    DragAndDrop.SetGenericData("ArtDragOrigin", _);
                 });
 
                 _assetItem.OnShowPreview.AddListener(

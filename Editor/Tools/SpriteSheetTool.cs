@@ -68,10 +68,7 @@ namespace UNIArt.Editor
             ProjectWindowUtil.ShowCreatedAsset(animationClip);
         }
 
-        public static AnimationClip CreateSequenceImageAnimation(
-            Type spriteType,
-            List<string> imagePaths
-        )
+        public static AnimationClip CreateSequenceImageAnimation(List<string> imagePaths)
         {
             var _sprites = imagePaths
                 .Select(_ => AssetDatabase.LoadAssetAtPath<Sprite>(_))
@@ -92,10 +89,20 @@ namespace UNIArt.Editor
             var _animPath = Path.Combine(_saveDir, _animName + ".anim").ToForwardSlash();
             Utils.CreateFolderIfNotExist(_saveDir);
             _animPath = AssetDatabase.GenerateUniqueAssetPath(_animPath);
-            return createSequenceAnimation(_animPath, spriteType, _sprites);
+            return CreateSequenceAnimation(_animPath, typeof(Image), _sprites);
         }
 
-        private static AnimationClip createSequenceAnimation(
+        public static AnimationClip CreateSequenceImageAnimation(List<Sprite> sprites)
+        {
+            var _saveDir = $"{UNIArtSettings.Project.ArtFolder}/Animations";
+            var _animName = sprites.First().name;
+            var _animPath = Path.Combine(_saveDir, _animName + ".anim").ToForwardSlash();
+            Utils.CreateFolderIfNotExist(_saveDir);
+            _animPath = AssetDatabase.GenerateUniqueAssetPath(_animPath);
+            return CreateSequenceAnimation(_animPath, typeof(Image), sprites);
+        }
+
+        public static AnimationClip CreateSequenceAnimation(
             string savePath,
             Type spriteType,
             List<Sprite> _sprites

@@ -20,8 +20,16 @@ namespace UNIArt.Editor
             "UIHide"
         };
 
+        private static AnimatorEditor current { get; set; } = null;
+
+        public static void RefreshAnimationList()
+        {
+            current?.listAnimationClips();
+        }
+
         void OnEnable()
         {
+            current = this;
             if (defaultSaveDir == string.Empty)
                 defaultSaveDir = Application.dataPath;
             UnityEditorInternal.InternalEditorUtility.SetIsInspectorExpanded(target, true);
@@ -29,6 +37,7 @@ namespace UNIArt.Editor
 
         private void OnDisable()
         {
+            current = null;
             PauseAnimPreview();
         }
 
@@ -93,7 +102,6 @@ namespace UNIArt.Editor
                     {
                         // controller.
                         var _stateMachine = controller.layers[0].stateMachine;
-
                         var _state = _stateMachine.states
                             .Where(_ => _.state.motion == clip)
                             .First();
@@ -348,7 +356,7 @@ namespace UNIArt.Editor
             if (!CanControl())
                 return;
 
-            animator.Play(curClipView.Clip.name, -1, 0f);
+            animator.Play(curClipView.Clip.name, 0, 0f);
             curClipView.Clip.SampleAnimation(animator.gameObject, 0);
             animator.Update(0);
 
@@ -398,7 +406,7 @@ namespace UNIArt.Editor
             if (!CanControl())
                 return;
 
-            animator.Play(curClipView.Clip.name, -1, 0f);
+            animator.Play(curClipView.Clip.name, 0, 0f);
             animator.Update(0);
             updateSlider(0);
         }

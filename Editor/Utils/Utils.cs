@@ -709,7 +709,7 @@ namespace UNIArt.Editor
 
         public static bool IsDragFromUNIArt()
         {
-            return DragAndDrop.GetGenericData("OriginAsset") != null;
+            return DragAndDrop.GetGenericData("ArtDragOrigin") != null;
         }
 
         public static void ReimportAsset(string path)
