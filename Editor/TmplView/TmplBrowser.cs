@@ -88,6 +88,7 @@ namespace UNIArt.Editor
         //     get => SelectedTemplateID.ToString();
         //     set => SelectedTemplateID = int.Parse(value);
         // }
+
         public TmplButton selectedTemplateButton =>
             SelectedTemplateID < templateButtons.Count ? templateButtons[SelectedTemplateID] : null;
 
@@ -113,8 +114,8 @@ namespace UNIArt.Editor
                         ? DisplayStyle.None
                         : DisplayStyle.Flex;
                     rootVisualElement.Q<Button>("btn-version-update").tooltip = _isLatest
-                        ? $"检查更新, 当前版本: {current}"
-                        : $"有新版本 {latest} 可更新";
+                        ? $"当前版本: {current}已是最新版本"
+                        : $"当前版本: {current}\n最新版本: {latest}, 点击开始更新";
                 }
             );
             // selectTemplate(SelectedTemplateID);
@@ -385,6 +386,7 @@ namespace UNIArt.Editor
             toolbarMenu.RemoveFromClassList("filter-menu-all");
             toolbarMenu.RemoveFromClassList("filter-menu-prefab");
             toolbarMenu.RemoveFromClassList("filter-menu-texture");
+
             if (selectedTemplateButton.FilterMode.Value == AssetFilterMode.All)
             {
                 toolbarMenu.AddToClassList("filter-menu-all");
@@ -503,7 +505,15 @@ namespace UNIArt.Editor
             root.Q<Button>("btn-version-update")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
-                    UPMUpdater.UpdatePackage("com.parful.uniart");
+                    UPMUpdater.UpdatePackage(
+                        "com.parful.uniart",
+                        () =>
+                        {
+                            Application.OpenURL(
+                                "http://upm.andcrane.com:4873/-/web/detail/com.parful.uniart"
+                            );
+                        }
+                    );
                 });
 
             root.Q<Button>("btn_updateAll")
@@ -1051,6 +1061,13 @@ namespace UNIArt.Editor
                             $"{selectedTemplateButton.PrefabRootDir}/{selectedFilterButton.FilterID}"
                         );
                     });
+                if (
+                    selectedTemplateButton.FilterMode.Value != AssetFilterMode.All
+                    && selectedTemplateButton.FilterMode.Value != AssetFilterMode.Prefab
+                )
+                {
+                    selectedTemplateButton.FilterMode.Value = AssetFilterMode.Prefab;
+                }
                 refreshTemplateAssets();
                 return;
             }
@@ -1087,7 +1104,13 @@ namespace UNIArt.Editor
                             Utils.ImportExternalAssets(new[] { _psdFile }, _psdRoot);
                         });
                     });
-
+                if (
+                    selectedTemplateButton.FilterMode.Value != AssetFilterMode.All
+                    && selectedTemplateButton.FilterMode.Value != AssetFilterMode.Texture
+                )
+                {
+                    selectedTemplateButton.FilterMode.Value = AssetFilterMode.All;
+                }
                 RefreshTemplateFilters();
                 return;
             }
@@ -1529,7 +1552,7 @@ namespace UNIArt.Editor
             filterListRoot.Clear();
             filterButtons.Clear();
 
-            var _templateAssetTags = selectedTemplateButton.FilterTags();
+            var _templateAssetTags = selectedTemplateButton.FilterTagsWithAsset();
 
             _templateAssetTags.Insert(0, string.Empty);
             _templateAssetTags.Add(FilterButton.CreateNewText);
@@ -1548,8 +1571,9 @@ namespace UNIArt.Editor
             selectedTemplateButton.FilterMode.OnValueChanged.RemoveAllListeners();
             selectedTemplateButton.FilterMode.OnValueChanged.AddListener(_ =>
             {
+                UNIArtSettings.Project.SetTemplateFilterMode(selectedTemplateButton.TemplateID, _);
                 syncToolbarMenuStatus();
-                refreshTemplateAssets();
+                RefreshTemplateFilters();
             });
 
             selectedTemplateButton.SearchFilter.OnValueChanged.RemoveAllListeners();

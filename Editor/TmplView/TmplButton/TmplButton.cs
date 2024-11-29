@@ -12,7 +12,8 @@ namespace UNIArt.Editor
     {
         All,
         Prefab,
-        Texture
+        Texture,
+        None
     }
 
     public class TmplButton : SelectableView
@@ -40,7 +41,7 @@ namespace UNIArt.Editor
         }
 
         public ReactiveProperty<AssetFilterMode> FilterMode = new ReactiveProperty<AssetFilterMode>(
-            AssetFilterMode.All
+            AssetFilterMode.None
         );
 
         // 遍历Top文件夹
@@ -59,8 +60,19 @@ namespace UNIArt.Editor
             {
                 templateID = value;
                 this.Q<Label>("title").text = templateID == "Standard" ? "基础组件" : templateID;
+                initDefaultVariables();
                 Refresh();
             }
+        }
+
+        private void initDefaultVariables()
+        {
+            var _filterMode = UNIArtSettings.Project.GetTemplateFilterMode(templateID);
+            if (_filterMode == AssetFilterMode.None)
+            {
+                _filterMode = (IsBuiltIn || IsLocal) ? AssetFilterMode.All : AssetFilterMode.Prefab;
+            }
+            FilterMode.Value = _filterMode;
         }
 
         private List<string> filterDirs()
@@ -128,6 +140,38 @@ namespace UNIArt.Editor
                 .Where(_ => !_.StartsWith("."))
                 .Distinct()
                 .OrderBy(_ => _)
+                .ToList();
+        }
+
+        // 拥有资源的FilterTags
+        public List<string> FilterTagsWithAsset()
+        {
+            if (FilterMode.Value == AssetFilterMode.All)
+            {
+                return FilterTags();
+            }
+
+            var _findArgs = "";
+            var _rootDir = string.Empty;
+
+            if (FilterMode.Value == AssetFilterMode.Prefab)
+            {
+                _findArgs = "t:Prefab";
+                _rootDir = PrefabRootDir;
+            }
+            else if (FilterMode.Value == AssetFilterMode.Texture)
+            {
+                _findArgs = "t:Texture";
+                _rootDir = TextureRootDir;
+            }
+            return FilterTags()
+                .Where(
+                    _filter =>
+                        AssetDatabase.IsValidFolder($"{_rootDir}/{_filter}")
+                        && AssetDatabase
+                            .FindAssets(_findArgs, new string[] { $"{_rootDir}/{_filter}" })
+                            .Length > 0
+                )
                 .ToList();
         }
 

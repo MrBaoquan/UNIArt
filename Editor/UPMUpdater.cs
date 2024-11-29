@@ -158,7 +158,11 @@ namespace UNIArt.Editor
             );
         }
 
-        public static void UpdatePackage(string packageName, string latestVersion)
+        public static void UpdatePackage(
+            string packageName,
+            string latestVersion,
+            Action onSuccess = null
+        )
         {
             var addRequest = Client.Add($"{packageName}@{latestVersion}");
             UpdateWhile(
@@ -169,6 +173,7 @@ namespace UNIArt.Editor
                     if (addRequest.Status == StatusCode.Success)
                     {
                         Debug.Log($"Successfully updated {packageName} to version {latestVersion}");
+                        onSuccess?.Invoke();
                     }
                     else if (addRequest.Status >= StatusCode.Failure)
                     {
@@ -180,7 +185,7 @@ namespace UNIArt.Editor
             );
         }
 
-        public static void UpdatePackage(string packageName)
+        public static void UpdatePackage(string packageName, Action onSuccess = null)
         {
             IsPackageLatest(
                 packageName,
@@ -194,7 +199,7 @@ namespace UNIArt.Editor
                     }
                     else
                     {
-                        UpdatePackage(packageName, latestVersion);
+                        UpdatePackage(packageName, latestVersion, onSuccess);
                     }
                 }
             );

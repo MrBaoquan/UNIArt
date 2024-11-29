@@ -380,6 +380,7 @@ namespace UNIArt.Editor
             public bool KeepTop = false;
             public int FilterID = 0;
             public bool SearchTopFolderOnly = true;
+            public AssetFilterMode FilterMode = AssetFilterMode.None;
         }
 
         [HideInInspector]
@@ -427,6 +428,16 @@ namespace UNIArt.Editor
         public void SetSearchTopFolderOnly(string templateName, bool searchTopOnly)
         {
             addOrGetTemplateCache(templateName).SearchTopFolderOnly = searchTopOnly;
+        }
+
+        public AssetFilterMode GetTemplateFilterMode(string templateName)
+        {
+            return addOrGetTemplateCache(templateName).FilterMode;
+        }
+
+        public void SetTemplateFilterMode(string templateName, AssetFilterMode filterMode)
+        {
+            addOrGetTemplateCache(templateName).FilterMode = filterMode;
         }
 
         [HideInInspector]
