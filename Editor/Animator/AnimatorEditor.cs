@@ -63,6 +63,7 @@ namespace UNIArt.Editor
             var _animationClips = controller.animationClips
                 .Where(_ => !builtInAnimClips.Contains(_.name))
                 .OrderBy(_ => _.name)
+                .OrderBy(_ => ReverseAnimationContext.AnimationClipOrder(_))
                 .Distinct();
 
             _clipRoot.Clear();

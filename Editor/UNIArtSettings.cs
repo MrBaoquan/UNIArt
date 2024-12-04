@@ -383,7 +383,7 @@ namespace UNIArt.Editor
             public AssetFilterMode FilterMode = AssetFilterMode.None;
         }
 
-        [HideInInspector]
+        [SerializeField]
         public List<TemplateCache> TemplateCaches = new List<TemplateCache>();
 
         [HideInInspector]

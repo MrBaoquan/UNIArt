@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor.SceneManagement;
 using PluginMaster;
+using UNIArt.Runtime;
+using System.Linq;
 
 namespace UNIArt.Editor
 {
@@ -90,143 +92,342 @@ namespace UNIArt.Editor
                     && _optionRect.Contains(Event.current.mousePosition)
                 )
                 {
-                    GenericMenu menu = new GenericMenu();
-
-                    // 添加空物体菜单
-                    var _addEmptyMenu = new GUIContent(
-                        "创建 UI 空物体",
-                        EditorGUIUtility.IconContent("d__Menu").image
-                    );
-
-                    menu.AddItem(
-                        _addEmptyMenu,
-                        false,
-                        () =>
-                        {
-                            GameObject _newObj = new GameObject();
-                            _newObj.transform.SetParent(obj.transform, false);
-                            _newObj.name = "UI 对象";
-                            if (_newObj.GetComponentInParent<RectTransform>() != null)
-                            {
-                                var _rectTrans = _newObj.AddComponent<RectTransform>();
-                                _rectTrans.sizeDelta = Vector2.zero;
-                            }
-                            Selection.activeGameObject = _newObj;
-                        }
-                    );
-                    menu.AddSeparator("");
-
-                    var _addButtonMenu = new GUIContent(
-                        "添加按钮组件",
-                        EditorGUIUtility.IconContent("d__Menu").image
-                    );
-                    if (obj.GetComponent<Button>() != null)
-                    {
-                        menu.AddDisabledItem(_addButtonMenu);
-                    }
-                    else
-                    {
-                        menu.AddItem(
-                            _addButtonMenu,
-                            false,
-                            () =>
-                            {
-                                obj.AddOrGetComponent<Image>();
-                                obj.AddOrGetComponent<Button>();
-                                Selection.activeGameObject = obj;
-                            }
-                        );
-                    }
-                    var _addAnimMenu = new GUIContent(
-                        "添加动画组件",
-                        AssetDatabase.LoadAssetAtPath<Texture2D>(
-                            "Packages/com.parful.uniart/Assets/Icon/筛选.png"
-                        )
-                    );
-                    if (obj.GetComponent<Animator>() != null)
-                    {
-                        menu.AddDisabledItem(_addAnimMenu);
-                    }
-                    else
-                    {
-                        menu.AddItem(
-                            _addAnimMenu,
-                            false,
-                            () =>
-                            {
-                                var _animator = obj.AddOrGetComponent<Animator>();
-                                var _controller = AnimatorExt.CreateController(_animator);
-                                AnimatorExt.AddClipToController(_controller, "出现");
-                                Selection.activeGameObject = obj;
-                            }
-                        );
-                    }
-
-                    var _prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
-
-                    menu.AddSeparator("");
-
-                    if (obj.GetComponentInChildren<PsGroup>(true) != null)
-                    {
-                        menu.AddItem(
-                            new GUIContent("移除PS组件"),
-                            false,
-                            () =>
-                            {
-                                PSUtils.RemovePSLayer(obj);
-                                EditorUtility.SetDirty(obj);
-                            }
-                        );
-                    }
-                    else
-                    {
-                        menu.AddDisabledItem(new GUIContent("移除PS组件"));
-                    }
-
-                    menu.AddSeparator("");
-                    if (PrefabUtility.IsPartOfAnyPrefab(obj))
-                    {
-                        menu.AddDisabledItem(new GUIContent("保存为预制体"));
-                    }
-                    else
-                    {
-                        menu.AddItem(
-                            new GUIContent("保存为预制体"),
-                            false,
-                            () =>
-                            {
-                                var _path = Utils.GetPrefabAssetPathByAnyGameObject(obj);
-                                var _saveRoot = UNIArtSettings.Project.ArtFolder;
-                                var _folder = "UI Prefabs/Widgets";
-                                if (UNIArtSettings.IsTemplateAsset(_path))
-                                {
-                                    _saveRoot = UNIArtSettings.GetExternalTemplateRootBySubAsset(
-                                        _path
-                                    );
-                                    _folder = "Prefabs/自定义组件";
-                                }
-                                var _savePath = Path.Combine(
-                                        _saveRoot,
-                                        _folder,
-                                        obj.name + ".prefab"
-                                    )
-                                    .ToForwardSlash();
-                                Utils.CreateFolderIfNotExist(Path.GetDirectoryName(_savePath));
-                                // _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
-
-                                var _newPrefab = PrefabUtility.SaveAsPrefabAssetAndConnect(
-                                    obj,
-                                    _savePath,
-                                    InteractionMode.AutomatedAction
-                                );
-                                ProjectWindowUtil.ShowCreatedAsset(_newPrefab);
-                            }
-                        );
-                    }
-
-                    menu.ShowAsContext();
-                    Event.current.Use();
+                    addGenericMenu(obj);
                 }
+            }
+        }
+
+        private static void addGenericMenu(GameObject obj)
+        {
+            GenericMenu menu = new GenericMenu();
+
+            // 添加空物体菜单
+            var _addEmptyMenu = new GUIContent(
+                "创建 UI 空物体",
+                EditorGUIUtility.IconContent("d__Menu").image
+            );
+
+            menu.AddItem(
+                _addEmptyMenu,
+                false,
+                () =>
+                {
+                    GameObject _newObj = new GameObject();
+                    _newObj.transform.SetParent(obj.transform, false);
+                    _newObj.name = "UI 对象";
+                    if (_newObj.GetComponentInParent<RectTransform>() != null)
+                    {
+                        var _rectTrans = _newObj.AddComponent<RectTransform>();
+                        _rectTrans.sizeDelta = Vector2.zero;
+                    }
+                    Selection.activeGameObject = _newObj;
+                }
+            );
+            menu.AddSeparator("");
+            drawAddComponentsMenus(obj, menu);
+            drawComponentConvertMenus(obj, menu);
+            menu.AddSeparator("");
+            if (obj.GetComponentInChildren<PsGroup>(true) != null)
+            {
+                menu.AddItem(
+                    new GUIContent("移除PS组件 (含子节点)"),
+                    false,
+                    () =>
+                    {
+                        PSUtils.RemovePSLayer(obj);
+                        EditorUtility.SetDirty(obj);
+                    }
+                );
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("移除PS组件 (含子节点)"));
+            }
+
+            // 移除丢失引用脚本
+            var _removeMissingScriptMenu = new GUIContent(
+                "移除丢失引用脚本",
+                EditorGUIUtility.IconContent("d__Menu").image
+            );
+
+            if (HasMissingScripts(obj))
+            {
+                menu.AddItem(
+                    _removeMissingScriptMenu,
+                    false,
+                    () =>
+                    {
+                        if (Selection.objects.Contains(obj))
+                        {
+                            foreach (var _obj in Selection.objects.OfType<GameObject>())
+                            {
+                                GameObjectUtility.RemoveMonoBehavioursWithMissingScript(_obj);
+                            }
+                        }
+                        else
+                        {
+                            GameObjectUtility.RemoveMonoBehavioursWithMissingScript(obj);
+                        }
+                    }
+                );
+            }
+            else
+            {
+                menu.AddDisabledItem(_removeMissingScriptMenu);
+            }
+
+            menu.AddSeparator("");
+            if (
+                !PrefabUtility.IsPartOfAnyPrefab(obj)
+                && Selection.objects.Contains(obj)
+                && Selection.objects.Length == 1
+            )
+            {
+                menu.AddItem(
+                    new GUIContent("保存为预制体"),
+                    false,
+                    () =>
+                    {
+                        var _path = Utils.GetPrefabAssetPathByAnyGameObject(obj);
+                        var _saveRoot = UNIArtSettings.Project.ArtFolder;
+                        var _folder = "UI Prefabs/Widgets";
+                        if (UNIArtSettings.IsTemplateAsset(_path))
+                        {
+                            _saveRoot = UNIArtSettings.GetExternalTemplateRootBySubAsset(_path);
+                            _folder = "Prefabs/自定义组件";
+                        }
+                        var _savePath = Path.Combine(_saveRoot, _folder, obj.name + ".prefab")
+                            .ToForwardSlash();
+                        Utils.CreateFolderIfNotExist(Path.GetDirectoryName(_savePath));
+                        // _savePath = AssetDatabase.GenerateUniqueAssetPath(_savePath);
+
+                        var _newPrefab = PrefabUtility.SaveAsPrefabAssetAndConnect(
+                            obj,
+                            _savePath,
+                            InteractionMode.AutomatedAction
+                        );
+                        ProjectWindowUtil.ShowCreatedAsset(_newPrefab);
+                    }
+                );
+            }
+            else
+            {
+                menu.AddDisabledItem(new GUIContent("保存为预制体"));
+            }
+
+            menu.ShowAsContext();
+            Event.current.Use();
+        }
+
+        // 添加组件
+        private static void drawAddComponentsMenus(GameObject obj, GenericMenu menu)
+        {
+            var _addImageMenu = new GUIContent(
+                "添加组件/图片",
+                EditorGUIUtility.IconContent("d__Menu").image
+            );
+
+            appendMenu(
+                obj,
+                menu,
+                _addImageMenu,
+                () => obj.GetComponent<Image>() == null,
+                _obj => _obj.AddComponent<Image>()
+            );
+
+            var _addButtonMenu = new GUIContent(
+                "添加组件/按钮",
+                EditorGUIUtility.IconContent("d__Menu").image
+            );
+
+            appendMenu(
+                obj,
+                menu,
+                _addButtonMenu,
+                () => obj.GetComponent<Selectable>() == null,
+                _obj =>
+                {
+                    _obj.AddOrGetComponent<Image>();
+                    _obj.AddComponent<Button>();
+                }
+            );
+
+            var _addToggleMenu = new GUIContent(
+                "添加组件/开关",
+                EditorGUIUtility.IconContent("d__Menu").image
+            );
+
+            appendMenu(
+                obj,
+                menu,
+                _addToggleMenu,
+                () => obj.GetComponent<Selectable>() == null,
+                _obj =>
+                {
+                    _obj.AddOrGetComponent<Image>();
+                    _obj.AddComponent<Toggle>();
+                }
+            );
+
+            var _addAnimMenu = new GUIContent(
+                "添加组件/动画",
+                AssetDatabase.LoadAssetAtPath<Texture2D>(
+                    "Packages/com.parful.uniart/Assets/Icon/筛选.png"
+                )
+            );
+
+            appendMenu(
+                obj,
+                menu,
+                _addAnimMenu,
+                () => obj.GetComponent<Animator>() == null,
+                _obj =>
+                {
+                    var _animator = _obj.AddComponent<Animator>();
+                    var _controller = AnimatorExt.CreateController(_animator);
+                    AnimatorExt.AddClipToController(_controller, "出现");
+                },
+                () =>
+                {
+                    Utils.HookUpdateOnce(() =>
+                    {
+                        AnimatorEditor.RefreshAnimationList();
+                    });
+                }
+            );
+        }
+
+        private static void drawComponentConvertMenus(GameObject obj, GenericMenu menu)
+        {
+            var _convertToToggleMenu = new GUIContent(
+                "组件转换/转换为开关组件",
+                EditorGUIUtility.IconContent("d__Menu").image
+            );
+
+            appendMenu(
+                obj,
+                menu,
+                _convertToToggleMenu,
+                () => obj.GetComponent<Button>() != null,
+                convertButtonToToggle
+            );
+
+            var _convertToButtonMenu = new GUIContent(
+                "组件转换/转换为按钮组件",
+                EditorGUIUtility.IconContent("d__Menu").image
+            );
+
+            appendMenu(
+                obj,
+                menu,
+                _convertToButtonMenu,
+                () => obj.GetComponent<Toggle>() != null,
+                convertToggleToButton
+            );
+        }
+
+        private static void convertButtonToToggle(GameObject obj)
+        {
+            var _button = obj.GetComponent<Button>();
+            if (_button == null)
+                return;
+
+            if (_button.transition == Selectable.Transition.SpriteSwap)
+            {
+                var _normalSP =
+                    _button.spriteState.highlightedSprite == null
+                        ? obj.GetComponent<Image>().sprite
+                        : _button.spriteState.highlightedSprite;
+
+                var _pressedSP = _button.spriteState.pressedSprite;
+                GameObject.DestroyImmediate(_button);
+
+                var _toggleImage = obj.AddOrGetComponent<ToggleImage>();
+                var _toggle = obj.GetComponent<Toggle>();
+                _toggle.transition = Selectable.Transition.SpriteSwap;
+                SpriteState _spriteState = new SpriteState
+                {
+                    highlightedSprite = _normalSP,
+                    pressedSprite = _pressedSP
+                };
+                _toggle.spriteState = _spriteState;
+            }
+            else
+            {
+                GameObject.DestroyImmediate(_button);
+                obj.AddOrGetComponent<Toggle>();
+            }
+        }
+
+        private static void convertToggleToButton(GameObject obj)
+        {
+            var _toggle = obj.GetComponent<Toggle>();
+            if (_toggle == null)
+                return;
+
+            if (_toggle.transition == Selectable.Transition.SpriteSwap)
+            {
+                var _normalSP = _toggle.spriteState.highlightedSprite;
+                var _pressedSP = _toggle.spriteState.pressedSprite;
+
+                var _toggleImage = obj.GetComponent<ToggleImage>();
+                if (_toggleImage != null)
+                    GameObject.DestroyImmediate(_toggleImage);
+                GameObject.DestroyImmediate(_toggle);
+
+                var _button = obj.AddOrGetComponent<Button>();
+                _button.transition = Selectable.Transition.SpriteSwap;
+                SpriteState _spriteState = new SpriteState
+                {
+                    highlightedSprite = _normalSP,
+                    pressedSprite = _pressedSP
+                };
+                _button.spriteState = _spriteState;
+            }
+            else
+            {
+                var _toggleImage = obj.GetComponent<ToggleImage>();
+                if (_toggleImage != null)
+                    GameObject.DestroyImmediate(_toggleImage);
+                GameObject.DestroyImmediate(_toggle);
+                obj.AddOrGetComponent<Button>();
+            }
+        }
+
+        private static void appendMenu(
+            GameObject obj,
+            GenericMenu menu,
+            GUIContent content,
+            Func<bool> condition,
+            Action<GameObject> action,
+            Action complete = null
+        )
+        {
+            if (condition())
+            {
+                menu.AddItem(
+                    content,
+                    false,
+                    () =>
+                    {
+                        if (Selection.objects.Contains(obj))
+                        {
+                            foreach (var _obj in Selection.objects.OfType<GameObject>())
+                            {
+                                action?.Invoke(_obj);
+                            }
+                        }
+                        else
+                        {
+                            action?.Invoke(obj);
+                        }
+                        complete?.Invoke();
+                    }
+                );
+            }
+            else
+            {
+                menu.AddDisabledItem(content);
             }
         }
 

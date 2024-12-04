@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
@@ -21,6 +22,40 @@ namespace UNIArt.Editor
                 && Selection.activeObject.GetType() == typeof(AnimationClip);
         }
 
+        public static Dictionary<string, string> animNamePairs = new Dictionary<string, string>()
+        {
+            { "出现", "消失" },
+            { "消失", "出现" },
+            { "打开", "关闭" },
+            { "关闭", "打开" },
+            { "淡入", "淡出" },
+            { "淡出", "淡入" },
+            { "显示", "隐藏" },
+            { "隐藏", "显示" },
+        };
+
+        public static int AnimationClipOrder(AnimationClip animationClip)
+        {
+            if (animNamePairs.ContainsKey(animationClip.name))
+            {
+                return animNamePairs.Keys.ToList().IndexOf(animationClip.name);
+            }
+            return 1000;
+        }
+
+        private static string GetReversedName(string name)
+        {
+            if (animNamePairs.ContainsKey(name))
+            {
+                return animNamePairs[name];
+            }
+            else if (name.EndsWith("_Reversed"))
+            {
+                return name.Replace("_Reversed", "");
+            }
+            return name + "_Reversed";
+        }
+
         // create reverse clip from an animation clip
         public static AnimationClip ReverseClip(AnimationClip originalClip)
         {
@@ -34,15 +69,7 @@ namespace UNIArt.Editor
                     .Where(_ => _ is AnimationClip)
                     .OfType<AnimationClip>();
 
-                var _reversedClipName = originalClip.name + "_Reversed";
-                if (originalClip.name == "出现")
-                {
-                    _reversedClipName = "消失";
-                }
-                else if (originalClip.name == "消失")
-                {
-                    _reversedClipName = "出现";
-                }
+                var _reversedClipName = GetReversedName(originalClip.name);
 
                 _reversedClip = _childAnims
                     .Where(_ => _.name == _reversedClipName)
