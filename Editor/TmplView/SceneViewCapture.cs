@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
@@ -25,6 +26,57 @@ namespace UNIArt.Editor
             SceneViewCapture.onCapture = onCapture;
         }
 
+        private static void SetBackgroundForPrefabs(Color color)
+        {
+            try
+            {
+                // 获取 SceneView 类的类型
+                Type sceneViewType = typeof(SceneView);
+
+                // 获取 kSceneViewPrefabBackground 字段
+                FieldInfo fieldInfo = sceneViewType.GetField(
+                    "kSceneViewPrefabBackground",
+                    BindingFlags.Static | BindingFlags.NonPublic
+                );
+                if (fieldInfo == null)
+                {
+                    Debug.LogError(
+                        "Unable to find kSceneViewPrefabBackground field. Unity version may not support this."
+                    );
+                    return;
+                }
+
+                // 获取当前的 PrefColor 实例
+                object prefColorInstance = fieldInfo.GetValue(null);
+                if (prefColorInstance == null)
+                {
+                    Debug.LogError("kSceneViewPrefabBackground field value is null.");
+                    return;
+                }
+
+                // 获取 PrefColor 的类型
+                Type prefColorType = prefColorInstance.GetType();
+
+                // 通过反射修改颜色值
+                PropertyInfo colorProperty = prefColorType.GetProperty(
+                    "Color",
+                    BindingFlags.Instance | BindingFlags.Public
+                );
+                if (colorProperty != null)
+                {
+                    colorProperty.SetValue(prefColorInstance, color);
+                }
+                else
+                {
+                    Debug.LogError("Unable to find 'Color' property on PrefColor.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Error modifying prefab background color: {ex.Message}");
+            }
+        }
+
         public static void stashSceneViewSettings()
         {
             SceneView sceneView = SceneView.lastActiveSceneView;
@@ -34,6 +86,9 @@ namespace UNIArt.Editor
 
             sceneView.showGrid = false;
             sceneView.drawGizmos = false;
+
+            SetBackgroundForPrefabs(new Color(0.193f, 0.193f, 0.193f, 1f));
+
             Tools.current = Tool.None;
         }
 
@@ -42,6 +97,7 @@ namespace UNIArt.Editor
             SceneView sceneView = SceneView.lastActiveSceneView;
             sceneView.showGrid = lastShowGrid;
             sceneView.drawGizmos = lastShowGizmos;
+            SetBackgroundForPrefabs(new Color(0.133f, 0.231f, 0.329f, 1f));
             Tools.current = lastTool;
         }
 

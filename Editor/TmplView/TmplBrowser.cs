@@ -16,22 +16,6 @@ namespace UNIArt.Editor
 {
     public class TmplBrowser : EditorWindow
     {
-        // [MenuItem("Tools/Test")]
-        // [InitializeOnLoadMethod]
-        // public static void Test()
-        // {
-        //     Debug.Log(PrefabUtility.IsOutermostPrefabInstanceRoot(Selection.activeGameObject));
-        //     Debug.Log(PrefabUtility.IsAnyPrefabInstanceRoot(Selection.activeGameObject));
-        //     Debug.LogWarning("--------------------");
-        //     // var _srcPath = "Assets/ArtAssets/Textures/弹框提示/木材提示.png";
-        //     // var _templateFolder = "";
-        //     // var _folder = "Animations";
-        //     // var _regex = $@"^Assets/(ArtAssets/)?.*?({_templateFolder}/)?(.*{_folder}/)*(.+)$";
-        //     // Debug.Log(_regex);
-        //     // var _match = System.Text.RegularExpressions.Regex.Match(_srcPath, _regex);
-        //     // _match.Groups.ToList().ForEach(_ => Debug.Log(_));
-        // }
-
         [MenuItem("Window/UNIArt 工作台 &1", priority = 1399)] //1499
         public static void ShowUNIArtWindow()
         {
@@ -82,12 +66,6 @@ namespace UNIArt.Editor
                 UNIArtSettings.Project.LastSelectedTemplateID = templateButtons[value].TemplateID;
             }
         }
-
-        // public string SelectedTemplateIDString
-        // {
-        //     get => SelectedTemplateID.ToString();
-        //     set => SelectedTemplateID = int.Parse(value);
-        // }
 
         public TmplButton selectedTemplateButton =>
             SelectedTemplateID < templateButtons.Count ? templateButtons[SelectedTemplateID] : null;
@@ -140,6 +118,8 @@ namespace UNIArt.Editor
 
         SelectType lastSelect = SelectType.None;
 
+        private EditorCoroutine installBuiltinCoroutine;
+
         private void buildUI()
         {
             VisualElement root = rootVisualElement;
@@ -181,13 +161,10 @@ namespace UNIArt.Editor
             _topListRoot.Insert(1, _builtinTemplateButton);
             templateButtons.Add(_builtinTemplateButton);
 
-            // if (!Directory.Exists(UNIArtSettings.Project.TemplateRelativeRoot))
-            // {
-            //     Directory.CreateDirectory(UNIArtSettings.Project.TemplateRelativeRoot);
-            //     AssetDatabase.Refresh();
-            // }
-
-            EditorCoroutineUtility.StartCoroutine(delayInstallBuiltinTemplate(), this);
+            installBuiltinCoroutine = EditorCoroutineUtility.StartCoroutine(
+                delayInstallBuiltinTemplate(),
+                this
+            );
 
             previewTex = rootVisualElement.Q<VisualElement>("img_preview");
 
@@ -309,11 +286,13 @@ namespace UNIArt.Editor
             var _builtinTemplateButton = templateButtons.Skip(1).Take(1).FirstOrDefault();
             if (_builtinTemplateButton == null)
                 yield break;
+
             UNIArtSettings.Project.PullExternals();
             _builtinTemplateButton.Refresh();
 
             if (UNIArtSettings.Project.InstallStandardDefault && !_builtinTemplateButton.AssetReady)
             {
+                Utils.UnlockReloadDomain();
                 // Debug.Log($"尝试安装基础组件库...");
                 SVNIntegration.AddOrUpdateExternal(
                     UNIArtSettings.Project.TemplatePropTarget,
@@ -332,10 +311,6 @@ namespace UNIArt.Editor
                 {
                     Debug.Log($"基础组件库安装成功.");
                 }
-                // else
-                // {
-                //     Debug.LogWarning($"基础组件库安装失败.");
-                // }
             }
         }
 
@@ -362,15 +337,18 @@ namespace UNIArt.Editor
         {
             var _btnUpdate = rootVisualElement.Q<Button>("btn_update");
             var _btnCommit = rootVisualElement.Q<Button>("btn_commit");
+            var _btnRevert = rootVisualElement.Q<Button>("btn_revert");
             if (selectedTemplateButton.IsLocal)
             {
                 _btnCommit.tooltip = "提交项目资源";
                 _btnUpdate.tooltip = "更新项目资源";
+                _btnRevert.tooltip = "还原项目资源变更";
             }
             else
             {
                 _btnCommit.tooltip = "提交当前资源库内容";
                 _btnUpdate.tooltip = "更新当前资源库内容";
+                _btnRevert.tooltip = "还原当前资源库内容变更";
             }
         }
 
@@ -378,6 +356,12 @@ namespace UNIArt.Editor
         {
             yield return new EditorWaitForSeconds(0.5f);
             finishCallback?.Invoke();
+        }
+
+        private IEnumerator delayRebuildAssetPreview(AssetItem assetItem)
+        {
+            yield return new EditorWaitForSeconds(0.01f);
+            assetItem?.RebuildPreview();
         }
 
         private void syncToolbarMenuStatus()
@@ -416,6 +400,12 @@ namespace UNIArt.Editor
             return (_originIsAsset, _originIsFilter);
         }
 
+        public void ShowUIPageList()
+        {
+            selectTemplate(0);
+            selectFilter(1);
+        }
+
         private void registerUIEvents()
         {
             var root = rootVisualElement;
@@ -431,6 +421,7 @@ namespace UNIArt.Editor
             root.Q<Button>("btn_install")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
+                    Utils.LockReloadDomain();
                     SVNIntegration.AddOrUpdateExternal(
                         UNIArtSettings.Project.TemplatePropTarget,
                         selectedTemplateButton.ExternalRepoUrl
@@ -439,6 +430,7 @@ namespace UNIArt.Editor
                     UNIArtSettings.Project.PullExternals();
                     refreshTemplateMenuList();
                     refreshTemplateView();
+                    Utils.UnlockReloadDomain();
 
                     Utils.Delay(
                         () =>
@@ -466,6 +458,8 @@ namespace UNIArt.Editor
                         if (!_confirm)
                             return;
                     }
+
+                    Utils.LockReloadDomain();
                     var _templateRootUrl = UNIArtSettings.GetExternalTemplateFolderUrl(
                         selectedTemplateButton.TemplateID
                     );
@@ -476,6 +470,7 @@ namespace UNIArt.Editor
                     UNIArtSettings.Project.PullExternals();
                     refreshTemplateMenuList();
                     refreshTemplateView();
+                    Utils.UnlockReloadDomain();
 
                     Utils.Delay(
                         () =>
@@ -534,6 +529,12 @@ namespace UNIArt.Editor
                     }
                 });
 
+            root.Q<Button>("btn_revert")
+                .RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    selectedTemplateButton.Revert();
+                });
+
             root.Q<Button>("btn_commit")
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
@@ -575,16 +576,28 @@ namespace UNIArt.Editor
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
                     WorkflowUtility.ShowUIList();
+                    ShowUIPageList();
                 });
 
-            Action<PrefabStage> refreshLocationButtonState = (_) =>
+            Action<PrefabStage> refreshLocationButtonState = (_prefabStage) =>
             {
-                var _prefabStage = PrefabStageUtility.GetCurrentPrefabStage();
-                root.Q<Button>("btn_location").SetEnabled(_prefabStage != null);
+                root.Q<Button>("btn_location")
+                    .SetEnabled(PrefabStageUtility.GetCurrentPrefabStage() != null);
+
+                if (_prefabStage is null || UNIArtSettings.Project.AutoUpdateUIPreview == false)
+                    return;
+
+                var _assetItem = assetItems.FirstOrDefault(
+                    _ => _.AssetPath == _prefabStage.assetPath
+                );
+                if (_assetItem is null)
+                    return;
+                EditorCoroutineUtility.StartCoroutine(delayRebuildAssetPreview(_assetItem), this);
             };
 
             PrefabStage.prefabStageOpened += refreshLocationButtonState;
             PrefabStage.prefabStageClosing += refreshLocationButtonState;
+
             refreshLocationButtonState(null);
 
             root.Q<Button>("btn_location")
@@ -643,10 +656,7 @@ namespace UNIArt.Editor
             {
                 if (selectedAsset == null)
                     return DropdownMenuAction.Status.Disabled;
-                return
-                    (selectedAsset.HasPSDEnity || selectedAsset.RawAssetObject is GameObject)
-                    && !selectedAsset.IsPSD
-                    && !selectedAsset.IsPSDPrefab
+                return selectedAsset.IsPrefab && selectedAsset.NonPSDPrefab
                     ? DropdownMenuAction.Status.Normal
                     : DropdownMenuAction.Status.Disabled;
             };
@@ -815,7 +825,28 @@ namespace UNIArt.Editor
 
                         evt.menu.AppendSeparator();
                         evt.menu.AppendAction(
-                            "选取缩略图",
+                            "缩略图/更新缩略图",
+                            (x) =>
+                            {
+                                selectedAssets
+                                    .Where(_ => _.NonPSDPrefab && _.IsPrefab)
+                                    .ToList()
+                                    .ForEach(_asset =>
+                                    {
+                                        _asset.RebuildPreview();
+                                    });
+                            },
+                            _ =>
+                                selectedAsset != null
+                                    && selectedAsset.IsPrefab
+                                    && selectedAsset.NonPSDPrefab
+                                || selectedAssets.Where(_ => _.NonPSDPrefab && _.IsPrefab).Count()
+                                    > 0
+                                    ? DropdownMenuAction.Status.Normal
+                                    : DropdownMenuAction.Status.Disabled
+                        );
+                        evt.menu.AppendAction(
+                            "缩略图/选取缩略图",
                             (x) =>
                             {
                                 AssetDatabase.OpenAsset(selectedAsset.RawAssetObject);

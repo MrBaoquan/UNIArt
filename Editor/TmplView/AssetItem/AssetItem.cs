@@ -72,6 +72,11 @@ namespace UNIArt.Editor
 
         public float Width => resolvedStyle.width;
 
+        public void RebuildPreview()
+        {
+            previewTex = UIPreviewer.CreateAssetPreview(RawAssetObject, PreviewPath);
+        }
+
         public void RefreshPreview()
         {
             defaultPrefabIcon = EditorGUIUtility.IconContent("Prefab Icon").image as Texture2D;
@@ -95,7 +100,10 @@ namespace UNIArt.Editor
             }
             else if (previewTex == null)
             {
-                previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(PreviewPath);
+                if (File.Exists(PreviewPath))
+                    previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(PreviewPath);
+                else
+                    RebuildPreview();
             }
 
             if (UNIArtSettings.IsProjectUIPageAsset(rawAssetPath) && RawAssetObject is GameObject)
@@ -160,6 +168,10 @@ namespace UNIArt.Editor
         }
 
         public string PreviewPath => UNIArtSettings.GetPreviewPathByAsset(AssetPath);
+
+        public bool NonPSDPrefab => !IsPSDPrefab;
+
+        public bool IsPrefab => RawAssetObject is GameObject;
 
         public bool IsPSD => rawAssetPath.EndsWith(".psd");
         public bool IsPSDPrefab => rawAssetPath.EndsWith("#psd.prefab");

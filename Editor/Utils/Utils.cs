@@ -16,25 +16,6 @@ namespace UNIArt.Editor
 {
     public static class Utils
     {
-        // [MenuItem("Tools/Test")]
-        // private static void test()
-        // {
-        //     AssetDatabase
-        //         .FindAssets("t:AnimationClip", new[] { "Assets/ArtAssets/Animations" })
-        //         .Select(AssetDatabase.GUIDToAssetPath)
-        //         .ForEach(_ =>
-        //         {
-        //             Debug.LogWarning(
-        //                 AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(_).GetType()
-        //             );
-        //             Debug.Log(
-        //                 AssetDatabase.IsMainAsset(
-        //                     AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(_)
-        //                 )
-        //             );
-        //         });
-        // }
-
         const string packageName = "com.parful.uniart";
 
         public static string ToForwardSlash(this string path)
@@ -45,6 +26,44 @@ namespace UNIArt.Editor
         public static string PackageAssetPath(string assetPath)
         {
             return $"Packages/{packageName}/{assetPath}";
+        }
+
+        //https://github.com/INeatFreak/unity-background-recompiler 来自这个库 反射获取是否锁住
+        static MethodInfo CanReloadAssembliesMethod;
+        static bool IsLocked
+        {
+            get
+            {
+                if (CanReloadAssembliesMethod == null)
+                {
+                    // source: https://github.com/Unity-Technologies/UnityCsReference/blob/master/Editor/Mono/EditorApplication.bindings.cs#L154
+                    CanReloadAssembliesMethod = typeof(EditorApplication).GetMethod(
+                        "CanReloadAssemblies",
+                        BindingFlags.NonPublic | BindingFlags.Static
+                    );
+                    if (CanReloadAssembliesMethod == null)
+                        Debug.LogError(
+                            "Can't find CanReloadAssemblies method. It might have been renamed or removed."
+                        );
+                }
+                return !(bool)CanReloadAssembliesMethod.Invoke(null, null);
+            }
+        }
+
+        public static void LockReloadDomain()
+        {
+            if (!IsLocked)
+            {
+                EditorApplication.LockReloadAssemblies();
+            }
+        }
+
+        public static void UnlockReloadDomain()
+        {
+            if (IsLocked)
+            {
+                EditorApplication.UnlockReloadAssemblies();
+            }
         }
 
         public static void RemoveHierarchyWindowItemOnGUI(List<string> methods)
@@ -724,6 +743,28 @@ namespace UNIArt.Editor
             }
 
             AssetDatabase.ImportAsset(path);
+        }
+
+        public static Vector2Int GetRenderingResolution()
+        {
+#if UNITY_2022_1_OR_NEWER
+            UnityEditor.PlayModeWindow.GetRenderingResolution(out uint width, out uint height);
+            return new Vector2Int((int)width, (int)height);
+#else
+            var _size = GetMainGameViewSize();
+            return new Vector2Int((int)_size.x, (int)_size.y);
+#endif
+        }
+
+        public static Vector2 GetMainGameViewSize()
+        {
+            System.Type T = System.Type.GetType("UnityEditor.GameView,UnityEditor");
+            System.Reflection.MethodInfo GetSizeOfMainGameView = T.GetMethod(
+                "GetSizeOfMainGameView",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static
+            );
+            System.Object Res = GetSizeOfMainGameView.Invoke(null, null);
+            return (Vector2)Res;
         }
     }
 }

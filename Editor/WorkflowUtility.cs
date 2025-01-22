@@ -213,6 +213,10 @@ namespace UNIArt.Editor
                 () => AssetDatabase.OpenAsset(_uiPrefabsFolder),
                 UNIArtSettings.Editor.DelayRetry
             );
+
+            if (!TmplBrowser.IsWindowOpen)
+                return;
+            TmplBrowser.Instance.ShowUIPageList();
         }
 
         [MenuItem("Assets/定位正在编辑的预制体 &3", priority = 51)]

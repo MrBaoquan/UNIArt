@@ -199,15 +199,13 @@ namespace UNIArt.Editor
         {
             [HideInInspector]
             public string psdPath;
-
             public string PSDEntityPath => PsdFileToPrefabPath(psdPath);
-
             public Texture2D OriginPSFile => AssetDatabase.LoadAssetAtPath<Texture2D>(psdPath);
             public float Scale = 1.0f;
             public bool ImportOnlyVisibleLayers = false;
             public bool CreateAtlas = false;
             public int MaxAtlasSize = 4096;
-            public bool AddPSLayer = true;
+            public bool AddPSLayer = false;
             public bool RestoreEntity = true;
 
             public PSDImportArgs ShallowCopy(string psdFilePath)
@@ -244,6 +242,8 @@ namespace UNIArt.Editor
 
         [HideInInspector]
         public List<PSDEntityInstance> PSDEntityInstances = new List<PSDEntityInstance>();
+
+        public bool AutoUpdateUIPreview = true;
 
         public bool DebugMode = false;
 
@@ -383,7 +383,7 @@ namespace UNIArt.Editor
             public AssetFilterMode FilterMode = AssetFilterMode.None;
         }
 
-        [SerializeField]
+        [SerializeField, HideInInspector]
         public List<TemplateCache> TemplateCaches = new List<TemplateCache>();
 
         [HideInInspector]

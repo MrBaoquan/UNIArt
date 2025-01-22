@@ -298,6 +298,16 @@ namespace UNIArt.Editor
             }
         }
 
+        public void Revert()
+        {
+            if (IsLocal)
+            {
+                SVNConextMenu.RevertAll();
+                return;
+            }
+            SVNConextMenu.Revert(new[] { RootFolder }, true, true);
+        }
+
         public void Commit()
         {
             if (IsLocal)
