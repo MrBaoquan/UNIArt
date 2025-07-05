@@ -747,7 +747,7 @@ namespace UNIArt.Editor
 
         public static Vector2Int GetRenderingResolution()
         {
-#if UNITY_2022_1_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
             UnityEditor.PlayModeWindow.GetRenderingResolution(out uint width, out uint height);
             return new Vector2Int((int)width, (int)height);
 #else
