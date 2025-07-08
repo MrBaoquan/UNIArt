@@ -180,3 +180,15 @@ ToolbarButton {
     flex-shrink: 0;
     align-items: stretch;
 }
+
+.installed {
+    background-image: url('project://database/Packages/com.parful.uniart/Assets/Icon/%E5%B7%B2%E5%AE%89%E8%A3%85.png?fileID=2800000&guid=8fefe3f04b16c18469861d27d6d06ed5&type=3#已安装');
+    width: 16px;
+    height: 16px;
+    justify-content: center;
+    align-items: auto;
+    flex-shrink: 0;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.5);
+    -unity-background-scale-mode: stretch-to-fill;
+    scale: 0.9 0.9;
+}

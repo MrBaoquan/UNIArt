@@ -144,14 +144,15 @@ namespace UNIArt.Editor
 
                 if (!isCtrlPressed)
                 {
-                    if (PrefabUtility.IsAnyPrefabInstanceRoot(_newObj))
-                    {
-                        PrefabUtility.UnpackPrefabInstance(
-                            _newObj,
-                            PrefabUnpackMode.Completely,
-                            InteractionMode.AutomatedAction
-                        );
-                    }
+                    // 取消解预制体
+                    // if (PrefabUtility.IsAnyPrefabInstanceRoot(_newObj))
+                    // {
+                    //     PrefabUtility.UnpackPrefabInstance(
+                    //         _newObj,
+                    //         PrefabUnpackMode.Completely,
+                    //         InteractionMode.AutomatedAction
+                    //     );
+                    // }
                 }
 
                 AssetItem dragAsset = DragAndDrop.GetGenericData("ArtDragOrigin") as AssetItem;

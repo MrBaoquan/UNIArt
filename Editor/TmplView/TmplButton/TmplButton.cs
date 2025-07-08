@@ -276,11 +276,20 @@ namespace UNIArt.Editor
         {
             if (parent == null)
                 return;
-            if (IsInstalled)
+            if (IsLocal || IsBuiltIn)
+            {
                 this.Q<VisualElement>("icon_status").RemoveFromClassList("not-installed");
+                this.Q<VisualElement>("icon_status").RemoveFromClassList("installed");
+            }
+            else if (IsInstalled)
+            {
+                this.Q<VisualElement>("icon_status").RemoveFromClassList("not-installed");
+                this.Q<VisualElement>("icon_status").AddToClassList("installed");
+            }
             else
             {
                 this.Q<VisualElement>("icon_status").AddToClassList("not-installed");
+                this.Q<VisualElement>("icon_status").RemoveFromClassList("installed");
             }
         }
 
