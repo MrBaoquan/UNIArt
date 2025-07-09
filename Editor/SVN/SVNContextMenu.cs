@@ -178,7 +178,7 @@ namespace UNIArt.Editor
         [MenuItem("Assets/Tortoise SVN/\U0001F9F9  清理", false, SVNMenuOrderOffset + 52)]
         public static void Cleanup()
         {
-            Cleanup(true);
+            CleanupAll(true);
         }
 
         [MenuItem("Assets/Tortoise SVN/\U0001F512  获取锁定", false, SVNMenuOrderOffset + 71)]
@@ -483,7 +483,7 @@ namespace UNIArt.Editor
         public static string ProjectRootUnity =>
             Path.GetDirectoryName(Application.dataPath).Replace("\\", "/");
 
-        public static void Cleanup(bool wait = false)
+        public static void CleanupAll(bool wait = false)
         {
             var result = ShellUtils.ExecuteCommand(
                 ClientCommand,
@@ -493,6 +493,34 @@ namespace UNIArt.Editor
             if (result.HasErrors)
             {
                 // Debug.LogError($"SVN Error: {result.Error}");
+            }
+        }
+
+        public static void Cleanup(string assetPath, bool wait = false)
+        {
+            if (System.IO.Directory.Exists(assetPath))
+            {
+                var resolveResult = ShellUtils.ExecuteCommand(
+                    ClientCommand,
+                    $"/command:cleanup /path:\"{AssetPathToContextPaths(assetPath, false)}\"",
+                    wait
+                );
+                if (!string.IsNullOrEmpty(resolveResult.Error))
+                {
+                    // Debug.LogError($"SVN Error: {resolveResult.Error}");
+                }
+
+                return;
+            }
+
+            var result = ShellUtils.ExecuteCommand(
+                ClientCommand,
+                $"/command:cleanup /path:\"{AssetPathToContextPaths(assetPath, false)}\"",
+                wait
+            );
+            if (result.HasErrors)
+            {
+                Debug.LogError($"SVN Error: {result.Error}");
             }
         }
 
@@ -520,7 +548,7 @@ namespace UNIArt.Editor
                 );
                 if (!string.IsNullOrEmpty(resolveResult.Error))
                 {
-                    Debug.LogError($"SVN Error: {resolveResult.Error}");
+                    // Debug.LogError($"SVN Error: {resolveResult.Error}");
                 }
 
                 return;

@@ -346,9 +346,9 @@ namespace UNIArt.Editor
             }
             else
             {
-                _btnCommit.tooltip = "提交当前资源库内容";
-                _btnUpdate.tooltip = "更新当前资源库内容";
-                _btnRevert.tooltip = "还原当前资源库内容变更";
+                _btnCommit.tooltip = "提交资源库内容";
+                _btnUpdate.tooltip = "更新资源库内容";
+                _btnRevert.tooltip = "还原资源库内容变更";
             }
         }
 
@@ -539,6 +539,24 @@ namespace UNIArt.Editor
                 .RegisterCallback<MouseUpEvent>(evt =>
                 {
                     selectedTemplateButton.Commit();
+                });
+
+            root.Q<Button>("btn_resolve")
+                .RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    selectedTemplateButton.Resolve();
+                });
+
+            root.Q<Button>("btn_clean")
+                .RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    selectedTemplateButton.Clean();
+                });
+
+            root.Q<Label>("text_version")
+                .RegisterCallback<MouseUpEvent>(evt =>
+                {
+                    selectedTemplateButton.ShowLog();
                 });
 
             // 更新模板资源
@@ -1378,6 +1396,8 @@ namespace UNIArt.Editor
             var _templateContent = rootVisualElement.Q<VisualElement>("template-content");
             var _templateMgr = rootVisualElement.Q<VisualElement>("template-mgr");
 
+            refreshVersions();
+
             if (selectedTemplateButton.IsInstalled || selectedTemplateButton.IsLocal)
             {
                 _templateContent.style.display = DisplayStyle.Flex;
@@ -1607,6 +1627,12 @@ namespace UNIArt.Editor
                 RefreshTemplateFilters();
             });
 
+            selectedTemplateButton.Version.OnValueChanged.RemoveAllListeners();
+            selectedTemplateButton.Version.OnValueChanged.AddListener(_ =>
+            {
+                refreshVersions();
+            });
+
             selectedTemplateButton.SearchFilter.OnValueChanged.RemoveAllListeners();
             selectedTemplateButton.SearchFilter.OnValueChanged.AddListener(_ =>
             {
@@ -1637,6 +1663,12 @@ namespace UNIArt.Editor
         }
 
         public string CurrentRootPath => CurrentRootPaths.FirstOrDefault();
+
+        private void refreshVersions()
+        {
+            var _textVersion = rootVisualElement.Q<Label>("text_version");
+            _textVersion.text = "Ver:" + selectedTemplateButton.Version.Value;
+        }
 
         private void refreshTemplateAssets()
         {

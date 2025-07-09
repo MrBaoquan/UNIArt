@@ -468,6 +468,13 @@ namespace UNIArt.Editor
             return _hasExternal;
         }
 
+        public int GetExternalVersion(string templateName)
+        {
+            var _relativeDir = GetExternalRelativeDir(templateName);
+            var _external = externals.FirstOrDefault(x => x.Dir == _relativeDir);
+            return _external != null ? _external.Revision : -1;
+        }
+
         private static UNIArtSettings instance;
         public static UNIArtSettings Project
         {

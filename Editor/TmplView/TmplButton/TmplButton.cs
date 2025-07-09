@@ -44,6 +44,8 @@ namespace UNIArt.Editor
             AssetFilterMode.None
         );
 
+        public ReactiveProperty<int> Version = new ReactiveProperty<int>(0);
+
         // 遍历Top文件夹
         public bool SearchTopFolderOnly
         {
@@ -254,10 +256,12 @@ namespace UNIArt.Editor
             {
                 IsInstalled = true;
                 IsTop = true;
+                Version.Value = SVNIntegration.GetLastChangedRevision(Utils.ProjectRoot);
                 return;
             }
             IsInstalled = UNIArtSettings.Project.HasExternal(TemplateID);
             IsTop = UNIArtSettings.Project.GetTemplateTop(TemplateID);
+            Version.Value = UNIArtSettings.Project.GetExternalVersion(TemplateID);
             RefreshStyle();
         }
 
@@ -317,6 +321,36 @@ namespace UNIArt.Editor
             SVNConextMenu.Revert(new[] { RootFolder }, true, true);
         }
 
+        public void Resolve()
+        {
+            if (IsLocal)
+            {
+                SVNConextMenu.ResolveAll();
+                return;
+            }
+            SVNConextMenu.Resolve(RootFolder, true);
+        }
+
+        public void Clean()
+        {
+            if (IsLocal)
+            {
+                SVNConextMenu.CleanupAll();
+                return;
+            }
+            SVNConextMenu.Cleanup(RootFolder, true);
+        }
+
+        public void ShowLog()
+        {
+            if (IsLocal)
+            {
+                SVNConextMenu.ShowLogAll();
+                return;
+            }
+            SVNConextMenu.ShowLog(RootFolder);
+        }
+
         public void Commit()
         {
             if (IsLocal)
@@ -341,6 +375,8 @@ namespace UNIArt.Editor
                 0,
                 false
             );
+
+            Version.Value = SVNIntegration.GetRevision(RootFolder);
         }
 
         // 拉取最新资源
@@ -357,6 +393,7 @@ namespace UNIArt.Editor
             {
                 if (SVNIntegration.Update(RootFolder))
                 {
+                    Version.Value = SVNIntegration.GetRevision(RootFolder);
                     AssetDatabase.Refresh();
                     return true;
                 }
