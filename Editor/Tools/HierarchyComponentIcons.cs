@@ -35,6 +35,7 @@ namespace UNIArt.Editor
                 typeof(Button),
                 typeof(Toggle),
                 typeof(ToggleGroup),
+                typeof(GameObject),
                 typeof(Canvas),
                 typeof(Camera),
                 typeof(MonoScript)
@@ -533,6 +534,16 @@ namespace UNIArt.Editor
                             EditorGUIUtility.LoadRequired("d_console.warnicon.sml") as Texture
                         );
                         AddTooltip(iconRect, "该对象包含丢失引用的脚本");
+                    }
+                }
+                else if (_componentType == typeof(GameObject))
+                {
+                    if (PrefabUtility.IsOutermostPrefabInstanceRoot(obj))
+                    {
+                        GUI.DrawTexture(
+                            iconRect,
+                            EditorGUIUtility.LoadRequired("d_Prefab Icon") as Texture
+                        );
                     }
                 }
 
