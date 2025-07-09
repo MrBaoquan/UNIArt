@@ -355,7 +355,8 @@ namespace UNIArt.Editor
         {
             if (IsLocal)
             {
-                SVNConextMenu.Commit(SVNConextMenu.GetRootAssetPath(), false);
+                SVNConextMenu.Commit(SVNConextMenu.GetRootAssetPath(), true, true);
+                Version.Value = SVNIntegration.GetLastChangedRevision(Utils.ProjectRoot);
                 return;
             }
             // 将版本设置为最新版
@@ -385,6 +386,7 @@ namespace UNIArt.Editor
             if (IsLocal)
             {
                 SVNConextMenu.UpdateAll();
+                Version.Value = SVNIntegration.GetLastChangedRevision(Utils.ProjectRoot);
                 return true;
             }
             if (!IsInstalled)
@@ -411,6 +413,7 @@ namespace UNIArt.Editor
                 Debug.LogWarning("Failed to checkout external template.");
                 return false;
             }
+            Version.Value = SVNIntegration.GetRevision(RootFolder);
             AssetDatabase.Refresh();
             return true;
         }
