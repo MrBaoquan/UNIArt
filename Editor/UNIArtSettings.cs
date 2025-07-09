@@ -159,14 +159,21 @@ namespace UNIArt.Editor
                     {
                         AddToWorkspace(new string[] { _packageJson }, true);
                     }
+                    Debug.Log("dirty 1");
                     _dirty = true;
                 }
+            }
+
+            if (!isInited)
+            {
+                PullExternals();
             }
 
             if (externals.Any(_ => !Directory.Exists(GetExternalTemplateRootByPropDir(_.Dir)))) // 同步子模块
             {
                 if (SVNIntegration.Update(UNIArtSettings.Project.TemplatePropTarget))
                 {
+                    Debug.Log("dirty 2");
                     _dirty = true;
                 }
             }
@@ -444,9 +451,12 @@ namespace UNIArt.Editor
         public List<SVNIntegration.ExternalProperty> externals =
             new List<SVNIntegration.ExternalProperty>();
 
+        private static bool isInited = false;
+
         public List<ExternalProperty> PullExternals()
         {
             externals = SVNIntegration.GetExternals(UNIArtSettings.Project.TemplatePropTarget);
+            isInited = true;
             return externals;
         }
 
