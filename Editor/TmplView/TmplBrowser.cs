@@ -1285,7 +1285,7 @@ namespace UNIArt.Editor
             validateTemplateID();
 
             templateButtons.ForEach(_t => _t.Deselect());
-            selectedTemplateButton.Select();
+            selectedTemplateButton?.Select();
 
             refreshTemplateView();
         }

@@ -151,7 +151,6 @@ namespace UNIArt.Editor
                     {
                         AddToWorkspace(new string[] { _packageJson }, true);
                     }
-                    Debug.Log("dirty 1");
                     _dirty = true;
                 }
             }
@@ -165,7 +164,6 @@ namespace UNIArt.Editor
             {
                 if (SVNIntegration.Update(UNIArtSettings.Project.TemplatePropTarget))
                 {
-                    Debug.Log("dirty 2");
                     _dirty = true;
                 }
             }
