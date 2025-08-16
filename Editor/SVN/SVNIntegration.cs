@@ -13,10 +13,7 @@ namespace UNIArt.Editor
     {
         #region SVN CLI Definitions
         public static string ProjectRootNative => Path.GetDirectoryName(Application.dataPath);
-        private static readonly Dictionary<char, VCFileStatus> m_FileStatusMap = new Dictionary<
-            char,
-            VCFileStatus
-        >
+        private static readonly Dictionary<char, VCFileStatus> m_FileStatusMap = new Dictionary<char, VCFileStatus>
         {
             { ' ', VCFileStatus.Normal },
             { 'A', VCFileStatus.Added },
@@ -31,18 +28,14 @@ namespace UNIArt.Editor
             { '~', VCFileStatus.Obstructed },
         };
 
-        private static readonly Dictionary<char, VCSwitchedExternal> m_SwitchedExternalStatusMap =
-            new Dictionary<char, VCSwitchedExternal>
-            {
-                { ' ', VCSwitchedExternal.Normal },
-                { 'S', VCSwitchedExternal.Switched },
-                { 'X', VCSwitchedExternal.External },
-            };
+        private static readonly Dictionary<char, VCSwitchedExternal> m_SwitchedExternalStatusMap = new Dictionary<char, VCSwitchedExternal>
+        {
+            { ' ', VCSwitchedExternal.Normal },
+            { 'S', VCSwitchedExternal.Switched },
+            { 'X', VCSwitchedExternal.External },
+        };
 
-        private static readonly Dictionary<char, VCLockStatus> m_LockStatusMap = new Dictionary<
-            char,
-            VCLockStatus
-        >
+        private static readonly Dictionary<char, VCLockStatus> m_LockStatusMap = new Dictionary<char, VCLockStatus>
         {
             { ' ', VCLockStatus.NoLock },
             { 'K', VCLockStatus.LockedHere },
@@ -51,32 +44,29 @@ namespace UNIArt.Editor
             { 'B', VCLockStatus.BrokenLock },
         };
 
-        private static readonly Dictionary<char, VCPropertiesStatus> m_PropertyStatusMap =
-            new Dictionary<char, VCPropertiesStatus>
-            {
-                { ' ', VCPropertiesStatus.Normal },
-                { 'C', VCPropertiesStatus.Conflicted },
-                { 'M', VCPropertiesStatus.Modified },
-            };
+        private static readonly Dictionary<char, VCPropertiesStatus> m_PropertyStatusMap = new Dictionary<char, VCPropertiesStatus>
+        {
+            { ' ', VCPropertiesStatus.Normal },
+            { 'C', VCPropertiesStatus.Conflicted },
+            { 'M', VCPropertiesStatus.Modified },
+        };
 
-        private static readonly Dictionary<char, VCTreeConflictStatus> m_ConflictStatusMap =
-            new Dictionary<char, VCTreeConflictStatus>
-            {
-                { ' ', VCTreeConflictStatus.Normal },
-                { 'C', VCTreeConflictStatus.TreeConflict },
-            };
+        private static readonly Dictionary<char, VCTreeConflictStatus> m_ConflictStatusMap = new Dictionary<char, VCTreeConflictStatus>
+        {
+            { ' ', VCTreeConflictStatus.Normal },
+            { 'C', VCTreeConflictStatus.TreeConflict },
+        };
 
-        private static readonly Dictionary<char, VCRemoteFileStatus> m_RemoteStatusMap =
-            new Dictionary<char, VCRemoteFileStatus>
-            {
-                { ' ', VCRemoteFileStatus.None },
-                { '*', VCRemoteFileStatus.Modified },
-            };
+        private static readonly Dictionary<char, VCRemoteFileStatus> m_RemoteStatusMap = new Dictionary<char, VCRemoteFileStatus>
+        {
+            { ' ', VCRemoteFileStatus.None },
+            { '*', VCRemoteFileStatus.Modified },
+        };
 
-        private static readonly Dictionary<
+        private static readonly Dictionary<UpdateResolveConflicts, string> m_UpdateResolveConflictsMap = new Dictionary<
             UpdateResolveConflicts,
             string
-        > m_UpdateResolveConflictsMap = new Dictionary<UpdateResolveConflicts, string>
+        >
         {
             { UpdateResolveConflicts.Postpone, "postpone" },
             { UpdateResolveConflicts.Working, "working" },
@@ -89,14 +79,13 @@ namespace UNIArt.Editor
             { UpdateResolveConflicts.Launch, "launch" },
         };
 
-        private static readonly Dictionary<char, LogPathChange> m_LogPathChangesMap =
-            new Dictionary<char, LogPathChange>
-            {
-                { 'A', LogPathChange.Added },
-                { 'D', LogPathChange.Deleted },
-                { 'R', LogPathChange.Replaced },
-                { 'M', LogPathChange.Modified },
-            };
+        private static readonly Dictionary<char, LogPathChange> m_LogPathChangesMap = new Dictionary<char, LogPathChange>
+        {
+            { 'A', LogPathChange.Added },
+            { 'D', LogPathChange.Deleted },
+            { 'R', LogPathChange.Replaced },
+            { 'M', LogPathChange.Modified },
+        };
 
 		#endregion
         internal const int COMMAND_TIMEOUT = 20000; // Milliseconds
@@ -120,11 +109,7 @@ namespace UNIArt.Editor
 
         public static string AssetPathToURL(string assetPath)
         {
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"info \"{SVNFormatPath(assetPath)}\"",
-                COMMAND_TIMEOUT
-            );
+            var result = ShellUtils.ExecuteCommand("svn", $"info \"{SVNFormatPath(assetPath)}\"", COMMAND_TIMEOUT);
             if (result.HasErrors)
                 return string.Empty;
 
@@ -212,11 +197,7 @@ namespace UNIArt.Editor
             //
             // Remove the first line if it begins with "Status" in this case so that the check for an empty output works in the cases where
             // there are one or more change list entries.
-            if (
-                !offline
-                && result.Output != null
-                && result.Output.StartsWith("Status", StringComparison.Ordinal)
-            )
+            if (!offline && result.Output != null && result.Output.StartsWith("Status", StringComparison.Ordinal))
             {
                 using var sr = new StringReader(result.Output);
                 sr.ReadLine();
@@ -247,16 +228,7 @@ namespace UNIArt.Editor
                 return StatusOperationResult.Success;
             }
 
-            resultEntries.AddRange(
-                ExtractStatuses(
-                    result.Output,
-                    recursive,
-                    offline,
-                    fetchLockDetails,
-                    timeout,
-                    shellMonitor
-                )
-            );
+            resultEntries.AddRange(ExtractStatuses(result.Output, recursive, offline, fetchLockDetails, timeout, shellMonitor));
             return StatusOperationResult.Success;
         }
 
@@ -278,11 +250,7 @@ namespace UNIArt.Editor
                 return string.Empty;
 
             var valueStartIndex = lineIndex + pattern.Length + 1;
-            var lineEndIndex = str.IndexOf(
-                "\n",
-                valueStartIndex,
-                StringComparison.OrdinalIgnoreCase
-            );
+            var lineEndIndex = str.IndexOf("\n", valueStartIndex, StringComparison.OrdinalIgnoreCase);
             if (lineEndIndex == -1)
             {
                 lineEndIndex = str.Length - 1;
@@ -297,11 +265,7 @@ namespace UNIArt.Editor
             return str.Substring(valueStartIndex, lineEndIndex - valueStartIndex);
         }
 
-        public static LockDetails FetchLockDetails(
-            string path,
-            int timeout = ONLINE_COMMAND_TIMEOUT,
-            IShellMonitor shellMonitor = null
-        )
+        public static LockDetails FetchLockDetails(string path, int timeout = ONLINE_COMMAND_TIMEOUT, IShellMonitor shellMonitor = null)
         {
             string url;
             LockDetails lockDetails = LockDetails.Empty;
@@ -323,12 +287,7 @@ namespace UNIArt.Editor
             // NOTE: Project url can be cached and prepended to path, but externals may have different base url.
             //
             {
-                var result = ShellUtils.ExecuteCommand(
-                    SVN_Command,
-                    $"info \"{SVNFormatPath(path)}\"",
-                    timeout,
-                    shellMonitor
-                );
+                var result = ShellUtils.ExecuteCommand(SVN_Command, $"info \"{SVNFormatPath(path)}\"", timeout, shellMonitor);
 
                 url = ExtractLineValue("URL:", result.Output);
 
@@ -366,8 +325,7 @@ namespace UNIArt.Editor
                     }
 
                     lockDetails.OperationResult = StatusOperationResult.UnknownError;
-                    lockDetails.m_GotEmptyResponse =
-                        string.IsNullOrEmpty(result.Output) && string.IsNullOrEmpty(result.Error);
+                    lockDetails.m_GotEmptyResponse = string.IsNullOrEmpty(result.Output) && string.IsNullOrEmpty(result.Error);
                     return lockDetails;
                 }
             }
@@ -376,12 +334,7 @@ namespace UNIArt.Editor
             // Get the actual owner from the repository (using the url).
             //
             {
-                var result = ShellUtils.ExecuteCommand(
-                    SVN_Command,
-                    $"info \"{SVNFormatPath(url)}\"",
-                    timeout,
-                    shellMonitor
-                );
+                var result = ShellUtils.ExecuteCommand(SVN_Command, $"info \"{SVNFormatPath(url)}\"", timeout, shellMonitor);
 
                 lockDetails.Owner = ExtractLineValue("Lock Owner:", result.Output);
 
@@ -395,8 +348,7 @@ namespace UNIArt.Editor
                     }
 
                     lockDetails.OperationResult = ParseCommonStatusError(result.Error);
-                    lockDetails.m_GotEmptyResponse =
-                        string.IsNullOrEmpty(result.Output) && string.IsNullOrEmpty(result.Error);
+                    lockDetails.m_GotEmptyResponse = string.IsNullOrEmpty(result.Output) && string.IsNullOrEmpty(result.Error);
                     return lockDetails;
                 }
 
@@ -409,21 +361,11 @@ namespace UNIArt.Editor
                 // Bar
                 // ...
                 // The number of lines is arbitrary. If there is no comment, this section is omitted.
-                var lockMessageLineIndex = result.Output.IndexOf(
-                    "Lock Comment",
-                    StringComparison.OrdinalIgnoreCase
-                );
+                var lockMessageLineIndex = result.Output.IndexOf("Lock Comment", StringComparison.OrdinalIgnoreCase);
                 if (lockMessageLineIndex != -1)
                 {
-                    var lockMessageStart =
-                        result.Output.IndexOf(
-                            "\n",
-                            lockMessageLineIndex,
-                            StringComparison.OrdinalIgnoreCase
-                        ) + 1;
-                    lockDetails.Message = result.Output
-                        .Substring(lockMessageStart)
-                        .Replace("\r", "");
+                    var lockMessageStart = result.Output.IndexOf("\n", lockMessageLineIndex, StringComparison.OrdinalIgnoreCase) + 1;
+                    lockDetails.Message = result.Output.Substring(lockMessageStart).Replace("\r", "");
                     // Fuck '\r'
                 }
             }
@@ -514,16 +456,12 @@ namespace UNIArt.Editor
                         if (statusData.Status == VCFileStatus.Deleted)
                         {
                             int movedPathStartIndex = "        > moved to ".Length;
-                            statusData.MovedTo = nextLine
-                                .Substring(movedPathStartIndex)
-                                .Replace('\\', '/');
+                            statusData.MovedTo = nextLine.Substring(movedPathStartIndex).Replace('\\', '/');
                         }
                         if (statusData.Status == VCFileStatus.Added)
                         {
                             int movedPathStartIndex = "        > moved from ".Length;
-                            statusData.MovedFrom = nextLine
-                                .Substring(movedPathStartIndex)
-                                .Replace('\\', '/');
+                            statusData.MovedFrom = nextLine.Substring(movedPathStartIndex).Replace('\\', '/');
                         }
                     }
 
@@ -551,16 +489,9 @@ namespace UNIArt.Editor
 
                     if (!offline && fetchLockDetails)
                     {
-                        if (
-                            statusData.LockStatus != VCLockStatus.NoLock
-                            && statusData.LockStatus != VCLockStatus.BrokenLock
-                        )
+                        if (statusData.LockStatus != VCLockStatus.NoLock && statusData.LockStatus != VCLockStatus.BrokenLock)
                         {
-                            statusData.LockDetails = FetchLockDetails(
-                                statusData.Path,
-                                timeout,
-                                shellMonitor
-                            );
+                            statusData.LockDetails = FetchLockDetails(statusData.Path, timeout, shellMonitor);
 
                             // HACK: sometimes "svn info ..." commands return empty results (empty lock details) after assembly reload.
                             //		 if that happens, try a few more times.
@@ -568,11 +499,7 @@ namespace UNIArt.Editor
                             for (int i = 0; i < 3 && statusData.LockDetails.m_GotEmptyResponse; ++i)
                             {
                                 System.Threading.Thread.Sleep(20);
-                                statusData.LockDetails = FetchLockDetails(
-                                    statusData.Path,
-                                    timeout,
-                                    shellMonitor
-                                );
+                                statusData.LockDetails = FetchLockDetails(statusData.Path, timeout, shellMonitor);
                                 //Debug.LogError($"Attempt {i} {statusData.LockDetails.m_GotEmptyResponse} {statusData.Path}");
                             }
                         }
@@ -593,9 +520,7 @@ namespace UNIArt.Editor
             IShellMonitor shellMonitor = null
         )
         {
-            targetsFileToUse = string.IsNullOrEmpty(targetsFileToUse)
-                ? FileUtil.GetUniqueTempPathInProject()
-                : targetsFileToUse;
+            targetsFileToUse = string.IsNullOrEmpty(targetsFileToUse) ? FileUtil.GetUniqueTempPathInProject() : targetsFileToUse;
             if (includeMeta)
             {
                 assetPaths = assetPaths.Select(path => path + ".meta").Concat(assetPaths);
@@ -643,8 +568,7 @@ namespace UNIArt.Editor
                     break;
 
                 case StatusOperationResult.AuthenticationFailed:
-                    displayMessage =
-                        $"SVN Error: Trying to reach server repository failed because authentication is needed!";
+                    displayMessage = $"SVN Error: Trying to reach server repository failed because authentication is needed!";
                     break;
 
                 case StatusOperationResult.UnableToConnectError:
@@ -658,16 +582,11 @@ namespace UNIArt.Editor
                     break;
 
                 default:
-                    displayMessage =
-                        $"SVN \"{result}\" error occurred while processing the assets. Check the logs for more info.";
+                    displayMessage = $"SVN \"{result}\" error occurred while processing the assets. Check the logs for more info.";
                     break;
             }
 
-            if (
-                !string.IsNullOrEmpty(displayMessage)
-                && !Silent
-                && m_LastDisplayedError != displayMessage
-            )
+            if (!string.IsNullOrEmpty(displayMessage) && !Silent && m_LastDisplayedError != displayMessage)
             {
                 Debug.LogError($"{displayMessage} {suffix}\n");
                 m_LastDisplayedError = displayMessage;
@@ -675,25 +594,13 @@ namespace UNIArt.Editor
             }
         }
 
-        public static SVNStatusData GetStatus(
-            string path,
-            bool logErrorHint = true,
-            IShellMonitor shellMonitor = null
-        )
+        public static SVNStatusData GetStatus(string path, bool logErrorHint = true, IShellMonitor shellMonitor = null)
         {
             List<SVNStatusData> resultEntries = new List<SVNStatusData>();
 
             // Optimization: empty depth will return nothing if status is normal.
             // If path is modified, added, deleted, unversioned, it will return proper value.
-            StatusOperationResult result = GetStatuses(
-                path,
-                false,
-                true,
-                resultEntries,
-                false,
-                COMMAND_TIMEOUT,
-                shellMonitor
-            );
+            StatusOperationResult result = GetStatuses(path, false, true, resultEntries, false, COMMAND_TIMEOUT, shellMonitor);
 
             if (logErrorHint)
             {
@@ -714,23 +621,14 @@ namespace UNIArt.Editor
 
         public static bool IsWorkingCopy(string path)
         {
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"info \"{SVNFormatPath(path)}\"",
-                COMMAND_TIMEOUT
-            );
+            var result = ShellUtils.ExecuteCommand("svn", $"info \"{SVNFormatPath(path)}\"", COMMAND_TIMEOUT);
 
-            return !result.HasErrors
-                && !string.IsNullOrEmpty(ExtractLineValue("URL:", result.Output));
+            return !result.HasErrors && !string.IsNullOrEmpty(ExtractLineValue("URL:", result.Output));
         }
 
         public static bool IsFileUnderVersionControl(string path)
         {
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"info \"{SVNFormatPath(path)}\"",
-                COMMAND_TIMEOUT
-            );
+            var result = ShellUtils.ExecuteCommand("svn", $"info \"{SVNFormatPath(path)}\"", COMMAND_TIMEOUT);
             return !result.HasErrors;
         }
 
@@ -748,11 +646,7 @@ namespace UNIArt.Editor
             var _targetPathsStr = string.Join(" ", _targetPaths);
 
             var _forceStr = force ? "--force" : "";
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"delete {_targetPathsStr} {_forceStr}",
-                COMMAND_TIMEOUT
-            );
+            var result = ShellUtils.ExecuteCommand("svn", $"delete {_targetPathsStr} {_forceStr}", COMMAND_TIMEOUT);
             if (result.HasErrors)
             {
                 Debug.LogError(result.Error);
@@ -765,11 +659,7 @@ namespace UNIArt.Editor
 
         public static int GetRevision(string path)
         {
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"info \"{SVNFormatPath(path)}\"",
-                COMMAND_TIMEOUT
-            );
+            var result = ShellUtils.ExecuteCommand("svn", $"info \"{SVNFormatPath(path)}\"", COMMAND_TIMEOUT);
             var revision = ExtractLineValue("Revision:", result.Output);
 
             if (string.IsNullOrEmpty(revision))
@@ -782,12 +672,7 @@ namespace UNIArt.Editor
 
         public static int GetLastChangedRevision(string path)
         {
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"info \"{SVNFormatPath(path)}\"",
-                Encoding.GetEncoding(936),
-                true
-            );
+            var result = ShellUtils.ExecuteCommand("svn", $"info \"{SVNFormatPath(path)}\"", Encoding.GetEncoding(936), true);
             var lastChangedRevision = ExtractLineValue("Last Changed Rev:", result.Output);
 
             if (string.IsNullOrEmpty(lastChangedRevision))
@@ -800,19 +685,13 @@ namespace UNIArt.Editor
 
         public static bool SetIngore(string dir, string ignorePattern)
         {
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"propset svn:ignore \"{ignorePattern}\" \"{dir}\"",
-                COMMAND_TIMEOUT
-            );
+            var result = ShellUtils.ExecuteCommand("svn", $"propset svn:ignore \"{ignorePattern}\" \"{dir}\"", COMMAND_TIMEOUT);
             return !result.HasErrors;
         }
 
         public static bool AddToWorkspace(IEnumerable<string> assetPaths, bool includeMeta = true)
         {
-            var metaPaths = includeMeta
-                ? assetPaths.Select(path => path + ".meta")
-                : new List<string>();
+            var metaPaths = includeMeta ? assetPaths.Select(path => path + ".meta") : new List<string>();
 
             var _targetPaths = assetPaths.Concat(metaPaths);
             var _targetPathsStr = string.Join(" ", _targetPaths);
@@ -830,19 +709,13 @@ namespace UNIArt.Editor
 
         public static bool Commit(IEnumerable<string> assetPaths, bool includeMeta = true)
         {
-            var metaPaths = includeMeta
-                ? assetPaths.Select(path => path + ".meta")
-                : new List<string>();
+            var metaPaths = includeMeta ? assetPaths.Select(path => path + ".meta") : new List<string>();
 
             var _targetPaths = assetPaths.Concat(metaPaths).Where(_ => File.Exists(_));
 
             var _targetPathsStr = string.Join(" ", _targetPaths);
 
-            var result = ShellUtils.ExecuteCommand(
-                SVN_Command,
-                $"commit -m \"UNIArt Auto Commit\" {_targetPathsStr}",
-                true
-            );
+            var result = ShellUtils.ExecuteCommand(SVN_Command, $"commit -m \"UNIArt Auto Commit\" {_targetPathsStr}", true);
 
             if (result.HasErrors)
             {
@@ -863,12 +736,7 @@ namespace UNIArt.Editor
 
         public static List<ExternalProperty> GetExternals(string path)
         {
-            var result = ShellUtils.ExecuteCommand(
-                SVN_Command,
-                $"propget svn:externals \"{path}\"",
-                Encoding.GetEncoding(936),
-                true
-            );
+            var result = ShellUtils.ExecuteCommand(SVN_Command, $"propget svn:externals \"{path}\"", Encoding.GetEncoding(936), true);
 
             if (result.HasErrors)
             {
@@ -900,9 +768,7 @@ namespace UNIArt.Editor
                 if (match.Success)
                 {
                     // 目录名可能在 dir1 或 dir2 中
-                    string dir = match.Groups["dir1"].Success
-                        ? match.Groups["dir1"].Value
-                        : match.Groups["dir2"].Value;
+                    string dir = match.Groups["dir1"].Success ? match.Groups["dir1"].Value : match.Groups["dir2"].Value;
                     string url = match.Groups["url"].Value; // 获取完整的 URL，不包括 @ 后面的部分
                     // 修订版本号可能来自 -r 或 @
                     string revision = match.Groups["rev"].Success
@@ -931,12 +797,7 @@ namespace UNIArt.Editor
         /// <param name="propTarget"></param>
         /// <param name="repoUrl"></param>
         /// <param name="Revision">0 指定最新版本号  -1 不指定版本</param>
-        public static void AddOrUpdateExternal(
-            string propTarget,
-            string repoUrl,
-            int Revision = 0,
-            bool update = true
-        )
+        public static void AddOrUpdateExternal(string propTarget, string repoUrl, int Revision = 0, bool update = true)
         {
             UNIArtSettings.Project.PrepareTemplateRootFolder();
 
@@ -945,16 +806,11 @@ namespace UNIArt.Editor
 
             var _externals = GetExternals(propTarget);
 
-            var _folderName = UNIArtSettings.Project.GetExternalRelativeDir(
-                Path.GetFileName(repoUrl)
-            );
+            var _folderName = UNIArtSettings.Project.GetExternalRelativeDir(Path.GetFileName(repoUrl));
 
             if (!_externals.Exists(_ => _.Dir == _folderName))
             {
-                var _externalDir =
-                    propTarget == "."
-                        ? _folderName
-                        : Path.Combine(propTarget, _folderName).ToForwardSlash();
+                var _externalDir = propTarget == "." ? _folderName : Path.Combine(propTarget, _folderName).ToForwardSlash();
                 Utils.DeleteProjectAsset(_externalDir);
                 AssetDatabase.Refresh();
                 _externals.Add(
@@ -972,11 +828,7 @@ namespace UNIArt.Editor
                 .Where(_external => _external.Revision < 1)
                 .ToList()
                 .ForEach(
-                    _external =>
-                        _external.Revision =
-                            _external.Revision == 0
-                                ? GetLastChangedRevision(_external.Url)
-                                : _external.Revision
+                    _external => _external.Revision = _external.Revision == 0 ? GetLastChangedRevision(_external.Url) : _external.Revision
                 );
 
             var _externalsStr = formatExternals(_externals);
@@ -995,12 +847,7 @@ namespace UNIArt.Editor
                 return;
             }
 
-            result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"update",
-                workingDir,
-                Encoding.GetEncoding(936)
-            );
+            result = ShellUtils.ExecuteCommand("svn", $"update", workingDir, Encoding.GetEncoding(936));
             if (result.HasErrors)
             {
                 Debug.LogError($"SVN Error: {result.Error}");
@@ -1028,9 +875,7 @@ namespace UNIArt.Editor
 
             var _externals = GetExternals(propTarget);
 
-            var _folderName = UNIArtSettings.Project.GetExternalRelativeDir(
-                Path.GetFileName(externalUrl)
-            );
+            var _folderName = UNIArtSettings.Project.GetExternalRelativeDir(Path.GetFileName(externalUrl));
 
             var _external = _externals.FirstOrDefault(x => x.Dir == _folderName);
             if (_external == default)
@@ -1051,21 +896,13 @@ namespace UNIArt.Editor
             }
 
             var workingDir = $"{SVNConextMenu.ProjectRootUnity}/{propTarget}";
-            result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"update",
-                workingDir,
-                Encoding.GetEncoding(936)
-            );
+            result = ShellUtils.ExecuteCommand("svn", $"update", workingDir, Encoding.GetEncoding(936));
             if (result.HasErrors)
             {
                 Debug.LogError($"SVN Error: {result.Error}");
                 return;
             }
-            var _externalDir =
-                propTarget == "."
-                    ? _folderName
-                    : Path.Combine(propTarget, _folderName).ToForwardSlash();
+            var _externalDir = propTarget == "." ? _folderName : Path.Combine(propTarget, _folderName).ToForwardSlash();
             Utils.DeleteProjectAsset(_externalDir);
 
             AssetDatabase.Refresh();
@@ -1078,12 +915,7 @@ namespace UNIArt.Editor
                 return false;
             }
 
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                $"update",
-                workingDir,
-                Encoding.GetEncoding(936)
-            );
+            var result = ShellUtils.ExecuteCommand("svn", $"update", workingDir, Encoding.GetEncoding(936));
             if (result.HasErrors)
             {
                 Debug.LogError($"SVN Error: {result.Error}");
@@ -1094,12 +926,7 @@ namespace UNIArt.Editor
 
         public static bool IsWorkingCopyDirty(string workingDir)
         {
-            var result = ShellUtils.ExecuteCommand(
-                "svn",
-                "status",
-                workingDir,
-                Encoding.GetEncoding(936)
-            );
+            var result = ShellUtils.ExecuteCommand("svn", "status", workingDir, Encoding.GetEncoding(936));
             if (result.HasErrors)
             {
                 return true;

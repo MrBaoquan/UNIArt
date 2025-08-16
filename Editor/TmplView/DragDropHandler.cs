@@ -91,20 +91,14 @@ namespace UNIArt.Editor
 
                 if (_textures.Count > 1)
                 {
-                    var _sprites = DragAndDrop.paths
-                        .Select(_ => AssetDatabase.LoadAssetAtPath<Sprite>(_))
-                        .OfType<Sprite>()
-                        .ToList();
+                    var _sprites = DragAndDrop.paths.Select(_ => AssetDatabase.LoadAssetAtPath<Sprite>(_)).OfType<Sprite>().ToList();
                     createSequenceImageAnimation(obj, _sprites);
                 }
                 else if (_textures.Count == 1)
                 {
                     var _assetPath = AssetDatabase.GetAssetPath(_textures.First());
                     // 获取子资源
-                    var _subSprites = AssetDatabase
-                        .LoadAllAssetsAtPath(_assetPath)
-                        .OfType<Sprite>()
-                        .ToList();
+                    var _subSprites = AssetDatabase.LoadAllAssetsAtPath(_assetPath).OfType<Sprite>().ToList();
 
                     if (_subSprites.Count > 1)
                     {
@@ -168,9 +162,7 @@ namespace UNIArt.Editor
                     _newObj.AddComponent<RectTransform>();
                     var _imageComponent = _newObj.AddComponent<Image>();
                     _imageComponent.color = Color.white;
-                    _imageComponent.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(
-                        dragAsset.AssetPath
-                    );
+                    _imageComponent.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(dragAsset.AssetPath);
                     _newObj.GetComponent<Image>().SetNativeSize();
                 }
 
@@ -179,11 +171,7 @@ namespace UNIArt.Editor
             }
         }
 
-        static DragAndDropVisualMode ProjectBrowserDropHandler(
-            int dragInstanceId,
-            string dropUponPath,
-            bool perform
-        )
+        static DragAndDropVisualMode ProjectBrowserDropHandler(int dragInstanceId, string dropUponPath, bool perform)
         {
             // 1. 从工作台拖拽到项目文件夹 需要处理依赖
             // 2. 项目文件夹内按住alt拖拽到项目文件夹 需要处理依赖
@@ -192,10 +180,7 @@ namespace UNIArt.Editor
                 && (
                     (
                         Event.current.modifiers == EventModifiers.Alt
-                        && (
-                            dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder)
-                            || UNIArtSettings.IsTemplateAsset(dropUponPath)
-                        )
+                        && (dropUponPath.StartsWith(UNIArtSettings.Project.ArtFolder) || UNIArtSettings.IsTemplateAsset(dropUponPath))
                     ) || Utils.IsDragFromUNIArt()
                 )
             )

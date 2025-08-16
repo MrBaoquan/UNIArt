@@ -1,6 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
     <Style src="project://database/Packages/com.parful.uniart/Editor/TmplView/TmplBroswer.uss?fileID=7433441132597879392&amp;guid=4f3d453b97492d24da5f3621ef25cce3&amp;type=3#TmplBroswer" />
-    <ui:VisualElement name="root" focusable="true" style="flex-grow: 1; flex-direction: column; flex-shrink: 1; align-items: stretch;">
+    <ui:VisualElement name="root" focusable="true" style="flex-grow: 1; flex-direction: column; flex-shrink: 1; align-items: stretch; transition-duration: 0.45s; transition-timing-function: ease-in-out-cubic; background-color: rgb(56, 56, 56);">
         <uie:Toolbar name="Toolbar" style="width: auto; flex-shrink: 1; flex-grow: 0; display: flex; max-height: 27px; align-items: center; margin-top: 2px; margin-bottom: 2px; height: 27px;">
             <uie:ToolbarSpacer style="width: 8px;" />
             <uie:ToolbarButton display-tooltip-when-elided="true" name="btn-help" tooltip="查看文档" style="background-image: url(&apos;project://database/Packages/com.parful.uniart/Assets/Icon/%E5%B8%AE%E5%8A%A9%E6%96%87%E6%A1%A3%20(1).png?fileID=2800000&amp;guid=b8f70e64ca50f4447b4876339690c3f4&amp;type=3#帮助文档 (1)&apos;); width: 21px; height: 21px; border-left-width: 0; border-right-width: 0; border-top-width: 0; border-bottom-width: 0;" />

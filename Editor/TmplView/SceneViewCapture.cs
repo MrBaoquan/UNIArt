@@ -34,15 +34,10 @@ namespace UNIArt.Editor
                 Type sceneViewType = typeof(SceneView);
 
                 // 获取 kSceneViewPrefabBackground 字段
-                FieldInfo fieldInfo = sceneViewType.GetField(
-                    "kSceneViewPrefabBackground",
-                    BindingFlags.Static | BindingFlags.NonPublic
-                );
+                FieldInfo fieldInfo = sceneViewType.GetField("kSceneViewPrefabBackground", BindingFlags.Static | BindingFlags.NonPublic);
                 if (fieldInfo == null)
                 {
-                    Debug.LogError(
-                        "Unable to find kSceneViewPrefabBackground field. Unity version may not support this."
-                    );
+                    Debug.LogError("Unable to find kSceneViewPrefabBackground field. Unity version may not support this.");
                     return;
                 }
 
@@ -58,10 +53,7 @@ namespace UNIArt.Editor
                 Type prefColorType = prefColorInstance.GetType();
 
                 // 通过反射修改颜色值
-                PropertyInfo colorProperty = prefColorType.GetProperty(
-                    "Color",
-                    BindingFlags.Instance | BindingFlags.Public
-                );
+                PropertyInfo colorProperty = prefColorType.GetProperty("Color", BindingFlags.Instance | BindingFlags.Public);
                 if (colorProperty != null)
                 {
                     colorProperty.SetValue(prefColorInstance, color);
@@ -156,37 +148,13 @@ namespace UNIArt.Editor
 
             // 定义矩形边缘的拖拽区域
             float edgeSize = 10f;
-            Rect leftEdge = new Rect(
-                _rectangle.x - edgeSize / 2,
-                _rectangle.y,
-                edgeSize,
-                _rectangle.height
-            );
-            Rect rightEdge = new Rect(
-                _rectangle.xMax - edgeSize / 2,
-                _rectangle.y,
-                edgeSize,
-                _rectangle.height
-            );
-            Rect topEdge = new Rect(
-                _rectangle.x,
-                _rectangle.y - edgeSize / 2,
-                _rectangle.width,
-                edgeSize
-            );
-            Rect bottomEdge = new Rect(
-                _rectangle.x,
-                _rectangle.yMax - edgeSize / 2,
-                _rectangle.width,
-                edgeSize
-            );
+            Rect leftEdge = new Rect(_rectangle.x - edgeSize / 2, _rectangle.y, edgeSize, _rectangle.height);
+            Rect rightEdge = new Rect(_rectangle.xMax - edgeSize / 2, _rectangle.y, edgeSize, _rectangle.height);
+            Rect topEdge = new Rect(_rectangle.x, _rectangle.y - edgeSize / 2, _rectangle.width, edgeSize);
+            Rect bottomEdge = new Rect(_rectangle.x, _rectangle.yMax - edgeSize / 2, _rectangle.width, edgeSize);
 
             // 绘制矩形边框（不填充）
-            Handles.DrawSolidRectangleWithOutline(
-                _rectangle,
-                new Color(0, 0, 0, 0),
-                _rectangleColor
-            );
+            Handles.DrawSolidRectangleWithOutline(_rectangle, new Color(0, 0, 0, 0), _rectangleColor);
 
             // 在矩形右下角绘制一个按钮
             Rect confirmRect = new Rect(_rectangle.xMax - 40, _rectangle.yMax + 5, 40, 20);
@@ -261,9 +229,7 @@ namespace UNIArt.Editor
                 var _windowRect = sceneView.position;
                 _windowRect.height += 21; // 实际测试， 窗口高度比实际测量少21像素
 
-                var _deltaY =
-                    sceneView.position.y
-                    + (_windowRect.height - SceneView.currentDrawingSceneView.camera.pixelHeight);
+                var _deltaY = sceneView.position.y + (_windowRect.height - SceneView.currentDrawingSceneView.camera.pixelHeight);
 
                 var _captureRect = _rectangle;
                 _captureRect.y += _deltaY;
@@ -360,12 +326,7 @@ namespace UNIArt.Editor
                     _targetHeight
                 );
 
-                Texture2D inspectorTexture = new Texture2D(
-                    _targetWidth,
-                    _targetHeight,
-                    TextureFormat.RGB24,
-                    false
-                );
+                Texture2D inspectorTexture = new Texture2D(_targetWidth, _targetHeight, TextureFormat.RGB24, false);
                 inspectorTexture.SetPixels(pixels);
 
                 byte[] bytes = inspectorTexture.EncodeToPNG();

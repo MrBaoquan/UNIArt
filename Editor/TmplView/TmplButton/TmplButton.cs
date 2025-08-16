@@ -40,9 +40,7 @@ namespace UNIArt.Editor
             }
         }
 
-        public ReactiveProperty<AssetFilterMode> FilterMode = new ReactiveProperty<AssetFilterMode>(
-            AssetFilterMode.None
-        );
+        public ReactiveProperty<AssetFilterMode> FilterMode = new ReactiveProperty<AssetFilterMode>(AssetFilterMode.None);
 
         public ReactiveProperty<int> Version = new ReactiveProperty<int>(0);
 
@@ -129,15 +127,10 @@ namespace UNIArt.Editor
                             .GetDirectories(
                                 $"{RootFolder}/{_topDir}",
                                 "*",
-                                SearchTopFolderOnly
-                                    ? SearchOption.TopDirectoryOnly
-                                    : SearchOption.AllDirectories
+                                SearchTopFolderOnly ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories
                             )
                             .Select(_dir => _dir.ToForwardSlash())
-                            .Select(
-                                _dir =>
-                                    _dir.ToForwardSlash().Replace($"{RootFolder}/{_topDir}/", "")
-                            )
+                            .Select(_dir => _dir.ToForwardSlash().Replace($"{RootFolder}/{_topDir}/", ""))
                 )
                 .Where(_ => !_.StartsWith("."))
                 .Distinct()
@@ -170,9 +163,7 @@ namespace UNIArt.Editor
                 .Where(
                     _filter =>
                         AssetDatabase.IsValidFolder($"{_rootDir}/{_filter}")
-                        && AssetDatabase
-                            .FindAssets(_findArgs, new string[] { $"{_rootDir}/{_filter}" })
-                            .Length > 0
+                        && AssetDatabase.FindAssets(_findArgs, new string[] { $"{_rootDir}/{_filter}" }).Length > 0
                 )
                 .ToList();
         }
@@ -185,15 +176,9 @@ namespace UNIArt.Editor
             }
 
             var _filterRoots = filterDirs().Select(_ => $"{RootFolder}/{_}");
-            _filterRoots
-                .Where(_ => !AssetDatabase.IsValidFolder(_))
-                .ToList()
-                .ForEach(_ => Utils.CreateFolderIfNotExist(_));
+            _filterRoots.Where(_ => !AssetDatabase.IsValidFolder(_)).ToList().ForEach(_ => Utils.CreateFolderIfNotExist(_));
 
-            return _filterRoots
-                .Select(_rootDir => $"{_rootDir}/{filterTag}")
-                .Where(_ => AssetDatabase.IsValidFolder(_))
-                .ToArray();
+            return _filterRoots.Select(_rootDir => $"{_rootDir}/{filterTag}").Where(_ => AssetDatabase.IsValidFolder(_)).ToArray();
         }
 
         public string RootPrefabFilterPath(string filterTag)
@@ -224,10 +209,7 @@ namespace UNIArt.Editor
         }
         public ReactiveProperty<string> SearchFilter = new ReactiveProperty<string>(string.Empty);
 
-        public string RootFolder =>
-            IsLocal
-                ? UNIArtSettings.Project.ArtFolder
-                : UNIArtSettings.GetExternalTemplateFolder(TemplateID);
+        public string RootFolder => IsLocal ? UNIArtSettings.Project.ArtFolder : UNIArtSettings.GetExternalTemplateFolder(TemplateID);
         public string ExternalRepoUrl => UNIArtSettings.GetExternalTemplateFolderUrl(TemplateID);
 
         public int OrderID
@@ -355,29 +337,19 @@ namespace UNIArt.Editor
         {
             if (IsLocal)
             {
-                SVNConextMenu.Commit(SVNConextMenu.GetRootAssetPath(), true, true);
+                SVNConextMenu.Commit(SVNConextMenu.GetRootAssetPath(), false, true);
                 Version.Value = SVNIntegration.GetLastChangedRevision(Utils.ProjectRoot);
                 return;
             }
             // 将版本设置为最新版
-            SVNIntegration.AddOrUpdateExternal(
-                UNIArtSettings.Project.TemplatePropTarget,
-                ExternalRepoUrl,
-                -1,
-                false
-            );
+            SVNIntegration.AddOrUpdateExternal(UNIArtSettings.Project.TemplatePropTarget, ExternalRepoUrl, -1, false);
 
             SVNConextMenu.CommitExternal(RootFolder);
 
             // 指定为最新版本号
-            SVNIntegration.AddOrUpdateExternal(
-                UNIArtSettings.Project.TemplatePropTarget,
-                ExternalRepoUrl,
-                0,
-                false
-            );
+            SVNIntegration.AddOrUpdateExternal(UNIArtSettings.Project.TemplatePropTarget, ExternalRepoUrl, 0, false);
 
-            Version.Value = SVNIntegration.GetRevision(RootFolder);
+            Version.Value = SVNIntegration.GetLastChangedRevision(RootFolder);
         }
 
         // 拉取最新资源
@@ -395,7 +367,7 @@ namespace UNIArt.Editor
             {
                 if (SVNIntegration.Update(RootFolder))
                 {
-                    Version.Value = SVNIntegration.GetRevision(RootFolder);
+                    Version.Value = SVNIntegration.GetLastChangedRevision(RootFolder);
                     AssetDatabase.Refresh();
                     return true;
                 }
@@ -413,7 +385,7 @@ namespace UNIArt.Editor
                 Debug.LogWarning("Failed to checkout external template.");
                 return false;
             }
-            Version.Value = SVNIntegration.GetRevision(RootFolder);
+            Version.Value = SVNIntegration.GetLastChangedRevision(RootFolder);
             AssetDatabase.Refresh();
             return true;
         }
@@ -438,10 +410,7 @@ namespace UNIArt.Editor
                                 IsTop = true;
                                 onTopChanged.Invoke(true);
                             },
-                            _ =>
-                                keeptopable
-                                    ? DropdownMenuAction.Status.Normal
-                                    : DropdownMenuAction.Status.Disabled
+                            _ => keeptopable ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled
                         );
                         evt.menu.AppendAction(
                             "取消置顶",
@@ -450,10 +419,7 @@ namespace UNIArt.Editor
                                 IsTop = false;
                                 onTopChanged.Invoke(false);
                             },
-                            _ =>
-                                unkeeptopable
-                                    ? DropdownMenuAction.Status.Normal
-                                    : DropdownMenuAction.Status.Disabled
+                            _ => unkeeptopable ? DropdownMenuAction.Status.Normal : DropdownMenuAction.Status.Disabled
                         );
                     }
                 )

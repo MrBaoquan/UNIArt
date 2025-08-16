@@ -88,14 +88,10 @@ namespace UNIArt.Editor
 
             if (rawAssetPath.EndsWith("#psd.prefab"))
             {
-                previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                    UNIArtSettings.PrefabPathToPsdFile(rawAssetPath)
-                );
+                previewTex = AssetDatabase.LoadAssetAtPath<Texture2D>(UNIArtSettings.PrefabPathToPsdFile(rawAssetPath));
                 if (UNIArtSettings.PsdRawExists(rawAssetPath))
                 {
-                    defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                        "Packages/com.parful.uniart/Assets/Icon/ps-prefab.png"
-                    );
+                    defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Packages/com.parful.uniart/Assets/Icon/ps-prefab.png");
                 }
             }
             else if (previewTex == null)
@@ -108,19 +104,14 @@ namespace UNIArt.Editor
 
             if (UNIArtSettings.IsProjectUIPageAsset(rawAssetPath) && RawAssetObject is GameObject)
             {
-                defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                    "Packages/com.parful.uniart/Assets/Icon/UIPage.png"
-                );
+                defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Packages/com.parful.uniart/Assets/Icon/UIPage.png");
             }
             else if (UNIArtSettings.IsProjectUIComponentAsset(rawAssetPath))
             {
-                defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                    "Packages/com.parful.uniart/Assets/Icon/组件.png"
-                );
+                defaultPrefabIcon = AssetDatabase.LoadAssetAtPath<Texture2D>("Packages/com.parful.uniart/Assets/Icon/组件.png");
             }
 
-            this.Q<VisualElement>("preview").style.backgroundImage =
-                previewTex ?? defaultPrefabIcon;
+            this.Q<VisualElement>("preview").style.backgroundImage = previewTex ?? defaultPrefabIcon;
 
             refreshAssetIcon();
         }
@@ -138,16 +129,11 @@ namespace UNIArt.Editor
                 if (IsPSD)
                 {
                     _assetType.style.backgroundImage = HasPSDEnity
-                        ? AssetDatabase.LoadAssetAtPath<Texture2D>(
-                            "Packages/com.parful.uniart/Assets/Icon/ps-active.png"
-                        )
-                        : AssetDatabase.LoadAssetAtPath<Texture2D>(
-                            "Packages/com.parful.uniart/Assets/Icon/ps-disabled.png"
-                        );
+                        ? AssetDatabase.LoadAssetAtPath<Texture2D>("Packages/com.parful.uniart/Assets/Icon/ps-active.png")
+                        : AssetDatabase.LoadAssetAtPath<Texture2D>("Packages/com.parful.uniart/Assets/Icon/ps-disabled.png");
                     return;
                 }
-                _assetType.style.backgroundImage =
-                    EditorGUIUtility.IconContent("Image Icon").image as Texture2D;
+                _assetType.style.backgroundImage = EditorGUIUtility.IconContent("Image Icon").image as Texture2D;
                 return;
             }
 
@@ -264,10 +250,7 @@ namespace UNIArt.Editor
                     OnHidePreview.Invoke(this);
                     EditorCoroutineUtility.StopCoroutine(hoverCoroutine);
                 }
-                hoverCoroutine = EditorCoroutineUtility.StartCoroutine(
-                    ShowPreviewAfterDelay(),
-                    this
-                );
+                hoverCoroutine = EditorCoroutineUtility.StartCoroutine(ShowPreviewAfterDelay(), this);
             };
 
             this.RegisterCallback<MouseEnterEvent>(evt =>
@@ -348,9 +331,7 @@ namespace UNIArt.Editor
                     return;
                 var _delta = (evt.mousePosition - mouseDownPosition).magnitude;
 
-                var dragable =
-                    Event.current.type == EventType.MouseDown
-                    || Event.current.type == EventType.MouseDrag;
+                var dragable = Event.current.type == EventType.MouseDown || Event.current.type == EventType.MouseDrag;
 
                 if (_delta < 5f || !dragable)
                     return;

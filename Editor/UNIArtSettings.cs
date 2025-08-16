@@ -17,25 +17,22 @@ namespace UNIArt.Editor
         {
             const string editorPrefsPrefix = "UNIArt_";
             private const string enableHierarchyIcon = editorPrefsPrefix + "enableHierarchyIcon";
-            private const string enableHierarchyCheckbox =
-                editorPrefsPrefix + "enableHierarchyCheckbox";
+            private const string enableHierarchyCheckbox = editorPrefsPrefix + "enableHierarchyCheckbox";
             private const string delayRetry = editorPrefsPrefix + "uniart_delayRetry";
 
-            public static ReactiveProperty<float> DelayRetry = new ReactiveProperty<float>(
-                EditorPrefs.GetFloat(delayRetry, 0.2f)
-            );
+            public static ReactiveProperty<float> DelayRetry = new ReactiveProperty<float>(EditorPrefs.GetFloat(delayRetry, 0.2f));
 
             public static ReactiveProperty<bool> EnableHierarchyIcon = new ReactiveProperty<bool>(
                 EditorPrefs.GetBool(enableHierarchyIcon, true)
             );
 
-            public static ReactiveProperty<bool> EnableHierarchyCheckbox =
-                new ReactiveProperty<bool>(EditorPrefs.GetBool(enableHierarchyCheckbox, true));
+            public static ReactiveProperty<bool> EnableHierarchyCheckbox = new ReactiveProperty<bool>(
+                EditorPrefs.GetBool(enableHierarchyCheckbox, true)
+            );
 
-            public static ReactiveProperty<bool> EnableHierarchyItemGUI =
-                new ReactiveProperty<bool>(
-                    EnableHierarchyCheckbox.Value || EnableHierarchyIcon.Value
-                );
+            public static ReactiveProperty<bool> EnableHierarchyItemGUI = new ReactiveProperty<bool>(
+                EnableHierarchyCheckbox.Value || EnableHierarchyIcon.Value
+            );
 
             static Editor()
             {
@@ -45,8 +42,7 @@ namespace UNIArt.Editor
 
                 Action refreshProperty = () =>
                 {
-                    EnableHierarchyItemGUI.Value =
-                        EnableHierarchyCheckbox.Value || EnableHierarchyIcon.Value;
+                    EnableHierarchyItemGUI.Value = EnableHierarchyCheckbox.Value || EnableHierarchyIcon.Value;
                 };
 
                 EnableHierarchyItemGUI.OnValueChanged.AddListener(
@@ -94,8 +90,7 @@ namespace UNIArt.Editor
 
         [NonSerialized]
         internal string TemplateSubdir = "com.parful.collabhub";
-        internal string TemplateRelativeRoot =>
-            Path.Combine(TemplatePropTarget, TemplateSubdir).ToForwardSlash();
+        internal string TemplateRelativeRoot => Path.Combine(TemplatePropTarget, TemplateSubdir).ToForwardSlash();
 
         public string GetExternalRelativeDir(string templateName)
         {
@@ -150,10 +145,7 @@ namespace UNIArt.Editor
                 var _packageJson = Path.Combine(TemplateRelativeRoot, "package.json");
                 if (!File.Exists(_packageJson))
                 {
-                    AssetDatabase.CopyAsset(
-                        "Packages/com.parful.uniart/Assets/templates/package.json.txt",
-                        _packageJson
-                    );
+                    AssetDatabase.CopyAsset("Packages/com.parful.uniart/Assets/templates/package.json.txt", _packageJson);
                     AssetDatabase.Refresh();
                     if (!IsFileUnderVersionControl(_packageJson))
                     {
@@ -196,10 +188,7 @@ namespace UNIArt.Editor
         public List<string> dependencyExcludeFolders = new List<string> { "Assets/TextMesh Pro", };
 
         // 依赖文件排除文件
-        internal List<string> dependencyExcludeFiles = new List<string>
-        {
-            "Assets/ArtAssets/Fonts/DefaultTMPFont.asset",
-        };
+        internal List<string> dependencyExcludeFiles = new List<string> { "Assets/ArtAssets/Fonts/DefaultTMPFont.asset", };
 
         [Serializable]
         public class PSDImportArgs
@@ -242,8 +231,7 @@ namespace UNIArt.Editor
         {
             public string origin;
             public string instancePath;
-            public GameObject instanceObject =>
-                AssetDatabase.LoadAssetAtPath<GameObject>(instancePath);
+            public GameObject instanceObject => AssetDatabase.LoadAssetAtPath<GameObject>(instancePath);
             public bool IsMissing => instanceObject == null;
         }
 
@@ -261,19 +249,14 @@ namespace UNIArt.Editor
 
         public static GameObject GetPSDEntityInstance(string psdPath)
         {
-            return Project.PSDEntityInstances
-                .Where(x => x.origin == psdPath)
-                .LastOrDefault()
-                ?.instanceObject;
+            return Project.PSDEntityInstances.Where(x => x.origin == psdPath).LastOrDefault()?.instanceObject;
         }
 
         public static void AddPSDEntityInstance(string psdPath, string instance)
         {
             var _instance = new PSDEntityInstance() { origin = psdPath, instancePath = instance };
             Project.PSDEntityInstances.Add(_instance);
-            Project.PSDEntityInstances = Project.PSDEntityInstances
-                .Where(x => !x.IsMissing)
-                .ToList();
+            Project.PSDEntityInstances = Project.PSDEntityInstances.Where(x => !x.IsMissing).ToList();
         }
 
         public static string GetExternalTemplateFolderUrl(string templateName)
@@ -323,11 +306,7 @@ namespace UNIArt.Editor
             }
 
             var TemplatePreviewFolder = TemplateRootFolder + "/Previews";
-            var _fileName = assetPath
-                .ToForwardSlash()
-                .Replace(TemplateRootFolder + "/", "")
-                .Replace("/", "_")
-                .Replace(".prefab", ".png");
+            var _fileName = assetPath.ToForwardSlash().Replace(TemplateRootFolder + "/", "").Replace("/", "_").Replace(".prefab", ".png");
             return TemplatePreviewFolder + "/" + _fileName;
         }
 
@@ -371,8 +350,7 @@ namespace UNIArt.Editor
 
         public static bool PsdRawExists(string entityPath)
         {
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(PrefabPathToPsdFile(entityPath))
-                != null;
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(PrefabPathToPsdFile(entityPath)) != null;
         }
 
         public static bool IsPsdEntity(string assetPath)
@@ -448,8 +426,7 @@ namespace UNIArt.Editor
         }
 
         [HideInInspector]
-        public List<SVNIntegration.ExternalProperty> externals =
-            new List<SVNIntegration.ExternalProperty>();
+        public List<SVNIntegration.ExternalProperty> externals = new List<SVNIntegration.ExternalProperty>();
 
         private static bool isInited = false;
 
@@ -532,10 +509,7 @@ namespace UNIArt.Editor
                         Editor.EnableHierarchyCheckbox.Value
                     );
 
-                    Editor.EnableHierarchyIcon.Value = EditorGUILayout.Toggle(
-                        "Component Icon",
-                        Editor.EnableHierarchyIcon.Value
-                    );
+                    Editor.EnableHierarchyIcon.Value = EditorGUILayout.Toggle("Component Icon", Editor.EnableHierarchyIcon.Value);
                     EditorGUIUtility.labelWidth = _defaultLabelWidth;
                     EditorGUI.indentLevel -= 2;
                 },

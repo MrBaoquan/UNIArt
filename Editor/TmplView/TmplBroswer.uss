@@ -9,7 +9,7 @@ Label {
 }
 
 .tmpl-button:hover {
-    background-color: rgb(214, 60, 60);
+    background-color: rgb(14, 165, 233);
     transition-duration: 0.25s, 0.25s;
     transition-timing-function: ease, ease;
     transition-property: background-color, font-size;
@@ -52,12 +52,12 @@ Label {
 }
 
 .filter-button:hover {
-    background-color: rgb(214, 60, 60);
+    background-color: rgb(14, 165, 233);
     transition-duration: 0.25s;
 }
 
 .selected {
-    background-color: rgb(214, 60, 60);
+    background-color: rgb(2, 132, 199);
 }
 
 .full-view {
